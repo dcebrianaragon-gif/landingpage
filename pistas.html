@@ -6,7 +6,7 @@
     <title>TRACK ANALYSIS | PROTOCOL 2026</title>
     <style>
         /* ================================================================
-           [01] DESIGN SYSTEM & VARIABLES (Mismo estilo que entrada1)
+           [01] DESIGN SYSTEM & VARIABLES
            ================================================================
         */
         :root {
@@ -24,7 +24,7 @@
             background-color: var(--black);
             color: #fff;
             font-family: 'Segoe UI', sans-serif;
-            overflow: hidden;
+            overflow-x: hidden; /* Evita scroll horizontal */
         }
 
         /* CURSOR */
@@ -46,6 +46,7 @@
             font-size: 14px; font-weight: bold; border: 1px solid #444;
             padding: 10px 20px; transition: var(--transition-fast);
             background: rgba(0,0,0,0.5); backdrop-filter: blur(5px);
+            z-index: 100;
         }
         .btn-back:hover { background: var(--red); border-color: var(--red); }
         
@@ -53,7 +54,7 @@
 
         /* LAYOUT PRINCIPAL */
         .track-container {
-            display: flex; height: 100vh; width: 100vw;
+            display: flex; min-height: 100vh; width: 100vw;
         }
 
         /* PANEL IZQUIERDO: EL MAPA */
@@ -62,18 +63,23 @@
             background: radial-gradient(circle at center, #111 0%, #000 100%);
             display: flex; align-items: center; justify-content: center;
             border-right: 1px solid #333;
+            perspective: 1200px; 
+            overflow: hidden;
         }
+        
         .map-display img {
-            width: 80%; max-height: 80vh; object-fit: contain;
-            filter: drop-shadow(0 0 20px rgba(225,0,0,0.2)) grayscale(100%) contrast(150%);
-            transition: 1s; animation: pulseMap 4s infinite alternate;
+            width: 70%; max-height: 70vh; object-fit: contain;
+            filter: drop-shadow(0 0 20px rgba(225,0,0,0.3)) grayscale(100%) contrast(150%);
+            transition: transform 0.1s ease-out, filter 0.3s ease-out;
+            transform-style: preserve-3d;
+            will-change: transform;
         }
-        @keyframes pulseMap { 0% { filter: drop-shadow(0 0 10px rgba(225,0,0,0.1)) grayscale(100%) contrast(150%); } 100% { filter: drop-shadow(0 0 30px rgba(225,0,0,0.4)) grayscale(100%) contrast(150%); } }
 
         .scan-line {
             position: absolute; top: 0; left: 0; width: 100%; height: 2px;
             background: rgba(0, 242, 255, 0.3); box-shadow: 0 0 10px rgba(0, 242, 255, 0.5);
             animation: scan 3s linear infinite; pointer-events: none;
+            z-index: 10;
         }
         @keyframes scan { 0% { top: 0; } 100% { top: 100%; } }
 
@@ -81,6 +87,7 @@
         .data-panel {
             width: 450px; background: var(--grey-900); padding: 100px 50px;
             display: flex; flex-direction: column; justify-content: center;
+            z-index: 5;
         }
         .track-title {
             font-family: var(--font-racing); font-size: 50px;
@@ -98,6 +105,58 @@
             line-height: 1.8; border-top: 1px solid #222; padding-top: 30px;
         }
 
+        /* ================================================================
+           [02] RESPONSIVIDAD (OPTIMIZACIÓN MÓVIL)
+           ================================================================
+        */
+        @media (max-width: 850px) {
+            * { cursor: auto; } /* Restaura el cursor normal en pantallas pequeñas */
+            #pro-cursor { display: none; } /* Oculta el cursor custom en móvil */
+
+            header {
+                padding: 15px 20px;
+                flex-direction: column;
+                gap: 15px;
+            }
+
+            .track-container {
+                flex-direction: column; /* Apila el mapa y los datos verticalmente */
+            }
+
+            .map-display {
+                border-right: none;
+                border-bottom: 1px solid #333;
+                min-height: 50vh; /* El mapa ocupa la mitad superior */
+                padding-top: 80px; /* Deja espacio para el header */
+            }
+
+            .map-display img {
+                width: 90%;
+            }
+
+            .data-panel {
+                width: 100%;
+                padding: 40px 25px;
+                align-items: center; /* Centra el contenido en móvil */
+                text-align: center;
+            }
+
+            .track-title {
+                font-size: 35px;
+            }
+
+            .stats-grid {
+                width: 100%;
+                gap: 15px;
+            }
+
+            .stat-box {
+                border-left: none;
+                border-top: 2px solid var(--red); /* Cambia la línea de diseño para que quede mejor centrada */
+                padding-left: 0;
+                padding-top: 10px;
+            }
+        }
     </style>
 </head>
 <body>
@@ -105,12 +164,12 @@
     <div id="pro-cursor"><div class="cursor-dot"></div></div>
 
     <header>
-        <a href="entrada1.html#circuit-maps" class="btn-back"> Volver atras</a>
+        <a href="entrada1.html#circuit-maps" class="btn-back"> < VOLVER ATRÁS</a>
         <div class="sys-status">[ LIVE_TELEMETRY_FEED ]</div>
     </header>
 
     <div class="track-container">
-        <div class="map-display">
+        <div class="map-display" id="3d-container">
             <div class="scan-line"></div>
             <img id="map-img" src="" alt="Track Map">
         </div>
@@ -144,14 +203,16 @@
     </div>
 
     <script>
-        // Cursor
+        // 1. Cursor Personalizado (Solo activo si no estamos en móvil)
         const cursor = document.getElementById('pro-cursor');
-        document.addEventListener('mousemove', e => {
-            cursor.style.left = e.clientX + 'px';
-            cursor.style.top = e.clientY + 'px';
-        });
+        if (window.innerWidth > 850) {
+            document.addEventListener('mousemove', e => {
+                cursor.style.left = e.clientX + 'px';
+                cursor.style.top = e.clientY + 'px';
+            });
+        }
 
-        // Base de datos de circuitos
+        // 2. Base de datos de circuitos COMPLETA
         const trackData = {
             "jerez": {
                 name: "JEREZ",
@@ -160,7 +221,7 @@
                 record: "1'36.170",
                 speed: "300.5 km/h",
                 desc: "Circuito muy técnico caracterizado por fuertes frenadas y curvas rápidas y enlazadas. La gestión del neumático delantero es crítica en las curvas de alta velocidad del sector 3.",
-                img: "mapa-jerez.png" // Cambia esto por la imagen real de tu mapa
+                img: "https://upload.wikimedia.org/wikipedia/commons/thumb/c/ca/Circuit_Jerez.svg/1024px-Circuit_Jerez.svg.png" 
             },
             "mugello": {
                 name: "MUGELLO",
@@ -169,7 +230,7 @@
                 record: "1'44.855",
                 speed: "366.1 km/h",
                 desc: "Una de las rectas más rápidas del campeonato combinada con cambios de rasante ciegos. Exige un motor potente y una aerodinámica perfecta para evitar que la moto despegue en el rasante.",
-                img: "mapa-mugello.png"
+                img: "mugello.png" // Recuerda cambiar esto por una URL si no tienes la imagen local
             },
             "assen": {
                 name: "ASSEN",
@@ -178,64 +239,89 @@
                 record: "1'31.504",
                 speed: "318.4 km/h",
                 desc: "La 'Catedral' del motociclismo. Un trazado muy rápido y fluido donde los pilotos pasan gran parte de la vuelta inclinados. La chicane final es el punto crítico para adelantar en la última vuelta.",
-                img: "mapa-assen.png"
+                img: "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a2/TT_Circuit_Assen_2010.svg/1024px-TT_Circuit_Assen_2010.svg.png"
             },
-            // Añade aquí el resto (phillip-island, sachsenring, valencia) siguiendo la misma estructura
+            "phillip-island": {
+                name: "PHILLIP_IS",
+                length: "4.45 km",
+                curves: "12 (7 Izq, 5 Der)",
+                record: "1'27.246",
+                speed: "349.5 km/h",
+                desc: "Posiblemente el circuito más espectacular del mundo. Una pista rapidísima a la orilla del mar donde la valentía del piloto y el control del acelerador en curvas largas de izquierdas son clave.",
+                img: "https://upload.wikimedia.org/wikipedia/commons/thumb/5/5e/Phillip_Island_Grand_Prix_Circuit.svg/1024px-Phillip_Island_Grand_Prix_Circuit.svg.png"
+            },
+            "sachsenring": {
+                name: "SACHSENR.",
+                length: "3.67 km",
+                curves: "13 (10 Izq, 3 Der)",
+                record: "1'19.765",
+                speed: "304.2 km/h",
+                desc: "Un circuito ratonero, lento y asimétrico. Los neumáticos sufren un estrés brutal en el lado izquierdo. La curva 11 ('Waterfall') es una bajada ciega a derechas rapidísima tras estar mucho tiempo inclinados a la izquierda.",
+                img: "https://upload.wikimedia.org/wikipedia/commons/thumb/c/cd/Sachsenring_Circuit.svg/1024px-Sachsenring_Circuit.svg.png"
+            },
+            "valencia": {
+                name: "VALENCIA",
+                length: "4.00 km",
+                curves: "14 (9 Izq, 5 Der)",
+                record: "1'28.931",
+                speed: "337.5 km/h",
+                desc: "Trazado estilo 'estadio', estrecho y con muchas curvas lentas. Suele albergar la carrera final de la temporada, convirtiéndose en un escenario de alta tensión para la resolución de campeonatos.",
+                img: "https://upload.wikimedia.org/wikipedia/commons/thumb/1/1d/Circuit_Ricardo_Tormo_2012.svg/1024px-Circuit_Ricardo_Tormo_2012.svg.png"
+            }
         };
 
-        // Leer parámetro de la URL (ej: track.html?id=jerez)
+        // 3. Inyección de datos
         const urlParams = new URLSearchParams(window.location.search);
         let trackId = urlParams.get('id');
 
-        // Si no hay ID o el ID no existe en la base de datos, cargar Jerez por defecto
+        // Selecciona Jerez por defecto si no hay ID o es incorrecto
         if (!trackId || !trackData[trackId]) {
             trackId = "jerez"; 
         }
 
         const data = trackData[trackId];
 
-        // Inyectar los datos en el HTML
         document.getElementById('track-name').innerHTML = `${data.name}<span>_</span>`;
         document.getElementById('track-length').innerText = data.length;
         document.getElementById('track-curves').innerText = data.curves;
         document.getElementById('track-record').innerText = data.record;
         document.getElementById('track-speed').innerText = data.speed;
         document.getElementById('track-desc').innerText = data.desc;
-        
-        // Imagen placeholder si no tienes imágenes (o pon la ruta de las tuyas en el JSON)
         document.getElementById('map-img').src = data.img;
-        document.getElementById('map-img').onerror = function() {
-            this.src = 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/ca/Circuit_Jerez.svg/1024px-Circuit_Jerez.svg.png'; // Placeholder de respaldo
-        };
-        function initMaps() {
-    // Hemos añadido una propiedad 'id' en minúsculas para pasarlo por la URL
-    const circuits = [
-        { id: "jerez", name: "Jerez", data: "4.42 km // 13 Curves" },
-        { id: "mugello", name: "Mugello", data: "5.25 km // 15 Curves" },
-        { id: "assen", name: "Assen", data: "4.54 km // 18 Curves" },
-        { id: "phillip-island", name: "Phillip Island", data: "4.45 km // 12 Curves" },
-        { id: "sachsenring", name: "Sachsenring", data: "3.67 km // 13 Curves" },
-        { id: "valencia", name: "Valencia", data: "4.00 km // 14 Curves" }
-    ];
-    const container = document.getElementById('maps-target');
 
-    circuits.forEach((c) => {
-        const card = document.createElement('div');
-        card.className = 'map-card';
-        // Hacemos que toda la tarjeta sea clickable
-        card.style.cursor = "none"; // Mantenemos tu cursor personalizado
-        card.onclick = function() {
-            window.location.href = `track.html?id=${c.id}`;
-        };
-        
-        card.innerHTML = `
-            <div class="map-name">${c.name.toUpperCase()}</div>
-            <div class="map-data">${c.data}</div>
-            <div style="margin-top:20px; font-family:var(--font-data); font-size:10px; color:var(--red);">[ ENGAGE_TRACK ]</div>
-        `;
-        container.appendChild(card);
-    });
-}
+        // =========================================================
+        // 4. EFECTO HOVER 3D INTERACTIVO
+        // =========================================================
+        const container3D = document.getElementById('3d-container');
+        const img3D = document.getElementById('map-img');
+
+        // Solo aplicamos el efecto 3D si estamos en escritorio para no volver loco el scroll en móviles
+        if (window.innerWidth > 850) {
+            container3D.addEventListener('mousemove', (e) => {
+                const rect = container3D.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+                
+                const centerX = rect.width / 2;
+                const centerY = rect.height / 2;
+                
+                const rotateX = ((y - centerY) / centerY) * -20; 
+                const rotateY = ((x - centerX) / centerX) * 20;
+
+                img3D.style.transform = `rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale3d(1.05, 1.05, 1.05)`;
+                img3D.style.filter = `drop-shadow(${rotateY * -1}px ${rotateX * 1 + 20}px 30px rgba(225,0,0,0.6)) grayscale(100%) contrast(150%)`;
+            });
+
+            container3D.addEventListener('mouseleave', () => {
+                img3D.style.transition = 'transform 0.5s ease-out, filter 0.5s ease-out';
+                img3D.style.transform = `rotateX(0deg) rotateY(0deg) scale3d(1, 1, 1)`;
+                img3D.style.filter = `drop-shadow(0 0 20px rgba(225,0,0,0.3)) grayscale(100%) contrast(150%)`;
+                
+                setTimeout(() => {
+                    img3D.style.transition = 'transform 0.1s ease-out, filter 0.3s ease-out';
+                }, 500);
+            });
+        }
     </script>
 </body>
 </html>
