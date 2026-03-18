@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MOTOGP™ ULTIMATE TERMINAL | PROTOCOL 2026</title>
     <style>
         /* ================================================================
@@ -38,7 +38,7 @@
             scroll-behavior: smooth;
         }
 
-        body.ready { overflow-y: auto; overflow-x: hidden; }
+        body.ready { overflow-y: auto; }
         body.ready::-webkit-scrollbar { width: 4px; }
         body.ready::-webkit-scrollbar-track { background: #000; }
         body.ready::-webkit-scrollbar-thumb { background: var(--red); }
@@ -59,7 +59,6 @@
             position: fixed; top: 0; width: 100%; padding: 40px 6%;
             display: flex; justify-content: space-between; align-items: center;
             z-index: 10000; transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
-            background: linear-gradient(to bottom, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0) 100%);
         }
         header.nav-hidden { transform: translateY(-100%); }
 
@@ -71,7 +70,6 @@
             color: #fff; text-decoration: none; font-family: var(--font-data);
             font-size: 11px; font-weight: 900; letter-spacing: 3px;
             text-transform: uppercase; opacity: 0.5; transition: var(--transition-fast);
-            padding: 5px;
         }
         nav a:hover { opacity: 1; color: var(--red); }
 
@@ -114,7 +112,7 @@
         section { min-height: 100vh; padding: 150px 10%; position: relative; border-bottom: 1px solid #111; }
         
         .hero { display: flex; align-items: center; justify-content: center; overflow: hidden; }
-        .hero-title { font-family: var(--font-racing); font-size: 14vw; font-style: italic; line-height: 0.8; text-transform: uppercase; text-align: center; }
+        .hero-title { font-family: var(--font-racing); font-size: 14vw; font-style: italic; line-height: 0.8; text-transform: uppercase; }
         .hero-title span { color: transparent; -webkit-text-stroke: 2px #fff; }
 
         .reveal { opacity: 0; transform: translateY(100px); transition: var(--transition-slow); }
@@ -144,7 +142,7 @@
         .team-card:hover { transform: scale(1.02); }
         .team-card img { width: 100%; height: 100%; object-fit: cover; opacity: 0.25; filter: grayscale(1); transition: 1s; }
         .team-card:hover img { opacity: 0.9; filter: grayscale(0); }
-        .team-label { position: absolute; bottom: 50px; left: 60px; font-family: var(--font-racing); font-size: 45px; pointer-events: none; text-shadow: 2px 2px 10px rgba(0,0,0,0.8); }
+        .team-label { position: absolute; bottom: 50px; left: 60px; font-family: var(--font-racing); font-size: 45px; pointer-events: none; }
 
         .glossary { background: #000; }
         .glossary-item { display: flex; justify-content: space-between; padding: 40px 0; border-bottom: 1px solid #111; transition: 0.3s; }
@@ -186,73 +184,53 @@
         .footer-logo { font-family: var(--font-racing); font-size: 60px; font-style: italic; opacity: 0.1; }
 
         /* ================================================================
-           [08] MOBILE RESPONSIVE QUERIES (OPTIMIZED)
+           [08] MOBILE RESPONSIVE QUERIES (NUEVO)
            ================================================================
         */
         @media (max-width: 768px) {
-            /* Restablecer cursor y tap targets para pantallas táctiles */
+            /* Restablecer cursor para pantallas táctiles */
             * { cursor: auto !important; }
             #pro-cursor { display: none !important; }
 
             /* Reducir espaciado general */
-            section { padding: 80px 6%; min-height: auto; }
+            section { padding: 80px 5%; min-height: auto; }
             
             /* Ajustes del Header */
-            header { padding: 20px 5%; flex-direction: column; gap: 15px; background: rgba(0,0,0,0.95); }
-            nav ul { flex-wrap: wrap; justify-content: center; gap: 10px; }
-            nav a { font-size: 12px; padding: 10px 15px; background: #111; border-radius: 4px; border: 1px solid #222; }
-            .logo { font-size: 36px; margin-bottom: 10px; }
+            header { padding: 20px 5%; flex-direction: column; gap: 15px; }
+            nav ul { flex-wrap: wrap; justify-content: center; gap: 15px; }
+            .logo { font-size: 28px; }
             
-            /* Ajustes de Tipografía */
-            .hero-title { font-size: 18vw; }
-            .hero-title span { -webkit-text-stroke: 1px #fff; }
-            h2.reveal[style] { font-size: 38px !important; margin-bottom: 30px !important; line-height: 1.1; }
+            /* Ajustes de Tipografía (Sobrescribiendo estilos en línea) */
+            .hero-title { font-size: 22vw; }
+            h2.reveal[style] { font-size: 35px !important; margin-bottom: 40px !important; }
             
             /* Cuadrículas apiladas */
-            .data-grid { grid-template-columns: 1fr; gap: 50px; margin-top: 30px; }
-            .data-card { padding-left: 20px; border-left-width: 3px; }
-            .data-card h3 { font-size: 26px; }
-            .data-card p { font-size: 15px; }
+            .data-grid { grid-template-columns: 1fr; gap: 40px; margin-top: 40px; }
+            .data-card { padding-left: 20px; }
+            .data-card h3 { font-size: 28px; }
             
-            /* Carrusel de Equipos (Optimizado para Touch Swiping) */
-            .teams-slider { 
-                padding: 20px 0; 
-                gap: 15px; 
-                scroll-snap-type: x mandatory; 
-                scroll-padding-left: 5%;
-            }
-            .team-card { 
-                flex: 0 0 90vw; 
-                height: 480px; 
-                scroll-snap-align: center;
-                clip-path: polygon(5% 0, 100% 0, 95% 100%, 0% 100%);
-            }
-            .team-card:hover { transform: none; } /* Desactivar hover en táctil */
-            .team-card img { opacity: 0.7; filter: grayscale(0.3); } /* Visibilidad por defecto en móvil */
-            .team-label { bottom: 30px; left: 20px; font-size: 32px; text-shadow: 2px 2px 15px #000; }
+            /* Carrusel de Equipos */
+            .teams-slider { padding: 40px 0; gap: 20px; }
+            .team-card { flex: 0 0 85vw; height: 450px; }
+            .team-label { bottom: 30px; left: 30px; font-size: 30px; }
             
             /* Glosario */
-            .glossary-item { flex-direction: column; gap: 12px; padding: 30px 0; }
-            .glossary-item:hover { background: transparent; padding-left: 0; } /* Desactivar hover */
-            .desc { width: 100%; font-size: 15px; }
+            .glossary-item { flex-direction: column; gap: 10px; padding: 25px 0; }
+            .desc { width: 100%; }
             
-            /* Mapas */
-            .maps-grid { grid-template-columns: 1fr; gap: 15px; margin-top: 40px; }
-            .map-card { padding: 30px 15px; }
-            .map-card:hover { transform: none; background: #050505; border-color: #222; }
-
             /* Footer */
             footer { padding: 60px 5%; }
-            .footer-logo { font-size: 36px; line-height: 1; }
+            .footer-logo { font-size: 40px; }
 
             /* Botón de inicio */
-            .btn-ignite { padding: 20px 30px; font-size: 18px; width: 80%; }
+            .btn-ignite { padding: 15px 30px; font-size: 16px; }
         }
+
     </style>
 </head>
 <body id="body-main">
 
-    <audio id="sfx-engine" src="turbo-bark.mp3"></audio>
+    <audio id="sfx-engine" src="turbo-bark.mp3" ></audio>
 
     <div id="pro-cursor"><div class="cursor-dot"></div></div>
 
@@ -261,13 +239,13 @@
         <nav>
             <ul>
                 <li><a href="#hero">Hub</a></li>
-                <li><a href="#technical">Ingeniería</a></li>
-                <li><a href="#crash">Caídas</a></li>
-                <li><a href="#teams">Parrilla</a></li>
+                <li><a href="#technical">Engineering</a></li>
+                <li><a href="#crash">Crashes</a></li>
+                <li><a href="#teams">Grid</a></li>
                 <li><a href="#glossary">Terminal</a></li>
             </ul>
         </nav>
-        <div style="font-family: var(--font-data); font-size: 10px; color: var(--red); text-align: center; margin-top: 10px;">[ ENCRYPTED_CONNECTION ]</div>
+        <div style="font-family: var(--font-data); font-size: 10px; color: var(--red);">[ ENCRYPTED_CONNECTION ]</div>
     </header>
 
     <div id="master-loader">
@@ -289,14 +267,14 @@
         </section>
 
         <section id="technical">
-            <h2 class="reveal" style="font-family: var(--font-racing); font-size: 60px; margin-bottom: 100px;">PALABRAS <span>TÉCNICAS</span></h2>
+            <h2 class="reveal" style="font-family: var(--font-racing); font-size: 60px; margin-bottom: 100px;">PALABRAS <span>TECNICAS</span></h2>
             
             <div class="data-grid">
                 <div class="data-card reveal">
                     <h3>01. AERODYNAMICS</h3>
                     <p>Las aletas frontales modernas generan hasta 50kg de 'downforce' a 300 km/h. Esto evita que la rueda delantera pierda contacto con el suelo (wheeling) sin necesidad de cortar potencia electrónica.</p>
                 </div>
-                <div class="data-card reveal" style="transition-delay: 0.1s;">
+                <div class="data-card reveal" style="transition-delay: 0.2s;">
                     <h3>02. BRAKING FORCE</h3>
                     <p>En el GP de Austria, los pilotos pasan de 310 km/h a 60 km/h en solo 4 segundos. La presión en la maneta de freno supera los 12 bares, y la temperatura del carbono llega a los 800°C.</p>
                 </div>
@@ -304,7 +282,7 @@
                     <h3>03. LEAN ANGLE</h3>
                     <p>64 grados. Esa es la inclinación máxima permitida por las leyes de la física y los neumáticos Michelin. El codo y el hombro del piloto son ahora sensores de trazada.</p>
                 </div>
-                <div class="data-card reveal" style="transition-delay: 0.1s;">
+                <div class="data-card reveal" style="transition-delay: 0.2s;">
                     <h3>04. TYRE TECH</h3>
                     <p>Un neumático trasero de MotoGP alcanza los 120°C en carrera. Su composición química cambia durante las 25 vueltas para ofrecer agarre cuando la goma empieza a degradarse.</p>
                 </div>
@@ -349,32 +327,31 @@
             </div>
         </section>
 
-        <section style="height: 60vh; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center;">
+        <section style="height: 60vh; display: flex; flex-direction: column; align-items: center; justify-content: center;">
             <p class="reveal" style="font-family: var(--font-data); color: var(--red); margin-bottom: 20px;">CONNECTION_ESTABLISHED</p>
-            <h2 class="reveal hero-title" style="font-size: clamp(40px, 8vw, 100px);">RACE<span>_READY</span></h2>
+            <h2 class="reveal hero-title" style="font-size: 6vw;">RACE<span>_READY</span></h2>
         </section>
 
         <section id="circuit-maps" class="reveal-scale">
-            <h2 style="font-family: var(--font-racing); font-size: clamp(38px, 6vw, 60px); text-align: center;">SELECT <span>CIRCUIT</span></h2>
-            <div class="maps-grid" id="maps-target"></div>
+            <h2 style="font-family: var(--font-racing); font-size: 60px; text-align: center;">SELECT <span>CIRCUIT</span></h2>
+            <div class="maps-grid" id="maps-target">
+                </div>
         </section>
         
     </main>
 
     <footer>
         <div class="footer-logo">MOTOGP TERMINAL</div>
-        <p style="font-family: var(--font-data); font-size: 11px; color: #444; margin-top: 50px;">© 2026 DIGITAL_TECH_DORNA. TODOS LOS DATOS SON SIMULADOS.</p>
+        <p style="font-family: var(--font-data); font-size: 11px; color: #333; margin-top: 50px;">© 2026 DIGITAL_TECH_DORNA. TODOS LOS DATOS SON SIMULADOS.</p>
     </footer>
 
     <script>
-        // 1. CURSOR (Solo en dispositivos con ratón)
+        // 1. CURSOR
         const cursor = document.getElementById('pro-cursor');
-        if (window.matchMedia("(pointer: fine)").matches) {
-            document.addEventListener('mousemove', e => {
-                cursor.style.left = e.clientX + 'px';
-                cursor.style.top = e.clientY + 'px';
-            });
-        }
+        document.addEventListener('mousemove', e => {
+            cursor.style.left = e.clientX + 'px';
+            cursor.style.top = e.clientY + 'px';
+        });
 
         // 2. CHECK SESSION STORAGE
         document.addEventListener("DOMContentLoaded", () => {
@@ -383,7 +360,7 @@
                 document.getElementById('body-main').classList.add('ready');
                 initTeams();
                 initMaps();
-                setTimeout(reveal, 100); // Pequeño delay para asegurar carga
+                reveal();
             }
         });
 
@@ -402,7 +379,7 @@
             const bar = document.getElementById('load-bar');
 
             const timer = setInterval(() => {
-                progress += Math.random() * 2; // Ligeramente más rápido
+                progress += Math.random() * 1.5;
                 
                 if(progress >= 100) {
                     progress = 100;
@@ -411,13 +388,12 @@
                     finalizeLoader();
                 }
 
-                let displayProg = Math.floor(progress).toString().padStart(2, '0');
-                pct.innerText = displayProg;
-                pct.setAttribute('data-pct', displayProg);
+                pct.innerText = Math.floor(progress).toString().padStart(2, '0');
+                pct.setAttribute('data-pct', Math.floor(progress).toString().padStart(2, '0'));
                 pct.style.setProperty('--p', progress + '%');
                 bar.style.width = progress + '%';
 
-            }, 30);
+            }, 40);
         }
 
         function fadeOutAudio() {
@@ -440,23 +416,22 @@
                 initTeams();
                 initMaps(); 
                 reveal(); 
-            }, 600);
+            }, 800);
         }
 
         // 4. SCROLL REVEAL ENGINE
         function reveal() {
             const reveals = document.querySelectorAll('.reveal, .reveal-scale');
-            const windowHeight = window.innerHeight;
-            const elementVisible = 100; // Sensibilidad ajustada para móvil
-
             reveals.forEach(el => {
+                const windowHeight = window.innerHeight;
                 const elementTop = el.getBoundingClientRect().top;
+                const elementVisible = 150;
                 if (elementTop < windowHeight - elementVisible) {
                     el.classList.add('active');
                 }
             });
         }
-        window.addEventListener('scroll', reveal, { passive: true });
+        window.addEventListener('scroll', reveal);
 
         // 5. SMART HEADER
         let lastScroll = 0;
@@ -464,63 +439,63 @@
             const header = document.getElementById('main-header');
             const currentScroll = window.pageYOffset;
 
-            if (currentScroll > lastScroll && currentScroll > 150) {
+            if (currentScroll > lastScroll && currentScroll > 200) {
                 header.classList.add('nav-hidden');
             } else {
                 header.classList.remove('nav-hidden');
             }
-            lastScroll = currentScroll <= 0 ? 0 : currentScroll;
-        }, { passive: true });
+            lastScroll = currentScroll;
+        });
 
-        // 6. INIT TEAMS (Con optimización para scroll de rueda en PC, dejando libre el swipe en móvil)
-        function initTeams() {
-            const container = document.getElementById('team-target');
-            if (container.children.length > 0) return;
+      function initTeams() {
+        const container = document.getElementById('team-target');
+        if (container.children.length > 0) return;
 
-            const teamNames = ["Ducati Lenovo", "Red Bull KTM", "Aprilia Racing", "Monster Yamaha", "Repsol Honda", "Prima Pramac", "Gresini Racing", "VR46 Racing", "Trackhouse", "GASGAS Tech3", "LCR Honda"];
+        const teamNames = ["Ducati Lenovo", "Red Bull KTM", "Aprilia Racing", "Monster Yamaha", "Repsol Honda", "Prima Pramac", "Gresini Racing", "VR46 Racing", "Trackhouse", "GASGAS Tech3", "LCR Honda"];
 
-            teamNames.forEach((name, i) => {
-                const card = document.createElement('div');
-                card.className = 'team-card reveal';
-                card.innerHTML = `
-                    <img src="motogp${i+1}.jpg" alt="${name}" onerror="this.src='https://images.unsplash.com/photo-1558981403-c5f9899a28bc?q=80&w=600'">
-                    <div class="team-label">
-                        <span style="font-family:var(--font-data); font-size:12px; color:var(--red);">OFFICIAL_ENTRY_0${i+1}</span><br>
-                        ${name.toUpperCase()}
-                    </div>
-                `;
-                container.appendChild(card);
-            });
+        teamNames.forEach((name, i) => {
+            const card = document.createElement('div');
+            card.className = 'team-card reveal';
+            card.innerHTML = `
+                <img src="motogp${i+1}.jpg" onerror="this.src='https://images.unsplash.com/photo-1558981403-c5f9899a28bc?q=80&w=600'">
+                <div class="team-label">
+                    <span style="font-family:var(--font-data); font-size:12px; color:var(--red);">OFFICIAL_ENTRY_0${i+1}</span><br>
+                    ${name.toUpperCase()}
+                </div>
+            `;
+            container.appendChild(card);
+        });
 
-            // Lógica de scroll horizontal por rueda (solo en PC)
-            if (window.matchMedia("(pointer: fine)").matches) {
-                let targetScroll = container.scrollLeft;
+        // LÓGICA DE SCROLL (Mantenida intacta)
+        let targetScroll = container.scrollLeft;
 
-                container.addEventListener('wheel', (e) => {
-                    const maxScrollLeft = container.scrollWidth - container.clientWidth;
-                    const isAtStart = container.scrollLeft <= 0;
-                    const isAtEnd = container.scrollLeft >= maxScrollLeft - 2;
+        container.addEventListener('wheel', (e) => {
+            const maxScrollLeft = container.scrollWidth - container.clientWidth;
+            
+            const isAtStart = container.scrollLeft <= 0;
+            const isAtEnd = container.scrollLeft >= maxScrollLeft - 2;
 
-                    if ((e.deltaY > 0 && !isAtEnd) || (e.deltaY < 0 && !isAtStart)) {
-                        e.preventDefault(); 
-                        targetScroll += e.deltaY * 1.5; 
-                        targetScroll = Math.max(0, Math.min(maxScrollLeft, targetScroll));
+            if ((e.deltaY > 0 && !isAtEnd) || (e.deltaY < 0 && !isAtStart)) {
+                e.preventDefault(); 
+                targetScroll += e.deltaY * 1.5; 
+                targetScroll = Math.max(0, Math.min(maxScrollLeft, targetScroll));
 
-                        container.scrollTo({ left: targetScroll, behavior: 'smooth' });
-                    } else {
-                        targetScroll = container.scrollLeft;
-                    }
-                }, { passive: false });
-
-                container.addEventListener('scroll', () => {
-                    if (Math.abs(targetScroll - container.scrollLeft) > 50) {
-                        targetScroll = container.scrollLeft;
-                    }
-                }, { passive: true });
+                container.scrollTo({
+                    left: targetScroll,
+                    behavior: 'smooth'
+                });
+            } else {
+                targetScroll = container.scrollLeft;
             }
-        }
+        }, { passive: false });
 
-        // 7. INIT MAPS
+        container.addEventListener('scroll', () => {
+            if (Math.abs(targetScroll - container.scrollLeft) > 50) {
+                targetScroll = container.scrollLeft;
+            }
+        });
+    }
+
         function initMaps() {
             const container = document.getElementById('maps-target');
             if (container.children.length > 0) return;
@@ -536,8 +511,9 @@
 
             circuits.forEach((c) => {
                 const card = document.createElement('div');
-                card.className = 'map-card reveal-scale';
-                card.style.cursor = window.matchMedia("(pointer: fine)").matches ? "none" : "pointer"; 
+                card.className = 'map-card';
+                // En móviles, tener cursor none en botones puede causar comportamientos raros
+                card.style.cursor = window.innerWidth <= 768 ? "pointer" : "none"; 
                 
                 card.onclick = function() {
                     window.location.href = `pistas.html?id=${c.id}`;
@@ -546,7 +522,7 @@
                 card.innerHTML = `
                     <div class="map-name">${c.name.toUpperCase()}</div>
                     <div class="map-data">${c.data}</div>
-                    <div style="margin-top:20px; font-family:var(--font-data); font-size:10px; color:var(--red);">[ acceder_datos ]</div>
+                    <div style="margin-top:20px; font-family:var(--font-data); font-size:10px; color:var(--red);">[ información ]</div>
                 `;
                 container.appendChild(card);
             });
