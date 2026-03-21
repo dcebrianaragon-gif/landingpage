@@ -1,0 +1,43 @@
+{
+  "name": "Circuit",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Circuit name"
+    },
+    "flag": {
+      "type": "string",
+      "description": "Country flag emoji"
+    },
+    "laps": {
+      "type": "number",
+      "description": "Number of laps",
+      "default": 5
+    },
+    "track_width": {
+      "type": "number",
+      "description": "Track width in units",
+      "default": 13
+    },
+    "waypoints": {
+      "type": "array",
+      "description": "Array of [x, z] coordinate pairs defining the track shape",
+      "items": {
+        "type": "object",
+        "properties": {
+          "x": {
+            "type": "number"
+          },
+          "z": {
+            "type": "number"
+          }
+        }
+      }
+    }
+  },
+  "required": [
+    "name",
+    "waypoints"
+  ]
+}
