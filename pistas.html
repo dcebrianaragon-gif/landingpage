@@ -69,7 +69,8 @@
         
         .map-display img {
             width: 70%; max-height: 70vh; object-fit: contain;
-            filter: drop-shadow(0 0 20px rgba(225,0,0,0.3)) grayscale(100%) contrast(150%);
+            /* SE ELIMINÓ grayscale(100%) AQUÍ */
+            filter: drop-shadow(0 0 20px rgba(225,0,0,0.3)) contrast(150%);
             transition: transform 0.1s ease-out, filter 0.3s ease-out;
             transform-style: preserve-3d;
             will-change: transform;
@@ -308,14 +309,16 @@
                 const rotateX = ((y - centerY) / centerY) * -20; 
                 const rotateY = ((x - centerX) / centerX) * 20;
 
+                // SE ELIMINÓ grayscale(100%) AQUÍ
                 img3D.style.transform = `rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale3d(1.05, 1.05, 1.05)`;
-                img3D.style.filter = `drop-shadow(${rotateY * -1}px ${rotateX * 1 + 20}px 30px rgba(225,0,0,0.6)) grayscale(100%) contrast(150%)`;
+                img3D.style.filter = `drop-shadow(${rotateY * -1}px ${rotateX * 1 + 20}px 30px rgba(225,0,0,0.6)) contrast(150%)`;
             });
 
             container3D.addEventListener('mouseleave', () => {
                 img3D.style.transition = 'transform 0.5s ease-out, filter 0.5s ease-out';
                 img3D.style.transform = `rotateX(0deg) rotateY(0deg) scale3d(1, 1, 1)`;
-                img3D.style.filter = `drop-shadow(0 0 20px rgba(225,0,0,0.3)) grayscale(100%) contrast(150%)`;
+                // SE ELIMINÓ grayscale(100%) AQUÍ
+                img3D.style.filter = `drop-shadow(0 0 20px rgba(225,0,0,0.3)) contrast(150%)`;
                 
                 setTimeout(() => {
                     img3D.style.transition = 'transform 0.1s ease-out, filter 0.3s ease-out';
