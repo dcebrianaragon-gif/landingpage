@@ -3,41 +3,74 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MOTOGP™ ULTIMATE TERMINAL | PROTOCOL 2026</title>ww
+    <title>MOTOGP™ ULTIMATE TERMINAL | PROTOCOL 2026</title>
+    <script>
+        if (sessionStorage.getItem('entrada1LoaderDone') !== 'true') {
+            window.location.replace('loadervideo.html');
+        }
+    </script>
     <style>
         :root {
             --red: #e10000;
             --blue: #0077ff;
             --black: #000000;
+            --surface: #070707;
+            --surface-soft: #101010;
+            --line: rgba(255,255,255,0.08);
             --font-racing: 'Arial Black', sans-serif;
             --font-data: 'Courier New', monospace;
             --transition-slow: all 1.2s cubic-bezier(0.16, 1, 0.3, 1);
             --transition-fast: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
         }
- 
+
         * { margin: 0; padding: 0; box-sizing: border-box; cursor: none; }
+        
+        html, body {
+            overflow-y: auto;
+            overflow-x: hidden;
+        }
+
         body {
-            background-color: var(--black); color: #fff;
+            background:
+                radial-gradient(circle at top center, rgba(225,0,0,0.1), transparent 28%),
+                linear-gradient(180deg, #030303 0%, #000 38%, #050505 100%);
+            color: #fff;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             overflow-x: hidden; -webkit-font-smoothing: antialiased; scroll-behavior: smooth;
         }
-        body.ready { overflow-y: auto; }
+        
+        /* Scanlines Overlay */
+        body::after {
+            content: ""; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.15) 2px, rgba(0,0,0,0.15) 4px);
+            pointer-events: none; z-index: 999999; opacity: 0.6;
+        }
+
+        body.ready, html:has(body.ready) { overflow-y: auto; overflow-x: hidden; }
         body.ready::-webkit-scrollbar { width: 4px; }
         body.ready::-webkit-scrollbar-track { background: #000; }
         body.ready::-webkit-scrollbar-thumb { background: var(--red); }
- 
+
         #pro-cursor {
             position: fixed; width: 40px; height: 40px; border: 1px solid var(--red);
-            border-radius: 50%; pointer-events: none; z-index: 100001;
+            border-radius: 50%; pointer-events: none; z-index: 1000000;
             transform: translate(-50%, -50%); display: flex; align-items: center; justify-content: center;
-            mix-blend-mode: difference; transition: width 0.3s, height 0.3s;
+            mix-blend-mode: difference; transition: width 0.3s, height 0.3s, background-color 0.3s, opacity 0.2s;
+            opacity: 0;
         }
-        .cursor-dot { width: 4px; height: 4px; background: var(--red); border-radius: 50%; }
- 
+        .cursor-dot { width: 4px; height: 4px; background: var(--red); border-radius: 50%; transition: transform 0.3s;}
+        
+        /* Cursor animation */
+        #pro-cursor.cursor-hover { width: 60px; height: 60px; background-color: rgba(225,0,0,0.1); }
+        #pro-cursor.cursor-hover .cursor-dot { transform: scale(1.5); }
+
         header {
             position: fixed; top: 0; width: 100%; padding: 40px 6%;
             display: flex; justify-content: space-between; align-items: center;
-            z-index: 10000; transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+            z-index: 10000; transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.4s ease;
+            background: linear-gradient(180deg, rgba(0,0,0,0.72), rgba(0,0,0,0.08));
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid rgba(255,255,255,0.04);
         }
         header.nav-hidden { transform: translateY(-100%); }
         .logo { font-family: var(--font-racing); font-size: 32px; font-style: italic; letter-spacing: -2px; }
@@ -46,202 +79,250 @@
         nav a {
             color: #fff; text-decoration: none; font-family: var(--font-data);
             font-size: 11px; font-weight: 900; letter-spacing: 3px;
-            text-transform: uppercase; opacity: 0.5; transition: var(--transition-fast);
+            text-transform: uppercase; opacity: 0.5; transition: var(--transition-fast); position: relative;
+        }
+        nav a::before {
+            content: ''; position: absolute; bottom: -5px; left: 0; width: 0%; height: 2px;
+            background: var(--red); transition: var(--transition-fast);
         }
         nav a:hover { opacity: 1; color: var(--red); }
- 
-        #master-loader {
-            position: fixed; inset: 0; background: #000; z-index: 99999;
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
-            transition: transform 1.5s cubic-bezier(0.9, 0, 0.1, 1);
+        nav a:hover::before { width: 100%; }
+        nav a.is-active { opacity: 1; color: #fff; }
+        nav a.is-active::before { width: 100%; background: #fff; }
+
+        main, footer {
+            opacity: 1;
+            transform: translateY(0);
+            transition: opacity 0.95s cubic-bezier(0.22, 1, 0.36, 1), transform 0.95s cubic-bezier(0.22, 1, 0.36, 1);
+        }
+        body.ready main, body.ready footer,
+        html.has-ignited main, html.has-ignited footer {
+            opacity: 1;
+            transform: translateY(0);
         }
         .btn-ignite {
             background: transparent; border: 2px solid var(--red); color: var(--red);
             padding: 25px 60px; font-family: var(--font-racing); font-size: 24px;
             letter-spacing: 10px; text-transform: uppercase; transition: var(--transition-fast);
             clip-path: polygon(10% 0, 100% 0, 90% 100%, 0% 100%);
-            animation: pulseRed 2s infinite;
+            animation: pulseRed 2s infinite; position: relative; overflow: hidden;
         }
         @keyframes pulseRed {
             0%   { box-shadow: 0 0 0 0 rgba(225,0,0,.4); }
             70%  { box-shadow: 0 0 0 20px rgba(225,0,0,0); }
             100% { box-shadow: 0 0 0 0 rgba(225,0,0,0); }
         }
-        .btn-ignite:hover { background: var(--red); color: #fff; }
-        .load-content { display: none; text-align: center; }
-        .pct-big {
-            font-family: var(--font-racing); font-size: clamp(120px, 25vw, 350px);
-            font-style: italic; color: transparent; -webkit-text-stroke: 1px #222;
-            position: relative; line-height: 0.8;
+        .btn-ignite::before {
+            content: ''; position: absolute; top: 0; left: -100%; width: 100%; height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(225,0,0,0.4), transparent);
+            transition: 0.5s;
         }
-        .pct-big::after {
-            content: attr(data-pct); position: absolute; left: 0; top: 0;
-            width: var(--p, 0%); color: var(--red); -webkit-text-stroke: 1px var(--red); overflow: hidden;
+        .btn-ignite:hover::before { left: 100%; }
+        .btn-ignite:hover { background: var(--red); color: #fff; text-shadow: 0 0 10px #fff; box-shadow: 0 0 30px rgba(225,0,0,0.6); }
+        /* Glitch Effect */
+        .glitch { position: relative; }
+        .glitch::before, .glitch::after {
+            content: attr(data-text); position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            opacity: 0.8;
         }
- 
-        /* ══════════════════════════════════════════
-           HERO — spotlight unificado
-        ══════════════════════════════════════════ */
+        .glitch::before {
+            left: 2px; text-shadow: -2px 0 var(--red);
+            clip: rect(24px, 550px, 90px, 0);
+            animation: glitch-anim-2 3s infinite linear alternate-reverse;
+        }
+        .glitch::after {
+            left: -2px; text-shadow: -2px 0 var(--blue);
+            clip: rect(85px, 550px, 140px, 0);
+            animation: glitch-anim 2.5s infinite linear alternate-reverse;
+        }
+        @keyframes glitch-anim { 0% { clip: rect(42px, 9999px, 44px, 0); } 20% { clip: rect(12px, 9999px, 59px, 0); } 40% { clip: rect(48px, 9999px, 29px, 0); } 60% { clip: rect(42px, 9999px, 73px, 0); } 80% { clip: rect(63px, 9999px, 27px, 0); } 100% { clip: rect(34px, 9999px, 41px, 0); } }
+        @keyframes glitch-anim-2 { 0% { clip: rect(65px, 9999px, 100px, 0); } 20% { clip: rect(23px, 9999px, 45px, 0); } 40% { clip: rect(85px, 9999px, 12px, 0); } 60% { clip: rect(14px, 9999px, 89px, 0); } 80% { clip: rect(98px, 9999px, 34px, 0); } 100% { clip: rect(45px, 9999px, 67px, 0); } }
+
+        /* HERO */
         section { min-height: 100vh; padding: 150px 10%; position: relative; border-bottom: 1px solid #111; }
- 
-        .hero {
-            display: flex; align-items: center; justify-content: center;
-            overflow: hidden; position: relative;
+        .section-kicker {
+            display: inline-block; margin-bottom: 20px; color: rgba(255,255,255,0.55);
+            font-family: var(--font-data); font-size: 11px; letter-spacing: 4px; text-transform: uppercase;
         }
- 
-        /*
-         * #hero-spotlight-zone es el contenedor que:
-         *  1. Tiene las dos capas apiladas (base + lit)
-         *  2. Captura todos los eventos de mouse
-         *  3. Es position:relative para que las coordenadas sean locales
-         */
-        #hero-spotlight-zone {
-            position: relative;
-            display: inline-block;
-            text-align: center;
-            user-select: none;
-            /* El tamaño lo define la capa base */
+        .section-frame {
+            padding: 32px; background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0));
+            border: 1px solid var(--line);
         }
- 
-        /* Capa base: texto casi negro — siempre visible */
-        #hero-base {
-            font-family: var(--font-racing);
-            font-size: 14vw;
-            font-style: italic;
-            line-height: 0.85;
-            text-transform: uppercase;
-            color: #0a0a0a;
-            -webkit-text-stroke: 2px #1c1c1c;
-            display: block;
-            pointer-events: none;
-            opacity: 0; /* empieza invisible, la animación lo revela */
-            will-change: filter, opacity, transform;
+
+        .hero { display: flex; align-items: center; justify-content: center; overflow: hidden; position: relative; }
+        .hero::before {
+            content: ''; position: absolute; inset: 12% 8% auto; height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(225,0,0,0.7), transparent);
         }
- 
-        /* Capa iluminada: texto blanco/rojo superpuesto exactamente encima
-           Usa position:absolute para que ocupe exactamente el mismo espacio */
-        #hero-lit {
-            position: absolute;
-            inset: 0;
-            display: flex;
-            align-items: center;
-            justify-content: center;
- 
-            font-family: var(--font-racing);
-            font-size: 14vw;
-            font-style: italic;
-            line-height: 0.85;
-            text-transform: uppercase;
-            text-align: center;
- 
-            color: #ffffff;
-            -webkit-text-stroke: 2px var(--red);
-            text-shadow:
-                0 0 25px rgba(225, 0, 0, 0.9),
-                0 0 60px rgba(225, 0, 0, 0.4),
-                0 0 100px rgba(225, 0, 0, 0.15);
- 
-            /* Empieza totalmente cerrado — JS lo abre al mover el mouse */
-            clip-path: circle(0px at 50% 50%);
-            pointer-events: none;
-            will-change: clip-path;
-            opacity: 0;
+        #hero-spotlight-zone { position: relative; display: inline-block; text-align: center; user-select: none; }
+        #hero-base { font-family: var(--font-racing); font-size: 14vw; font-style: italic; line-height: 0.85; text-transform: uppercase; color: #0a0a0a; -webkit-text-stroke: 2px #1c1c1c; display: block; pointer-events: none; opacity: 0; will-change: filter, opacity, transform; }
+        #hero-lit { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-family: var(--font-racing); font-size: 14vw; font-style: italic; line-height: 0.85; text-transform: uppercase; text-align: center; color: #ffffff; -webkit-text-stroke: 2px var(--red); text-shadow: 0 0 25px rgba(225, 0, 0, 0.9), 0 0 60px rgba(225, 0, 0, 0.4), 0 0 100px rgba(225, 0, 0, 0.15); clip-path: circle(0px at 60% 60%); pointer-events: none; will-change: clip-path; opacity: 0; }
+        .hero-copy {
+            position: absolute; left: 10%; bottom: 12%; max-width: 420px;
+            padding-left: 20px; border-left: 2px solid rgba(225,0,0,0.75);
         }
- 
-        /* Animación de entrada (se dispara cuando body tiene .ready) */
-        @keyframes heroIn {
-            0%   { filter: blur(28px); opacity: 0; transform: scale(1.1); }
-            100% { filter: blur(0px);  opacity: 1; transform: scale(1); }
+        .hero-copy p {
+            color: #a9a9a9; line-height: 1.8; font-size: 15px; font-family: var(--font-data);
         }
-        body.ready #hero-base {
-            animation: heroIn 1.8s cubic-bezier(0.16, 1, 0.3, 1) 0.3s forwards;
-        }
-        /* La capa lit también aparece (con opacity, sin clip-path — ese lo controla JS) */
-        body.ready #hero-lit {
-            animation: heroIn 1.8s cubic-bezier(0.16, 1, 0.3, 1) 0.3s forwards;
-        }
- 
+
+        @keyframes heroIn { 0% { filter: blur(28px); opacity: 0; transform: scale(1.1); } 100% { filter: blur(0px); opacity: 1; transform: scale(1); } }
+        body.ready #hero-base, body.ready #hero-lit { animation: heroIn 1.8s cubic-bezier(0.16, 1, 0.3, 1) 0.3s forwards; }
+
         .reveal { opacity: 0; transform: translateY(100px); transition: var(--transition-slow); }
         .reveal.active { opacity: 1; transform: translateY(0); }
- 
-        .data-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 100px; margin-top: 100px; }
-        .data-card { border-left: 1px solid var(--red); padding-left: 40px; }
-        .data-card h3 { font-family: var(--font-racing); font-size: 40px; margin-bottom: 20px; font-style: italic; color: var(--red); }
+
+        .data-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 30px; margin-top: 70px; }
+        .data-card { border-left: 1px solid var(--red); padding-left: 34px; transition: var(--transition-fast); background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(225,0,0,0.03)); border-radius: 0 16px 16px 0; padding-top: 28px; padding-bottom: 28px; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+        .data-card:hover { transform: translateX(10px); border-left-width: 5px; box-shadow: -10px 0 20px -10px rgba(225,0,0,0.5); background: rgba(10,10,10,0.96); }
+        .data-card h3 { font-family: var(--font-racing); font-size: 40px; margin-bottom: 20px; font-style: italic; color: var(--red); transition: 0.3s;}
+        .data-card:hover h3 { text-shadow: 0 0 15px var(--red); }
         .data-card p { font-family: var(--font-data); color: #888; font-size: 16px; line-height: 1.8; }
- 
+
         #technical { background: var(--black); z-index: 2; padding-top: 100px; }
- 
+
         .crash-wall { background: #050505; padding: 0; }
-        .marquee {
-            background: var(--red); color: #000; padding: 20px 0;
-            font-family: var(--font-racing); font-size: clamp(40px, 8vw, 100px);
-            font-style: italic; overflow: hidden; white-space: nowrap;
-        }
+        .marquee { background: var(--red); color: #000; padding: 20px 0; font-family: var(--font-racing); font-size: clamp(40px, 8vw, 100px); font-style: italic; overflow: hidden; white-space: nowrap; }
         .marquee-inner { display: inline-block; animation: scrollMarquee 30s linear infinite; }
         @keyframes scrollMarquee { from { transform: translateX(0); } to { transform: translateX(-50%); } }
- 
+
         #teams, #glossary, #circuit-maps { background: var(--black); position: relative; z-index: 2; }
- 
-        .teams-slider { display: flex; gap: 40px; overflow-x: auto; padding: 80px 0; scrollbar-width: none; }
+
+        .teams-slider { display: flex; gap: 28px; overflow-x: auto; padding: 60px 0 20px; scrollbar-width: none; scroll-behavior: smooth; }
         .teams-slider::-webkit-scrollbar { display: none; }
-        .team-card {
-            flex: 0 0 500px; height: 700px; background: #0a0a0a; position: relative;
-            clip-path: polygon(10% 0, 100% 0, 90% 100%, 0% 100%);
-            border: 1px solid #222; transition: transform 0.8s;
-        }
-        .team-card:hover { transform: scale(1.02); }
+        .team-card { flex: 0 0 420px; height: 620px; background: #0a0a0a; position: relative; clip-path: polygon(10% 0, 100% 0, 90% 100%, 0% 100%); border: 1px solid #222; transition: transform 0.8s; }
+        .team-card:hover { transform: scale(1.05); z-index: 10; border-color: var(--red); box-shadow: 0 20px 40px rgba(0,0,0,0.8); }
         .team-card img { width: 100%; height: 100%; object-fit: cover; opacity: 0.25; filter: grayscale(1); transition: 1s; }
         .team-card:hover img { opacity: 0.9; filter: grayscale(0); }
-        .team-label { position: absolute; bottom: 50px; left: 60px; font-family: var(--font-racing); font-size: 45px; pointer-events: none; }
- 
-        .glossary-item { display: flex; justify-content: space-between; padding: 40px 0; border-bottom: 1px solid #111; transition: 0.3s; }
-        .glossary-item:hover { background: #080808; padding-left: 20px; }
-        .term { font-family: var(--font-racing); font-size: 24px; color: var(--red); }
-        .desc { font-family: var(--font-data); color: #666; width: 60%; }
- 
-        #circuit-maps {
-            min-height: 80vh; display: flex; flex-direction: column; justify-content: center;
-            background: radial-gradient(circle at center, #111 0%, #000 70%);
+        .team-label { position: absolute; bottom: 50px; left: 60px; font-family: var(--font-racing); font-size: 45px; pointer-events: none; transition: 0.5s; }
+        .team-card:hover .team-label { bottom: 60px; text-shadow: 0 0 20px #000; }
+        .team-meta {
+            position: absolute; top: 24px; left: 24px; right: 24px; display: flex; justify-content: space-between; align-items: center;
+            font-family: var(--font-data); font-size: 10px; letter-spacing: 2px; color: rgba(255,255,255,0.78);
         }
+        .team-meta span {
+            padding: 7px 10px; border: 1px solid rgba(255,255,255,0.16); background: rgba(0,0,0,0.4);
+        }
+
+        #motos-link { background: linear-gradient(135deg, #050505 0%, #0d0d0d 55%, #050505 100%); }
+        .motos-panel {
+            display: grid; grid-template-columns: 1.1fr 0.9fr; gap: 40px; align-items: center;
+            margin-top: 60px; border: 1px solid #1d1d1d; padding: 40px; background: rgba(255,255,255,0.02);
+            box-shadow: 0 25px 50px rgba(0,0,0,0.35);
+        }
+        .motos-copy p {
+            font-family: var(--font-data); color: #8a8a8a; font-size: 15px; line-height: 1.9; max-width: 560px;
+        }
+        .motos-jump {
+            display: inline-block; margin-top: 28px; padding: 18px 34px; border: 1px solid var(--red);
+            color: #fff; text-decoration: none; font-family: var(--font-data); letter-spacing: 3px; font-size: 12px;
+            transition: var(--transition-fast); background: linear-gradient(90deg, rgba(225,0,0,0.12), transparent);
+        }
+        .motos-jump:hover { background: var(--red); color: #fff; box-shadow: 0 0 28px rgba(225,0,0,0.35); }
+        .motos-visual {
+            min-height: 360px; background:
+                linear-gradient(180deg, rgba(225,0,0,0.08), rgba(0,0,0,0.05)),
+                url('imagenmoto.jpg') center/cover no-repeat;
+            border: 1px solid #222; clip-path: polygon(8% 0, 100% 0, 92% 100%, 0 100%);
+            position: relative; overflow: hidden;
+        }
+        .motos-visual::after {
+            content: 'MOTO_DATA // EXTERNAL_MODULE';
+            position: absolute; left: 20px; bottom: 18px; font-family: var(--font-data);
+            font-size: 11px; letter-spacing: 2px; color: rgba(255,255,255,0.75);
+            background: rgba(0,0,0,0.45); padding: 8px 10px;
+        }
+
+        .glossary-item { display: flex; justify-content: space-between; padding: 40px 0; border-bottom: 1px solid #111; transition: 0.4s; position: relative; overflow: hidden; }
+        .glossary-item::before { content: ''; position: absolute; left: 0; top: 0; width: 0%; height: 100%; background: linear-gradient(90deg, rgba(225,0,0,0.1), transparent); transition: 0.4s; z-index: 0; }
+        .glossary-item:hover { padding-left: 20px; border-bottom-color: var(--red); }
+        .glossary-item:hover::before { width: 100%; }
+        .term { font-family: var(--font-racing); font-size: 24px; color: var(--red); position: relative; z-index: 1; }
+        .desc { font-family: var(--font-data); color: #666; width: 60%; position: relative; z-index: 1; transition: 0.3s;}
+        .glossary-item:hover .desc { color: #fff; }
+
+        #circuit-maps { min-height: 80vh; display: flex; flex-direction: column; justify-content: center; background: radial-gradient(circle at center, #111 0%, #000 70%); }
         .reveal-scale { opacity: 0; transform: scale(0.8); transition: var(--transition-slow); }
         .reveal-scale.active { opacity: 1; transform: scale(1); }
- 
-        .maps-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; margin-top: 60px; width: 100%; }
-        .map-card {
-            background: #050505; border: 1px solid #222; padding: 40px 20px;
-            text-align: center; transition: var(--transition-fast);
-            position: relative; overflow: hidden;
-            clip-path: polygon(5% 0, 100% 0, 95% 100%, 0% 100%);
-        }
-        .map-card::before {
-            content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 2px;
-            background: var(--red); transform: scaleX(0); transition: var(--transition-fast); transform-origin: left;
-        }
-        .map-card:hover { border-color: #444; background: #0a0a0a; transform: translateY(-10px); }
+
+        .maps-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 24px; margin-top: 60px; width: 100%; }
+        .map-card { background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(225,0,0,0.03)); border: 1px solid #222; padding: 40px 20px; text-align: center; transition: var(--transition-fast); position: relative; overflow: hidden; clip-path: polygon(5% 0, 100% 0, 95% 100%, 0% 100%); }
+        .map-card::before { content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 2px; background: var(--red); transform: scaleX(0); transition: var(--transition-fast); transform-origin: left; }
+        .map-card:hover { border-color: #444; background: #0a0a0a; transform: translateY(-10px); box-shadow: 0 15px 30px rgba(225,0,0,0.15); }
         .map-card:hover::before { transform: scaleX(1); }
-        .map-name { font-family: var(--font-racing); font-size: 30px; color: #fff; margin-bottom: 10px; font-style: italic; }
+        .map-name { font-family: var(--font-racing); font-size: 30px; color: #fff; margin-bottom: 10px; font-style: italic; transition: 0.3s; }
+        .map-card:hover .map-name { color: var(--red); }
         .map-data { font-family: var(--font-data); font-size: 13px; color: #666; letter-spacing: 2px; }
- 
-        footer { padding: 100px 10% 50px; background: #000; text-align: center; border-top: 2px solid var(--red); position: relative; z-index: 2; }
+        .scan-btn { margin-top: 20px; font-family: var(--font-data); font-size: 10px; color: var(--red); letter-spacing: 1px; }
+
+        @keyframes pulseClickAnim {
+            0% { transform: scale(1); background: #0a0a0a; border-color: var(--red); }
+            50% { transform: scale(1.08); background: rgba(225,0,0,0.3); border-color: #fff; box-shadow: 0 0 40px rgba(225,0,0,1); }
+            100% { transform: scale(1); background: #0a0a0a; border-color: var(--red); }
+        }
+
+        .clicked-pulse {
+            animation: pulseClickAnim 0.35s ease-in-out forwards !important;
+            pointer-events: none;
+        }
+
+        #track-overlay {
+            position: fixed; inset: 0; z-index: 200000; background: #000;
+            opacity: 0; pointer-events: none; transition: opacity 0.45s ease;
+        }
+        #track-overlay.active { opacity: 1; pointer-events: auto; }
+        .track-overlay-close {
+            position: absolute; top: 30px; right: 30px; z-index: 20;
+            border: 1px solid #444; background: rgba(0,0,0,0.5); color: #fff;
+            padding: 12px 18px; font-family: var(--font-data); letter-spacing: 2px;
+        }
+        .track-container {
+            display: flex; min-height: 100vh; width: 100vw;
+        }
+        .map-display {
+            flex: 1; position: relative; background: radial-gradient(circle at center, #111 0%, #000 100%);
+            display: flex; align-items: center; justify-content: center; border-right: 1px solid #333;
+            perspective: 1200px; overflow: hidden;
+        }
+        .map-display img {
+            width: 70%; max-height: 70vh; object-fit: contain;
+            filter: drop-shadow(0 0 20px rgba(225,0,0,0.3)) contrast(150%);
+            transition: transform 0.1s ease-out, filter 0.3s ease-out;
+            transform-style: preserve-3d; will-change: transform;
+        }
+        .scan-line {
+            position: absolute; top: 0; left: 0; width: 100%; height: 2px;
+            background: rgba(0, 242, 255, 0.3); box-shadow: 0 0 10px rgba(0, 242, 255, 0.5);
+            animation: scan 3s linear infinite; pointer-events: none; z-index: 10;
+        }
+        @keyframes scan { 0% { top: 0; } 100% { top: 100%; } }
+        .data-panel {
+            width: 450px; background: #050505; padding: 100px 50px;
+            display: flex; flex-direction: column; justify-content: center; z-index: 5;
+        }
+        .track-title {
+            font-family: var(--font-racing); font-size: 50px; font-style: italic;
+            color: #fff; line-height: 1; margin-bottom: 30px;
+        }
+        .track-title span { color: var(--red); }
+        .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 40px; }
+        .stat-box { border-left: 2px solid var(--red); padding-left: 15px; }
+        .stat-label { font-family: var(--font-data); font-size: 10px; color: #666; letter-spacing: 2px; }
+        .stat-value { font-family: var(--font-racing); font-size: 24px; color: #fff; margin-top: 5px; }
+        .track-desc {
+            font-family: var(--font-data); font-size: 14px; color: #888;
+            line-height: 1.8; border-top: 1px solid #222; padding-top: 30px;
+        }
+
+        footer { padding: 100px 10% 50px; background: linear-gradient(180deg, #030303, #000); text-align: center; border-top: 2px solid var(--red); position: relative; z-index: 2; }
         .footer-logo { font-family: var(--font-racing); font-size: 60px; font-style: italic; opacity: 0.1; margin-bottom: 20px; }
-        .social-links { display: flex; justify-content: center; gap: 25px; margin-top: 40px; }
-        .social-icon {
-            display: flex; align-items: center; justify-content: center;
-            width: 60px; height: 60px; background: #050505; border: 1px solid #222;
-            border-radius: 50%; color: #666; text-decoration: none; transition: var(--transition-fast);
-            clip-path: polygon(15% 0, 100% 0, 85% 100%, 0% 100%);
-        }
+        .footer-note { max-width: 700px; margin: 0 auto; color: #7e7e7e; line-height: 1.8; font-family: var(--font-data); font-size: 14px; }
+        .social-links { display: flex; justify-content: center; gap: 25px; margin-top: 40px; flex-wrap: wrap; }
+        .social-icon { display: flex; align-items: center; justify-content: center; width: 60px; height: 60px; background: #050505; border: 1px solid #222; border-radius: 50%; color: #666; text-decoration: none; transition: var(--transition-fast); clip-path: polygon(15% 0, 100% 0, 85% 100%, 0% 100%); }
         .social-icon svg { width: 24px; height: 24px; fill: currentColor; }
-        .social-icon:hover {
-            border-color: var(--red); color: #fff; background: var(--red);
-            transform: translateY(-5px) scale(1.1); box-shadow: 0 10px 20px rgba(225,0,0,.4);
-        }
-        .back-to-top {
-            display: inline-block; margin-top: 60px; font-family: var(--font-data); font-size: 12px;
-            color: var(--red); text-decoration: none; letter-spacing: 4px; transition: var(--transition-fast);
-        }
-        .back-to-top:hover { color: #fff; text-shadow: 0 0 10px var(--red); }
- 
+        .social-icon:hover { border-color: var(--red); color: #fff; background: var(--red); transform: translateY(-5px) scale(1.1); box-shadow: 0 10px 20px rgba(225,0,0,.4); }
+        .back-to-top { display: inline-block; margin-top: 60px; font-family: var(--font-data); font-size: 12px; color: var(--red); text-decoration: none; letter-spacing: 4px; transition: var(--transition-fast); }
+        .back-to-top:hover { color: #fff; text-shadow: 0 0 10px var(--red); letter-spacing: 6px;}
+
         @media (max-width: 768px) {
             * { cursor: auto !important; }
             #pro-cursor { display: none !important; }
@@ -250,6 +331,7 @@
             nav ul { flex-wrap: wrap; justify-content: center; gap: 15px; }
             .logo { font-size: 28px; }
             #hero-base, #hero-lit { font-size: 22vw; }
+            .hero-copy { position: static; margin-top: 36px; max-width: none; padding-left: 16px; }
             h2.reveal[style] { font-size: 35px !important; margin-bottom: 40px !important; }
             .data-grid { grid-template-columns: 1fr; gap: 40px; margin-top: 40px; }
             .data-card { padding-left: 20px; }
@@ -257,67 +339,58 @@
             .teams-slider { padding: 40px 0; gap: 20px; }
             .team-card { flex: 0 0 85vw; height: 450px; }
             .team-label { bottom: 30px; left: 30px; font-size: 30px; }
+            .motos-panel { grid-template-columns: 1fr; padding: 24px; gap: 24px; }
+            .motos-visual { min-height: 240px; }
             .glossary-item { flex-direction: column; gap: 10px; padding: 25px 0; }
             .desc { width: 100%; }
+            .track-container { flex-direction: column; }
+            .map-display { border-right: none; border-bottom: 1px solid #333; min-height: 50vh; padding-top: 80px; }
+            .map-display img { width: 90%; }
+            .data-panel { width: 100%; padding: 40px 25px; align-items: center; text-align: center; }
+            .track-title { font-size: 35px; }
+            .stats-grid { width: 100%; gap: 15px; }
+            .stat-box { border-left: none; border-top: 2px solid var(--red); padding-left: 0; padding-top: 10px; }
+            .track-overlay-close { top: 15px; right: 15px; padding: 10px 14px; }
             footer { padding: 60px 5% 40px; }
             .footer-logo { font-size: 40px; }
             .btn-ignite { padding: 15px 30px; font-size: 16px; }
-            .social-links { flex-wrap: wrap; gap: 15px; }
+            .social-links { gap: 15px; }
             .social-icon { width: 50px; height: 50px; }
-            .social-icon svg { width: 20px; height: 20px; }
         }
     </style>
 </head>
 <body id="body-main">
- 
-    <audio id="sfx-engine" src="turbo-bark.mp3"></audio>
+    <script>
+        document.body.classList.add('ready');
+    </script>
+
     <div id="pro-cursor"><div class="cursor-dot"></div></div>
- 
+
     <header id="main-header">
         <div class="logo">MOTO<span>GP</span></div>
         <nav>
             <ul>
-                <li><a href="#technical">Tecnico</a></li>
-                <li><a href="#crash">Caidas</a></li>
+                <li><a href="#technical">Técnico</a></li>
+                <li><a href="#crash">Caídas</a></li>
                 <li><a href="#teams">Equipos</a></li>
-                <li><a href="#glossary">Terminal</a></li>
-                <li><a href="simulador.html" style="color:var(--red);text-shadow:0 0 5px var(--red);">[ Simulador 3D ]</a></li>
+                <li><a href="motos.html">Motos 2026</a></li>
+                <li><a href="minijuego3d.html" style="color:var(--red);text-shadow:0 0 5px var(--red);">[ Simulador 3D ]</a></li>
             </ul>
         </nav>
     </header>
- 
-    <div id="master-loader">
-        <div id="ignite-wrap">
-            <button class="btn-ignite" onclick="igniteSequence()">Iniciar motor</button>
-        </div>
-        <div class="load-content" id="load-ui">
-            <div class="pct-big" id="pct-text" data-pct="00">00</div>
-            <div style="width:300px;height:1px;background:#222;margin:40px auto;position:relative;max-width:80%;">
-                <div id="load-bar" style="position:absolute;left:0;top:0;height:100%;background:var(--red);width:0%;"></div>
-            </div>
-            <p style="font-family:var(--font-data);color:#444;letter-spacing:10px;font-size:12px;">LOADING...</p>
-        </div>
-    </div>
- 
+
     <main>
- 
-        <!-- ══ HERO ══ -->
+
         <section class="hero" id="hero">
-            <!--
-              #hero-spotlight-zone captura el mouse.
-              Dentro hay DOS capas de texto idéntico apiladas:
-                1. #hero-base  → oscura, siempre visible
-                2. #hero-lit   → blanca/roja, recortada por un clip-path circular
-              El clip-path se mueve con el cursor → efecto linterna unificado.
-            -->
             <div id="hero-spotlight-zone">
-                <div id="hero-base">Alcanza<br>tus&nbsp;límites</div>
-                <div id="hero-lit"  aria-hidden="true">Alcanza<br>tus&nbsp;límites</div>
+                <div id="hero-base">LLega<br>a&nbsp;la perfección</div>
+                <div id="hero-lit"  aria-hidden="true">Llega<br>a&nbsp;la perfección</div>
             </div>
         </section>
- 
+
         <section id="technical">
-            <h2 class="reveal" style="font-family:var(--font-racing);font-size:60px;margin-bottom:100px;">PALABRAS <span style="color:var(--red);">TECNICAS</span></h2>
+            <span class="section-kicker reveal">Base tecnica</span>
+            <h2 class="reveal glitch" data-text="PALABRAS TECNICAS" style="font-family:var(--font-racing);font-size:60px;margin-bottom:100px;">PALABRAS <span style="color:var(--red);">TECNICAS</span></h2>
             <div class="data-grid">
                 <div class="data-card reveal">
                     <h3>01. AERODYNAMICS</h3>
@@ -337,256 +410,397 @@
                 </div>
             </div>
         </section>
- 
+
         <section class="crash-wall" id="crash">
             <div class="marquee">
                 <div class="marquee-inner">&nbsp;CAIDAS 2026//ZONA PELIGROSA//CAIDAS FUERTES//FALLOS DEL SISTEMA //&nbsp;</div>
             </div>
         </section>
- 
+
         <section id="teams">
-            <h2 class="reveal" style="font-family:var(--font-racing);font-size:60px;margin-bottom:50px;">EQUIPOS <span style="color:var(--red);">MOTOGP</span></h2>
+            <span class="section-kicker reveal">Parrilla oficial</span>
+            <h2 class="reveal glitch" data-text="EQUIPOS MOTOGP" style="font-family:var(--font-racing);font-size:60px;margin-bottom:50px;">EQUIPOS <span style="color:var(--red);">MOTOGP</span></h2>
             <div class="teams-slider" id="team-target"></div>
         </section>
- 
-        <section class="glossary" id="glossary">
-            <h2 class="reveal" style="font-family:var(--font-racing);font-size:60px;margin-bottom:80px;"><span style="color:var(--red);">CONOCIMIENTOS</span></h2>
-            <div class="glossary-item reveal"><div class="term">HOLESHOT</div><div class="desc">Sistema mecánico que baja el centro de gravedad de la moto para las salidas, evitando el caballito.</div></div>
-            <div class="glossary-item reveal"><div class="term">HIGH-SIDE</div><div class="desc">La caída más temida. La rueda trasera pierde agarre y lo recupera bruscamente, catapultando al piloto.</div></div>
-            <div class="glossary-item reveal"><div class="term">SLIPSTREAM</div><div class="desc">Aprovechamiento del vacío aerodinámico dejado por la moto de delante para ganar velocidad punta.</div></div>
-            <div class="glossary-item reveal"><div class="term">APEX</div><div class="desc">El punto más interno de una curva, donde el piloto deja de frenar y empieza a acelerar.</div></div>
-            <div class="glossary-item reveal"><div class="term">TRAIL BRAKING</div><div class="desc">Técnica de mantener el freno delantero accionado mientras se entra en la curva.</div></div>
+
+        <section id="motos-link">
+            <span class="section-kicker reveal">Modulo independiente</span>
+            <h2 class="reveal glitch" data-text="MOTOS 2026" style="font-family:var(--font-racing);font-size:60px;margin-bottom:20px;">MOTOS <span style="color:var(--red);">2026</span></h2>
+            <div class="motos-panel reveal">
+                <div class="motos-copy">
+                    <p>Las motos tienen su propio modulo separado para que esta portada mantenga ritmo, foco y mejor lectura. Desde aqui saltas a una vista dedicada con mas detalle.</p>
+                    <a href="motos.html" class="motos-jump">ABRIR MODULO DE MOTOS</a>
+                </div>
+                <div class="motos-visual" aria-hidden="true"></div>
+            </div>
         </section>
- 
+
+        <section class="glossary" id="glossary">
+            <span class="section-kicker reveal">Diccionario rapido</span>
+            <h2 class="reveal glitch" data-text="CONOCIMIENTOS" style="font-family:var(--font-racing);font-size:60px;margin-bottom:80px;"><span style="color:var(--red);">CONOCIMIENTOS</span></h2>
+            <div class="glossary-item reveal"><div class="term">HOLESHOT</div><div class="desc">Sistema mecánico que baja el centro de gravedad de la moto para las salidas, evitando el caballito.</div></div>
+            <div class="glossary-item reveal" style="transition-delay:0.1s;"><div class="term">HIGH-SIDE</div><div class="desc">La caída más temida. La rueda trasera pierde agarre y lo recupera bruscamente, catapultando al piloto.</div></div>
+            <div class="glossary-item reveal" style="transition-delay:0.2s;"><div class="term">SLIPSTREAM</div><div class="desc">Aprovechamiento del vacío aerodinámico dejado por la moto de delante para ganar velocidad punta.</div></div>
+            <div class="glossary-item reveal" style="transition-delay:0.3s;"><div class="term">APEX</div><div class="desc">El punto más interno de una curva, donde el piloto deja de frenar y empieza a acelerar.</div></div>
+            <div class="glossary-item reveal" style="transition-delay:0.4s;"><div class="term">TRAIL BRAKING</div><div class="desc">Técnica de mantener el freno delantero accionado mientras se entra en la curva.</div></div>
+        </section>
+
         <section style="height:60vh;display:flex;flex-direction:column;align-items:center;justify-content:center;background:var(--black);z-index:2;position:relative;">
             <p class="reveal" style="font-family:var(--font-data);color:var(--red);margin-bottom:20px;">CONNECTION_ESTABLISHED</p>
-            <h2 class="reveal" style="font-family:var(--font-racing);font-size:6vw;font-style:italic;line-height:0.8;text-transform:uppercase;">RACE<span style="color:var(--red);">_READY</span></h2>
-            <a href="minijuego/index.html" class="reveal btn-ignite" style="margin-top:50px;text-decoration:none;display:inline-block;cursor:none;">ENTRAR AL SIMULADOR</a>
+            <h2 class="reveal glitch" data-text="RACE_READY" style="font-family:var(--font-racing);font-size:6vw;font-style:italic;line-height:0.8;text-transform:uppercase;">RACE<span style="color:var(--red);">_READY</span></h2>
+            <a href="minijuego/dist/index.html#/Game" class="reveal btn-ignite" style="margin-top:50px;text-decoration:none;display:inline-block;cursor:none;">ENTRAR AL SIMULADOR</a>
         </section>
- 
+
         <section id="circuit-maps" class="reveal-scale">
-            <h2 style="font-family:var(--font-racing);font-size:60px;text-align:center;">SELECT <span style="color:var(--red);">CIRCUIT</span></h2>
+            <span class="section-kicker reveal" style="text-align:center;display:block;">Calendario visual</span>
+            <h2 class="glitch" data-text="CALENDARIO CIRCUITOS" style="font-family:var(--font-racing);font-size:60px;text-align:center;">CALENDARIO <span style="color:var(--red);">CIRCUITOS</span></h2>
             <div class="maps-grid" id="maps-target"></div>
         </section>
- 
+
     </main>
- 
+
+    <div id="track-overlay" aria-hidden="true">
+        <button class="track-overlay-close" id="track-overlay-close">CERRAR</button>
+        <div class="track-container">
+            <div class="map-display" id="3d-container">
+                <div class="scan-line"></div>
+                <img id="map-img" src="" alt="Track Map">
+            </div>
+            <div class="data-panel">
+                <h1 class="track-title" id="track-name">Cargando<span>...</span></h1>
+                <div class="stats-grid">
+                    <div class="stat-box">
+                        <div class="stat-label">LONGITUD</div>
+                        <div class="stat-value" id="track-length">--</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-label">CURVAS</div>
+                        <div class="stat-value" id="track-curves">--</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-label">RECORD_VUELTA</div>
+                        <div class="stat-value" id="track-record">--</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-label">TOP_SPEED</div>
+                        <div class="stat-value" id="track-speed">--</div>
+                    </div>
+                </div>
+                <p class="track-desc" id="track-desc">Estableciendo conexion con los sensores de pista... Obteniendo telemetria.</p>
+            </div>
+        </div>
+    </div>
+
     <footer>
-        <div class="footer-logo">Nuestras redes!!</div>
+        <div class="footer-logo">MotoGP Feed</div>
+        <p class="footer-note">Una portada mas solida para explorar la parrilla, la tecnica y el calendario sin perder ritmo visual ni claridad de lectura.</p>
         <div class="social-links">
             <a href="https://www.instagram.com/motogp/" target="_blank" class="social-icon" title="Instagram">
                 <svg viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z"/></svg>
             </a>
-            <a href="https://www.facebook.com/MotoGP/" target="_blank" class="social-icon" title="Facebook">
-                <svg viewBox="0 0 24 24"><path d="M22.675 0h-21.35c-.732 0-1.325.593-1.325 1.325v21.351c0 .731.593 1.324 1.325 1.324h11.495v-9.294h-3.128v-3.622h3.128v-2.671c0-3.1 1.893-4.788 4.659-4.788 1.325 0 2.463.099 2.795.143v3.24l-1.918.001c-1.504 0-1.795.715-1.795 1.763v2.313h3.587l-.467 3.622h-3.12v9.293h6.116c.73 0 1.323-.593 1.323-1.325v-21.35c0-.732-.593-1.325-1.325-1.325z"/></svg>
-            </a>
-            <a href="https://twitter.com/MotoGP" target="_blank" class="social-icon" title="X">
+            <a href="https://twitter.com/MotoGP" target="_blank" class="social-icon" title="X / Twitter">
                 <svg viewBox="0 0 24 24"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
             </a>
-            <a href="https://www.youtube.com/motogp" target="_blank" class="social-icon" title="YouTube">
+            <a href="https://www.facebook.com/MotoGP" target="_blank" class="social-icon" title="Facebook">
+                <svg viewBox="0 0 24 24"><path d="M9 8h-3v4h3v12h5v-12h3.642l.358-4h-4v-1.667c0-.955.192-1.333 1.115-1.333h2.885v-5h-3.808c-3.596 0-5.192 1.583-5.192 4.615v3.385z"/></svg>
+            </a>
+            <a href="https://www.youtube.com/user/MotoGP" target="_blank" class="social-icon" title="YouTube">
                 <svg viewBox="0 0 24 24"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>
             </a>
             <a href="https://www.tiktok.com/@motogp" target="_blank" class="social-icon" title="TikTok">
-                <svg viewBox="0 0 24 24"><path d="M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.93v7.06c0 4.3-3.39 7.84-7.69 7.84-4.3 0-7.83-3.53-7.83-7.84 0-4.3 3.53-7.84 7.83-7.84 1.25 0 2.45.3 3.52.84V8.04c-.11-.03-.22-.05-.33-.07-.4-.08-.81-.13-1.22-.13-2.22 0-4.02 1.8-4.02 4.02 0 2.22 1.8 4.02 4.02 4.02 2.22 0 4.02-1.8 4.02-4.02V.02z"/></svg>
+                <svg viewBox="0 0 24 24"><path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64 2.93 2.93 0 0 1 .88.13V9.4a6.84 6.84 0 0 0-1-.05A6.33 6.33 0 0 0 5 20.1a6.34 6.34 0 0 0 10.86-4.43v-7a8.16 8.16 0 0 0 4.77 1.52v-3.4a4.85 4.85 0 0 1-1-.1z"/></svg>
             </a>
         </div>
         <p style="font-family:var(--font-data);font-size:11px;color:#444;margin-top:50px;letter-spacing:2px;">TERMINAL_OFFLINE // © 2026 MOTOGP PROTOCOL.</p>
         <a href="#body-main" class="back-to-top">[ VOLVER AL INICIO ]</a>
     </footer>
- 
+
     <script>
-    // ── CURSOR ──
+        
     const cursor = document.getElementById('pro-cursor');
-    document.addEventListener('mousemove', e => {
-        cursor.style.left = e.clientX + 'px';
-        cursor.style.top  = e.clientY + 'px';
-    });
- 
-    // ════════════════════════════════════════════════
-    //  SPOTLIGHT UNIFICADO
-    //  Cómo funciona:
-    //  - #hero-spotlight-zone cubre ambas líneas de texto
-    //  - #hero-lit (la capa iluminada) tiene clip-path:circle(...)
-    //  - Cuando el mouse se mueve, actualizamos el centro del círculo
-    //    con coordenadas RELATIVAS al contenedor
-    //  - clip-path:circle() recorta SÓLO la capa iluminada
-    //    y no afecta en nada a la capa base → efecto linterna
-    // ════════════════════════════════════════════════
-    const zone   = document.getElementById('hero-spotlight-zone');
-    const litDiv = document.getElementById('hero-lit');
-    const R = 170; // radio del círculo de luz en px
- 
-    zone.addEventListener('mousemove', e => {
-        const rect = zone.getBoundingClientRect();
-        const x = e.clientX - rect.left;
-        const y = e.clientY - rect.top;
-        // Sin transition mientras movemos = respuesta instantánea
-        litDiv.style.transition = 'none';
-        litDiv.style.clipPath   = `circle(${R}px at ${x}px ${y}px)`;
-    });
- 
-    zone.addEventListener('mouseleave', () => {
-        // Al salir, cierra el círculo con una transición suave
-        litDiv.style.transition = 'clip-path 0.6s cubic-bezier(0.4, 0, 0.2, 1)';
-        litDiv.style.clipPath   = 'circle(0px at 50% 50%)';
-    });
- 
-    // ── SESSION STORAGE ──
-    document.addEventListener('DOMContentLoaded', () => {
-        if (sessionStorage.getItem('terminalIgnited') === 'true') {
-            document.getElementById('master-loader').style.display = 'none';
-            document.getElementById('body-main').classList.add('ready');
-            initTeams(); initMaps(); revealElements();
-        }
-    });
- 
-    // ── LOADER ──
-    const audio = document.getElementById('sfx-engine');
- 
-    function igniteSequence() {
-        audio.volume = 0.5;
-        audio.play().catch(()=>{});
-        document.getElementById('ignite-wrap').style.display = 'none';
-        document.getElementById('load-ui').style.display = 'block';
- 
-        let progress = 0;
-        const pct = document.getElementById('pct-text');
-        const bar = document.getElementById('load-bar');
- 
-        const timer = setInterval(() => {
-            progress += Math.random() * 1.5;
-            if (progress >= 100) {
-                progress = 100;
-                clearInterval(timer);
-                fadeOutAudio();
-                finalizeLoader();
-            }
-            pct.innerText = Math.floor(progress).toString().padStart(2,'0');
-            pct.setAttribute('data-pct', Math.floor(progress).toString().padStart(2,'0'));
-            pct.style.setProperty('--p', progress + '%');
-            bar.style.width = progress + '%';
-        }, 40);
-    }
- 
-    function fadeOutAudio() {
-        const fade = setInterval(() => {
-            if (audio.volume > 0.05) audio.volume -= 0.05;
-            else { audio.pause(); clearInterval(fade); }
-        }, 100);
-    }
- 
-    function finalizeLoader() {
-        setTimeout(() => {
-            document.getElementById('master-loader').style.transform = 'translateY(-100%)';
-            document.getElementById('body-main').classList.add('ready');
-            sessionStorage.setItem('terminalIgnited', 'true');
-            initTeams(); initMaps(); revealElements();
-        }, 800);
-    }
- 
-    // ── SCROLL ──
-    let lastScroll = 0;
-    const heroBase = document.getElementById('hero-base');
- 
-    function revealElements() {
-        document.querySelectorAll('.reveal, .reveal-scale').forEach(el => {
-            if (el.getBoundingClientRect().top < window.innerHeight - 150)
-                el.classList.add('active');
+    const interactiveSelector = 'a, button, .map-card, .team-card, .social-icon, .btn-ignite';
+
+    function initCustomCursor() {
+        if (!cursor || window.innerWidth <= 850) return;
+
+        document.addEventListener('mousemove', e => {
+            cursor.style.left = e.clientX + 'px';
+            cursor.style.top = e.clientY + 'px';
+            cursor.style.opacity = '1';
+        });
+
+        document.addEventListener('mouseleave', () => {
+            cursor.style.opacity = '0';
+        });
+
+        document.querySelectorAll(interactiveSelector).forEach(el => {
+            el.addEventListener('mouseenter', () => cursor.classList.add('cursor-hover'));
+            el.addEventListener('mouseleave', () => cursor.classList.remove('cursor-hover'));
         });
     }
- 
+
+    initCustomCursor();
+
+    const zone   = document.getElementById('hero-spotlight-zone');
+    const litDiv = document.getElementById('hero-lit');
+    const R = 170; 
+
+    if(zone && litDiv) {
+        zone.addEventListener('mousemove', e => {
+            const rect = zone.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            litDiv.style.transition = 'none';
+            litDiv.style.clipPath   = `circle(${R}px at ${x}px ${y}px)`;
+        });
+        zone.addEventListener('mouseleave', () => {
+            litDiv.style.transition = 'clip-path 0.6s cubic-bezier(0.4, 0, 0.2, 1)';
+            litDiv.style.clipPath   = 'circle(0px at 50% 50%)';
+        });
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        document.getElementById('body-main').classList.add('ready');
+        initTeams();
+        revealElements();
+    });
+
+    let lastScroll = 0;
+    const heroBase = document.getElementById('hero-base');
+
+    function revealElements() {
+        document.querySelectorAll('.reveal, .reveal-scale').forEach(el => {
+            if (el.getBoundingClientRect().top < window.innerHeight - 150) el.classList.add('active');
+        });
+    }
+
     window.addEventListener('scroll', () => {
         const s = window.pageYOffset;
         const header = document.getElementById('main-header');
- 
-        // Smart header
-        if (s > lastScroll && s > 200) header.classList.add('nav-hidden');
-        else header.classList.remove('nav-hidden');
-        lastScroll = s;
- 
-        revealElements();
- 
-        // Scroll blur en el hero — afecta a ambas capas igual
-        if (window.innerWidth > 768) {
+        if (s > lastScroll && s > 200) header.classList.add('nav-hidden'); else header.classList.remove('nav-hidden');
+        lastScroll = s; revealElements();
+
+        if (window.innerWidth > 768 && heroBase && litDiv) {
             const start = 50;
             if (s > start) {
-                const sc      = s - start;
-                const blur    = Math.min(sc / 20, 25);
-                const opacity = Math.max(1 - sc / 350, 0);
-                const scale   = 1 - sc / 2000;
-                const ty      = sc * 0.3;
-                const f       = `blur(${blur}px)`;
-                const t       = `scale(${scale}) translateY(${ty}px)`;
-                heroBase.style.filter    = f;
-                heroBase.style.opacity   = opacity;
-                heroBase.style.transform = t;
-                litDiv.style.filter      = f;
-                litDiv.style.opacity     = opacity;
-                litDiv.style.transform   = t;
+                const sc = s - start; const blur = Math.min(sc / 20, 25); const opacity = Math.max(1 - sc / 350, 0); const scale = 1 - sc / 2000; const ty = sc * 0.3;
+                const filterStyle = `blur(${blur}px)`; const transformStyle = `scale(${scale}) translateY(${ty}px)`;
+                heroBase.style.filter = filterStyle; heroBase.style.opacity = opacity; heroBase.style.transform = transformStyle;
+                litDiv.style.filter = filterStyle; litDiv.style.opacity = opacity; litDiv.style.transform = transformStyle;
             } else {
-                heroBase.style.filter = litDiv.style.filter = 'blur(0)';
-                heroBase.style.opacity = litDiv.style.opacity = '1';
-                heroBase.style.transform = litDiv.style.transform = 'scale(1) translateY(0)';
+                heroBase.style.filter = 'blur(0px)'; heroBase.style.opacity = '1'; heroBase.style.transform = 'scale(1) translateY(0px)';
+                litDiv.style.filter = 'blur(0px)'; litDiv.style.opacity = '1'; litDiv.style.transform = 'scale(1) translateY(0px)';
             }
         }
     });
- 
-    // ── EQUIPOS ──
+
     function initTeams() {
         const container = document.getElementById('team-target');
         if (container.children.length > 0) return;
-        const names = ["Ducati Lenovo","Red Bull KTM","Aprilia Racing","Monster Yamaha","Repsol Honda","Prima Pramac","Gresini Racing","VR46 Racing","Trackhouse","GASGAS Tech3","LCR Honda"];
-        names.forEach((name, i) => {
+        const teams = [
+            { name: "Ducati Lenovo", code: "DUC-01", riders: "Bagnaia // Marquez", img: "motogp3.jpg" },
+            { name: "Pertamina VR46", code: "VR4-02", riders: "Di Giannantonio // Morbidelli", img: "motogp7.jpg" },
+            { name: "Monster Yamaha", code: "YAM-03", riders: "Quartararo // Rins", img: "Monster.jpg" },
+            { name: "Red Bull KTM", code: "KTM-04", riders: "Binder // Acosta", img: "motogp9.jpg" },
+            { name: "Honda HRC", code: "HON-05", riders: "Marini // Mir", img: "Honda.jpg" },
+            { name: "Trackhouse Aprilia", code: "APR-06", riders: "Ogura // Fernandez", img: "motogp1 (2).jpg" }
+        ];
+        teams.forEach((team, i) => {
             const card = document.createElement('div');
             card.className = 'team-card reveal';
             card.innerHTML = `
-                <img src="motogp${i+1}.jpg" onerror="this.src='https://images.unsplash.com/photo-1558981403-c5f9899a28bc?q=80&w=600'">
+                <div class="team-meta">
+                    <span>${team.code}</span>
+                    <span>${team.riders}</span>
+                </div>
+                <img src="${team.img}" alt="${team.name}">
                 <div class="team-label">
-                    <span style="font-family:var(--font-data);font-size:12px;color:var(--red);">OFFICIAL_ENTRY_0${i+1}</span><br>
-                    ${name.toUpperCase()}
+                    <span style="font-family:var(--font-data);font-size:12px;color:var(--red);background:#000;padding:2px 5px;">DATA_ID_0${i+1}</span><br>
+                    ${team.name.toUpperCase()}
                 </div>`;
             container.appendChild(card);
         });
-        let targetScroll = container.scrollLeft;
+        
         container.addEventListener('wheel', e => {
-            const max = container.scrollWidth - container.clientWidth;
-            const atStart = container.scrollLeft <= 0;
-            const atEnd   = container.scrollLeft >= max - 2;
-            if ((e.deltaY > 0 && !atEnd) || (e.deltaY < 0 && !atStart)) {
-                e.preventDefault();
-                targetScroll = Math.max(0, Math.min(max, targetScroll + e.deltaY * 1.5));
-                container.scrollTo({ left: targetScroll, behavior: 'smooth' });
-            } else { targetScroll = container.scrollLeft; }
+            if (e.deltaY !== 0) {
+                const isAtStart = container.scrollLeft <= 0;
+                const isAtEnd = container.scrollLeft + container.clientWidth >= container.scrollWidth - 1;
+                
+                if ((e.deltaY > 0 && !isAtEnd) || (e.deltaY < 0 && !isAtStart)) {
+                    e.preventDefault();
+                    container.scrollLeft += e.deltaY;
+                }
+            }
         }, { passive: false });
-        container.addEventListener('scroll', () => {
-            if (Math.abs(targetScroll - container.scrollLeft) > 50) targetScroll = container.scrollLeft;
+    }
+
+    function initActiveNav() {
+        const links = Array.from(document.querySelectorAll('header nav a[href^="#"]'));
+        const sections = links
+            .map((link) => document.querySelector(link.getAttribute('href')))
+            .filter(Boolean);
+
+        if (!links.length || !sections.length) return;
+
+        const observer = new IntersectionObserver((entries) => {
+            const visible = entries
+                .filter((entry) => entry.isIntersecting)
+                .sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
+
+            if (!visible) return;
+
+            links.forEach((link) => {
+                link.classList.toggle('is-active', link.getAttribute('href') === `#${visible.target.id}`);
+            });
+        }, { rootMargin: '-25% 0px -45% 0px', threshold: [0.15, 0.4, 0.7] });
+
+        sections.forEach((section) => observer.observe(section));
+    }
+
+    initActiveNav();
+</script>
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+    const body = document.getElementById('body-main');
+    const mapsTarget = document.getElementById('maps-target');
+    const overlay = document.getElementById('track-overlay');
+    const overlayClose = document.getElementById('track-overlay-close');
+    const container3D = document.getElementById('3d-container');
+    const img3D = document.getElementById('map-img');
+    const trackImageFallback = "jerez.png";
+    const availableTrackImages = new Set(["assen.png", "jerez.png", "mugello.png", "philipisland.png", "sachsenring.png", "valencia.png"]);
+    const resolveTrackImage = (imageName) => availableTrackImages.has(imageName) ? imageName : trackImageFallback;
+
+    const trackData = {
+        "qatar": { name: "LUSAIL", length: "5.38 km", curves: "16 (6 Izq, 10 Der)", record: "1'50.789", speed: "350.0 km/h", desc: "Carrera nocturna bajo los focos del desierto. La enorme recta de meta exige pura potencia.", img: resolveTrackImage("qatar.png") },
+        "portimao": { name: "PORTIMAO", length: "4.59 km", curves: "15 (6 Izq, 9 Der)", record: "1'36.836", speed: "340.5 km/h", desc: "La montana rusa del Algarve. Un trazado muy fisico con desniveles brutales y curvas ciegas.", img: resolveTrackImage("portimao.png") },
+        "cota": { name: "COTA", length: "5.51 km", curves: "20 (11 Izq, 9 Der)", record: "2'01.397", speed: "345.1 km/h", desc: "El circuito mas fisico del mundial en Texas. Combina un primer sector vertiginoso con una larguisima recta.", img: resolveTrackImage("cota.png") },
+        "jerez": { name: "JEREZ", length: "4.42 km", curves: "13 (5 Izq, 8 Der)", record: "1'36.170", speed: "300.5 km/h", desc: "Circuito muy tecnico caracterizado por fuertes frenadas y curvas rapidas y enlazadas.", img: resolveTrackImage("jerez.png") },
+        "lemans": { name: "LE MANS", length: "4.19 km", curves: "14 (5 Izq, 9 Der)", record: "1'30.450", speed: "323.5 km/h", desc: "Trazado de Stop and Go. Grandes frenadas y fuertes aceleraciones desde baja velocidad.", img: resolveTrackImage("lemans.png") },
+        "mugello": { name: "MUGELLO", length: "5.25 km", curves: "15 (6 Izq, 9 Der)", record: "1'44.855", speed: "366.1 km/h", desc: "Una de las rectas mas rapidas del campeonato combinada con cambios de rasante ciegos.", img: resolveTrackImage("mugello.png") },
+        "catalunya": { name: "CATALUNYA", length: "4.66 km", curves: "14 (6 Izq, 8 Der)", record: "1'38.680", speed: "355.0 km/h", desc: "Trazado tecnico con curvas largas de alta velocidad y una tremenda recta de meta.", img: resolveTrackImage("catalunya.png") },
+        "assen": { name: "ASSEN", length: "4.54 km", curves: "18 (6 Izq, 12 Der)", record: "1'31.504", speed: "318.4 km/h", desc: "La Catedral del motociclismo. Un trazado muy rapido y fluido donde los pilotos pasan gran parte inclinados.", img: resolveTrackImage("assen.png") },
+        "sachsenring": { name: "SACHSENR.", length: "3.67 km", curves: "13 (10 Izq, 3 Der)", record: "1'19.765", speed: "304.2 km/h", desc: "Un circuito ratonero, lento y asimetrico. Los neumaticos sufren un estres brutal en el lado izquierdo.", img: resolveTrackImage("sachsenring.png") },
+        "silverstone": { name: "SILVERST.", length: "5.90 km", curves: "18 (8 Izq, 10 Der)", record: "1'57.309", speed: "330.4 km/h", desc: "Uno de los trazados mas largos, anchos y rapidos. Requiere una moto excepcionalmente agil.", img: resolveTrackImage("silverstone.png") },
+        "redbullring": { name: "RB RING", length: "4.35 km", curves: "11 (3 Izq, 8 Der)", record: "1'28.533", speed: "315.0 km/h", desc: "El templo de la pura potencia. Rectas unidas por fuertes y abruptas frenadas.", img: resolveTrackImage("redbullring.png") },
+        "misano": { name: "MISANO", length: "4.23 km", curves: "16 (6 Izq, 10 Der)", record: "1'30.390", speed: "300.2 km/h", desc: "Pista tecnica, plana y con poco margen de error a orillas del Adriatico.", img: resolveTrackImage("misano.png") },
+        "aragon": { name: "MOTORLAND", length: "5.08 km", curves: "17 (10 Izq, 7 Der)", record: "1'46.069", speed: "345.8 km/h", desc: "Destaca por su espectacular sacacorchos inverso y una larguisima recta trasera en bajada.", img: resolveTrackImage("aragon.png") },
+        "phillipisland": { name: "PHILLIP_IS", length: "4.45 km", curves: "12 (7 Izq, 5 Der)", record: "1'27.246", speed: "349.5 km/h", desc: "Una pista rapidisima a la orilla del mar donde la valentia del piloto es la clave.", img: resolveTrackImage("philipisland.png") },
+        "sepang": { name: "SEPANG", length: "5.54 km", curves: "15 (5 Izq, 10 Der)", record: "1'57.491", speed: "335.5 km/h", desc: "Asfalto abrasivo y calor extremo. Dos inmensas rectas paralelas terminan en frenadas criticas.", img: resolveTrackImage("sepang.png") },
+        "valencia": { name: "VALENCIA", length: "4.00 km", curves: "14 (9 Izq, 5 Der)", record: "1'28.931", speed: "337.5 km/h", desc: "Trazado estilo estadio, muy estrecho y con multitud de curvas lentas.", img: resolveTrackImage("valencia.png") }
+    };
+
+    const revealElems = document.querySelectorAll('.reveal, .reveal-scale');
+    const revealOnScroll = () => {
+        const windowHeight = window.innerHeight;
+        revealElems.forEach(el => {
+            const top = el.getBoundingClientRect().top;
+            if (top < windowHeight - 100) el.classList.add('active');
+        });
+    };
+    window.addEventListener('scroll', revealOnScroll);
+    revealOnScroll();
+
+    function populateTrackOverlay(trackId) {
+        const data = trackData[trackId];
+        document.getElementById('track-name').innerHTML = `${data.name}<span>_</span>`;
+        document.getElementById('track-length').innerText = data.length;
+        document.getElementById('track-curves').innerText = data.curves;
+        document.getElementById('track-record').innerText = data.record;
+        document.getElementById('track-speed').innerText = data.speed;
+        document.getElementById('track-desc').innerText = data.desc;
+        img3D.src = data.img;
+        img3D.style.transform = 'rotateX(0deg) rotateY(0deg) scale3d(1, 1, 1)';
+        img3D.style.filter = 'drop-shadow(0 0 20px rgba(225,0,0,0.3)) contrast(150%)';
+    }
+
+    if (window.innerWidth > 850 && container3D && img3D) {
+        container3D.addEventListener('mousemove', (e) => {
+            const rect = container3D.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            const rotateX = ((y - (rect.height / 2)) / (rect.height / 2)) * -20;
+            const rotateY = ((x - (rect.width / 2)) / (rect.width / 2)) * 20;
+            img3D.style.transform = `rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale3d(1.05, 1.05, 1.05)`;
+            img3D.style.filter = `drop-shadow(${rotateY * -1}px ${rotateX + 20}px 30px rgba(225,0,0,0.6)) contrast(150%)`;
+        });
+        container3D.addEventListener('mouseleave', () => {
+            img3D.style.transition = 'transform 0.5s ease-out, filter 0.5s ease-out';
+            img3D.style.transform = 'rotateX(0deg) rotateY(0deg) scale3d(1, 1, 1)';
+            img3D.style.filter = 'drop-shadow(0 0 20px rgba(225,0,0,0.3)) contrast(150%)';
+            setTimeout(() => {
+                img3D.style.transition = 'transform 0.1s ease-out, filter 0.3s ease-out';
+            }, 500);
         });
     }
- 
-    // ── MAPAS ──
-    function initMaps() {
-        const container = document.getElementById('maps-target');
-        if (container.children.length > 0) return;
-        const circuits = [
-            { id:'jerez',          name:'Jerez',         data:'4.42 km // 13 Curves' },
-            { id:'mugello',        name:'Mugello',        data:'5.25 km // 15 Curves' },
-            { id:'assen',          name:'Assen',          data:'4.54 km // 18 Curves' },
-            { id:'phillip-island', name:'Phillip Island', data:'4.45 km // 12 Curves' },
-            { id:'sachsenring',    name:'Sachsenring',    data:'3.67 km // 13 Curves' },
-            { id:'valencia',       name:'Valencia',       data:'4.00 km // 14 Curves' },
-        ];
-        circuits.forEach(c => {
-            const card = document.createElement('div');
-            card.className = 'map-card';
-            card.style.cursor = window.innerWidth <= 768 ? 'pointer' : 'none';
-            card.onclick = () => window.location.href = `pistas.html?id=${c.id}`;
-            card.innerHTML = `
-                <div class="map-name">${c.name.toUpperCase()}</div>
-                <div class="map-data">${c.data}</div>
-                <div style="margin-top:20px;font-family:var(--font-data);font-size:10px;color:var(--red);">[ información ]</div>`;
-            container.appendChild(card);
-        });
+
+    function closeTrackOverlay() {
+        overlay.classList.remove('active');
+        overlay.setAttribute('aria-hidden', 'true');
+        body.style.overflow = '';
     }
-    </script>
+
+    function openTrackOverlay(trackId) {
+        populateTrackOverlay(trackId);
+        overlay.classList.add('active');
+        overlay.setAttribute('aria-hidden', 'false');
+        body.style.overflow = 'hidden';
+    }
+
+    Object.keys(trackData).forEach((key) => {
+        const circuit = trackData[key];
+        const card = document.createElement('div');
+        card.className = 'map-card reveal-scale';
+        card.innerHTML = `
+            <div class="map-name">${circuit.name}</div>
+            <div class="map-data">${circuit.length} // ${circuit.curves.split(' ')[0]} CURVAS</div>
+            <div class="scan-btn">[ INICIAR ESCANEO ]</div>
+        `;
+
+        card.addEventListener('click', function () {
+            if (document.querySelector('.is-expanding')) return;
+
+            const rect = this.getBoundingClientRect();
+            const clone = this.cloneNode(true);
+            clone.classList.add('is-expanding', 'clicked-pulse');
+            clone.style.position = 'fixed';
+            clone.style.top = rect.top + 'px';
+            clone.style.left = rect.left + 'px';
+            clone.style.width = rect.width + 'px';
+            clone.style.height = rect.height + 'px';
+            clone.style.margin = '0';
+            clone.style.zIndex = '199999';
+            document.body.appendChild(clone);
+
+            setTimeout(() => {
+                clone.classList.remove('clicked-pulse');
+                clone.style.transition = 'all 0.6s cubic-bezier(0.8, 0, 0.2, 1)';
+                clone.style.top = '0';
+                clone.style.left = '0';
+                clone.style.width = '100vw';
+                clone.style.height = '100vh';
+                clone.style.backgroundColor = 'var(--black)';
+                clone.style.borderColor = 'var(--black)';
+                Array.from(clone.children).forEach((child) => {
+                    child.style.transition = 'opacity 0.2s ease-out';
+                    child.style.opacity = '0';
+                });
+            }, 350);
+
+            setTimeout(() => {
+                openTrackOverlay(key);
+                clone.remove();
+            }, 900);
+        });
+
+        mapsTarget.appendChild(card);
+    });
+
+    overlayClose.addEventListener('click', closeTrackOverlay);
+    overlay.addEventListener('click', (e) => {
+        if (e.target === overlay) closeTrackOverlay();
+    });
+});
+</script>
 </body>
 </html>

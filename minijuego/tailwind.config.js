@@ -1,7 +1,29 @@
 /** @type {import('tailwindcss').Config} */
-module.exports = {
+export default {
     darkMode: ["class"],
-    content: ["./index.html", "./src/**/*.{ts,tsx,js,jsx}"],
+    content: [
+      "./index.html",
+      "./App.{js,jsx}",
+      "./AuthContext.{js,jsx}",
+      "./BikeForm.{js,jsx}",
+      "./CircuitForm.{js,jsx}",
+      "./Game.{js,jsx}",
+      "./GameEngine.{js,jsx}",
+      "./GameMenu.{js,jsx}",
+      "./HUD.{js,jsx}",
+      "./main.{js,jsx}",
+      "./ManageData.{js,jsx}",
+      "./MiniMap.{js,jsx}",
+      "./PageNotFound.{js,jsx}",
+      "./UseMobile.{js,jsx}",
+      "./UserNotRegisteredError.{js,jsx}",
+      "./Utils.{js,jsx}",
+      "./WayPointEditor.{js,jsx}",
+      "./api/**/*.{js,jsx}",
+      "./components/**/*.{js,jsx}",
+      "./lib/**/*.{js,jsx}",
+      "./pages/**/*.{js,jsx}"
+    ],
   theme: {
     extend: {
       fontFamily: {
@@ -80,5 +102,5 @@ module.exports = {
       }
     }
   },
-  plugins: [require("tailwindcss-animate")],
+  plugins: [],
 }

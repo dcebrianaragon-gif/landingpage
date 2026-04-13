@@ -12,65 +12,60 @@ export default function GameMenu({
   loading,
 }) {
   return (
-    <div className="fixed inset-0 bg-black/95 flex items-center justify-center z-50">
-      <div className="border-2 border-primary p-8 max-w-[740px] w-[95%] max-h-[92vh] overflow-y-auto text-center
-                      scrollbar-thin scrollbar-thumb-primary">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/95">
+      <div className="max-h-[92vh] w-[95%] max-w-[740px] overflow-y-auto border-2 border-primary p-8 text-center scrollbar-thin scrollbar-thumb-primary">
         <h1 className="font-black italic text-3xl uppercase tracking-tight">
-          MOTOGP™ <span className="text-primary">SIMULATOR</span>
+          MOTOGP TM <span className="text-primary">SIMULATOR</span>
         </h1>
-        <span className="text-muted-foreground/40 text-[10px] tracking-[3px] block mb-7">
-          2026 SEASON · SELECT YOUR SETUP
+        <span className="mb-7 block text-[10px] tracking-[3px] text-muted-foreground/40">
+          2026 SEASON - SELECT YOUR SETUP
         </span>
 
         {loading ? (
           <div className="flex items-center justify-center gap-3 py-12 text-muted-foreground">
-            <Loader2 className="w-5 h-5 animate-spin" />
+            <Loader2 className="h-5 w-5 animate-spin" />
             <span className="text-sm tracking-widest">CARGANDO DATOS...</span>
           </div>
         ) : (
           <>
-            {/* Circuits */}
-            <div className="text-[9px] text-muted-foreground/60 tracking-[4px] uppercase mb-3 border-b border-border pb-1 text-left">
-              Elige Circuito
+            <div className="mb-3 border-b border-border pb-1 text-left text-[9px] uppercase tracking-[4px] text-muted-foreground/60">
+              Elige circuito
             </div>
-            <div className="grid grid-cols-3 gap-2 mb-5">
+            <div className="mb-5 grid grid-cols-3 gap-2">
               {circuits.map((c) => (
                 <button
                   key={c.id}
                   onClick={() => onSelectCircuit(c.id)}
-                  className={`bg-transparent border px-2 py-3 font-mono text-[11px] cursor-pointer 
-                             transition-all text-center uppercase
-                             ${selectedCircuit === c.id
-                               ? 'border-primary bg-primary/10 text-white'
-                               : 'border-border text-muted-foreground hover:border-primary hover:bg-primary/5 hover:text-white'
-                             }`}
+                  className={`cursor-pointer border bg-transparent px-2 py-3 text-center font-mono text-[11px] uppercase transition-all ${
+                    selectedCircuit === c.id
+                      ? 'border-primary bg-primary/10 text-white'
+                      : 'border-border text-muted-foreground hover:border-primary hover:bg-primary/5 hover:text-white'
+                  }`}
                 >
                   {c.flag} {c.name}
-                  <span className="block text-[8px] text-muted-foreground/50 normal-case mt-1">
+                  <span className="mt-1 block text-[8px] normal-case text-muted-foreground/50">
                     {c.laps || 5} vueltas
                   </span>
                 </button>
               ))}
             </div>
 
-            {/* Bikes */}
-            <div className="text-[9px] text-muted-foreground/60 tracking-[4px] uppercase mb-3 border-b border-border pb-1 text-left">
-              Elige tu Moto
+            <div className="mb-3 border-b border-border pb-1 text-left text-[9px] uppercase tracking-[4px] text-muted-foreground/60">
+              Elige tu moto
             </div>
-            <div className="grid grid-cols-2 gap-2 mb-6">
+            <div className="mb-6 grid grid-cols-2 gap-2">
               {bikes.map((b) => (
                 <button
                   key={b.id}
                   onClick={() => onSelectBike(b.id)}
-                  className={`bg-transparent border px-2 py-3 font-mono text-[11px] cursor-pointer 
-                             transition-all text-center uppercase
-                             ${selectedBike === b.id
-                               ? 'border-primary bg-primary/10 text-white'
-                               : 'border-border text-muted-foreground hover:border-primary hover:bg-primary/5 hover:text-white'
-                             }`}
+                  className={`cursor-pointer border bg-transparent px-2 py-3 text-center font-mono text-[11px] uppercase transition-all ${
+                    selectedBike === b.id
+                      ? 'border-primary bg-primary/10 text-white'
+                      : 'border-border text-muted-foreground hover:border-primary hover:bg-primary/5 hover:text-white'
+                  }`}
                 >
                   {b.flag} {b.name}
-                  <span className="block text-[8px] text-muted-foreground/50 normal-case mt-1">
+                  <span className="mt-1 block text-[8px] normal-case text-muted-foreground/50">
                     {b.info}
                   </span>
                 </button>
@@ -80,12 +75,9 @@ export default function GameMenu({
             <button
               onClick={onLaunch}
               disabled={!selectedCircuit || !selectedBike}
-              className="w-full py-4 bg-transparent border-2 border-primary text-primary font-black 
-                         italic text-[15px] tracking-[5px] uppercase cursor-pointer transition-all
-                         hover:bg-primary hover:text-white
-                         disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:text-primary"
+              className="w-full cursor-pointer border-2 border-primary bg-transparent py-4 text-[15px] font-black italic uppercase tracking-[5px] text-primary transition-all hover:bg-primary hover:text-white disabled:cursor-not-allowed disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-primary"
             >
-              ▶ ENCENDER MOTOR
+              Iniciar carrera
             </button>
           </>
         )}

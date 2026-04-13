@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Experiencia Awwwards</title>
+<style>
+body {
+    overflow: hidden; /* Vital para bloquear tu web mientras carga */
+}
+
+#loader {
+    position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+    z-index: 999999; /* Nivel Dios para que tape toda tu web */
+    display: flex; justify-content: center; align-items: center;
+    background: #000;
+    clip-path: inset(0% 0% 0% 0%);
+    transition: clip-path 1.5s cubic-bezier(0.77, 0, 0.175, 1);
+}
+
+#video-bg {
+    position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+    object-fit: cover; opacity: 0.8; transform: scale(1.05);
+    transition: transform 2s ease-out;
+}
+
+#counter-wrapper {
+    position: relative; z-index: 2; mix-blend-mode: difference; 
+    display: flex; align-items: baseline; color: #fff;
+}
+
+#counter {
+    font-size: 15vw; font-weight: 900; line-height: 1;
+    letter-spacing: -2px; font-variant-numeric: tabular-nums; 
+    font-family: 'Arial Black', sans-serif;
+}
+
+.percent-symbol {
+    font-size: 5vw; font-weight: 700; margin-left: 10px; 
+    font-family: 'Arial Black', sans-serif;
+}
+
+/* ANIMACIÓN DE SALIDA (EL TELÓN) */
+.loader-exit #loader {
+    clip-path: inset(50% 0% 50% 0%);
+}
+.loader-exit #video-bg {
+    transform: scale(1);
+}
+.loader-exit #counter-wrapper {
+    opacity: 0; transform: translateY(-50px);
+    transition: all 0.8s cubic-bezier(0.77, 0, 0.175, 1);
+}
+
+/* ANIMACIÓN DE ENTRADA PARA TU WEB */
+#main-content {
+    opacity: 0; transform: translateY(50px);
+    transition: all 1.8s cubic-bezier(0.19, 1, 0.22, 1) 0.5s;
+}
+body.content-visible #main-content {
+    opacity: 1; transform: translateY(0);
+}
+
+        :root {
+            --bg-color: #000000;
+            --text-color: #ffffff;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+            overflow: hidden; /* Bloqueamos scroll durante carga */
+        }
+
+        /* =========================================
+           1. LOADER & VIDEO BACKGROUND
+           ========================================= */
+        #loader {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 9999;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: #000;
+            /* La magia: Un clip-path que luego animaremos para partir la pantalla */
+            clip-path: inset(0% 0% 0% 0%);
+            transition: clip-path 1.5s cubic-bezier(0.77, 0, 0.175, 1);
+        }
+
+        #video-bg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            opacity: 0.8;
+            transform: scale(1.05);
+            transition: transform 2s ease-out;
+        }
+
+        /* =========================================
+           2. CONTADOR DE 60FPS CON BLEND MODE
+           ========================================= */
+        #counter-wrapper {
+            position: relative;
+            z-index: 2;
+            /* Hace que el texto reaccione a los colores del video detrás */
+            mix-blend-mode: difference; 
+            display: flex;
+            align-items: baseline;
+        }
+
+        #counter {
+            font-size: 15vw; /* Tamaño responsivo masivo */
+            font-weight: 900;
+            line-height: 1;
+            letter-spacing: -2px;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .percent-symbol {
+            font-size: 5vw;
+            font-weight: 700;
+            margin-left: 10px;
+        }
+
+        #welcome-message {
+            position: absolute;
+            z-index: 3;
+            text-align: center;
+            color: #fff;
+            opacity: 0;
+            transform: translateY(50px) scale(0.92);
+            filter: blur(12px);
+            pointer-events: none;
+            transition: opacity 0.8s ease, transform 0.9s cubic-bezier(0.19, 1, 0.22, 1), filter 0.9s ease;
+        }
+
+        #welcome-message span {
+            display: block;
+            font-size: clamp(0.9rem, 1.6vw, 1.1rem);
+            letter-spacing: 0.7rem;
+            text-transform: uppercase;
+            color: #e10000;
+            margin-bottom: 16px;
+        }
+
+        #welcome-message strong {
+            display: block;
+            font-family: 'Arial Black', sans-serif;
+            font-size: clamp(2.5rem, 7vw, 6rem);
+            letter-spacing: 0.18rem;
+            text-transform: uppercase;
+            text-shadow: 0 0 25px rgba(225, 0, 0, 0.45);
+        }
+
+        body.show-welcome #counter-wrapper {
+            opacity: 0;
+            transform: translateY(-40px) scale(0.94);
+            filter: blur(10px);
+            transition: opacity 0.5s ease, transform 0.6s ease, filter 0.6s ease;
+        }
+
+        body.show-welcome #welcome-message {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+            filter: blur(0);
+        }
+
+        /* =========================================
+           3. ESTADOS DE ANIMACIÓN DE SALIDA
+           ========================================= */
+        .loader-exit #loader {
+            /* Parte la pantalla desde el centro hacia arriba y abajo */
+            clip-path: inset(50% 0% 50% 0%);
+        }
+
+        .loader-exit #video-bg {
+            transform: scale(1); /* Efecto de asentamiento del video al salir */
+        }
+
+        .loader-exit #counter-wrapper {
+            opacity: 0;
+            transform: translateY(-50px);
+            transition: all 0.8s cubic-bezier(0.77, 0, 0.175, 1);
+        }
+
+        /* =========================================
+           4. CONTENIDO PRINCIPAL (ENTRADA ÉPICA)
+           ========================================= */
+        #main-content {
+            position: relative;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            opacity: 0;
+            transform: translateY(100px) scale(0.95);
+            transition: all 1.8s cubic-bezier(0.19, 1, 0.22, 1) 0.5s; /* Delay para esperar al loader */
+        }
+
+        body.content-visible #main-content {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+        }
+
+        h1 {
+            font-size: 5rem;
+            text-transform: uppercase;
+            letter-spacing: 4px;
+        }
+
+        p {
+            font-size: 1.5rem;
+            color: #888;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="loader">
+        <video id="video-bg" autoplay muted playsinline loop>
+            <source src="Moto_en_túnel_en_primera_persona.mp4" type="video/mp4">
+        </video>
+        
+        <div id="counter-wrapper">
+            <div id="counter">0</div>
+            <div class="percent-symbol">%</div>
+        </div>
+
+        <div id="welcome-message" aria-live="polite">
+            <span>Acceso completado</span>
+            <strong>Bienvenido a MotoGP</strong>
+        </div>
+    </div>
+
+    <main id="main-content">
+    </main>
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            const counterElement = document.getElementById("counter");
+            const body = document.body;
+            let isTransitioning = false;
+            
+            // Configuración de la animación
+            const duration = 3000; // 3 segundos de carga
+            let startTime = null;
+
+            // Función matemática para un frenado elegante (Ease Out Quart)
+            // Empieza muy rápido y los últimos números pasan muy lento
+            const easeOutQuart = (x) => 1 - Math.pow(1 - x, 4);
+
+            // Bucle de animación a 60 frames por segundo
+            function updateCounter(currentTime) {
+                if (!startTime) startTime = currentTime;
+                
+                // Calculamos el progreso del tiempo (de 0 a 1)
+                const elapsedTime = currentTime - startTime;
+                let progress = Math.min(elapsedTime / duration, 1);
+                
+                // Aplicamos la curva matemática al progreso
+                const easedProgress = easeOutQuart(progress);
+                
+                // Calculamos el porcentaje final
+                const currentVal = Math.floor(easedProgress * 100);
+                
+                // Actualizamos el DOM
+                counterElement.textContent = currentVal;
+
+                if (progress < 1) {
+                    // Si no ha llegado a 100%, pedimos el siguiente frame
+                    requestAnimationFrame(updateCounter);
+                } else {
+                    // Al llegar al 100%, disparamos la salida épica
+                    triggerExitAnimation();
+                }
+            }
+
+            function triggerExitAnimation() {
+                if (isTransitioning) return;
+                isTransitioning = true;
+
+                body.classList.add("show-welcome");
+
+                setTimeout(() => {
+                    // 1. Añadimos la clase que parte la pantalla por la mitad
+                    body.classList.add("loader-exit");
+
+                    // 2. Revelamos el contenido principal
+                    body.classList.add("content-visible");
+                }, 1100);
+
+                // 3. Entramos en la portada tras mostrar el mensaje y cerrar el loader
+                setTimeout(() => {
+                    sessionStorage.setItem("entrada1LoaderDone", "true");
+                    window.location.replace("entrada1.html");
+                }, 2600);
+            }
+
+            // Iniciamos el motor de animación
+            requestAnimationFrame(updateCounter);
+        });
+    </script>
+</body>
+</html>

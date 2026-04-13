@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Motos 2026 | MotoGP Protocol</title>
+    <style>
+        :root {
+            --red: #e10000;
+            --black: #030303;
+            --line: rgba(255,255,255,0.08);
+            --font-racing: 'Arial Black', sans-serif;
+            --font-data: 'Courier New', monospace;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            min-height: 100vh;
+            background:
+                radial-gradient(circle at top center, rgba(225,0,0,0.16), transparent 24%),
+                linear-gradient(180deg, #050505 0%, #000 100%);
+            color: #fff;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        header {
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 28px 7%;
+            background: rgba(0,0,0,0.72);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid var(--line);
+        }
+
+        .logo {
+            font-family: var(--font-racing);
+            font-style: italic;
+            font-size: 28px;
+            letter-spacing: -1px;
+        }
+
+        .logo span { color: var(--red); }
+
+        .back-link {
+            color: #fff;
+            text-decoration: none;
+            border: 1px solid rgba(225,0,0,0.45);
+            padding: 12px 18px;
+            font-family: var(--font-data);
+            font-size: 12px;
+            letter-spacing: 2px;
+            transition: 0.3s ease;
+        }
+
+        .back-link:hover {
+            background: var(--red);
+            border-color: var(--red);
+        }
+
+        main {
+            padding: 80px 7% 100px;
+        }
+
+        .hero {
+            display: grid;
+            grid-template-columns: 1.05fr 0.95fr;
+            gap: 36px;
+            align-items: center;
+            margin-bottom: 70px;
+        }
+
+        .eyebrow {
+            display: inline-block;
+            margin-bottom: 18px;
+            font-family: var(--font-data);
+            font-size: 11px;
+            letter-spacing: 4px;
+            text-transform: uppercase;
+            color: rgba(255,255,255,0.58);
+        }
+
+        h1 {
+            font-family: var(--font-racing);
+            font-style: italic;
+            font-size: clamp(52px, 9vw, 112px);
+            line-height: 0.88;
+            letter-spacing: -2px;
+            text-transform: uppercase;
+        }
+
+        h1 span { color: var(--red); }
+
+        .hero-copy p {
+            margin-top: 24px;
+            max-width: 560px;
+            color: #a1a1a1;
+            line-height: 1.9;
+            font-size: 15px;
+            font-family: var(--font-data);
+        }
+
+        .hero-visual {
+            min-height: 500px;
+            border: 1px solid var(--line);
+            background:
+                linear-gradient(180deg, rgba(225,0,0,0.08), rgba(0,0,0,0.02)),
+                url('imagenmoto.jpg') center/cover no-repeat;
+            clip-path: polygon(8% 0, 100% 0, 92% 100%, 0 100%);
+            box-shadow: 0 40px 80px rgba(0,0,0,0.45);
+        }
+
+        .spec-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 18px;
+            margin-bottom: 60px;
+        }
+
+        .spec-card {
+            padding: 24px;
+            border: 1px solid var(--line);
+            background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(225,0,0,0.03));
+        }
+
+        .spec-label {
+            color: #6f6f6f;
+            font-family: var(--font-data);
+            font-size: 10px;
+            letter-spacing: 3px;
+            margin-bottom: 10px;
+        }
+
+        .spec-value {
+            font-family: var(--font-racing);
+            font-size: 28px;
+            color: #fff;
+        }
+
+        .models {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 24px;
+        }
+
+        .model-card {
+            border: 1px solid var(--line);
+            background: #080808;
+            overflow: hidden;
+        }
+
+        .model-card img {
+            width: 100%;
+            height: 300px;
+            object-fit: cover;
+            display: block;
+            filter: grayscale(0.12) contrast(1.05);
+        }
+
+        .model-copy {
+            padding: 24px;
+        }
+
+        .model-copy h2 {
+            font-family: var(--font-racing);
+            font-style: italic;
+            font-size: 34px;
+            margin-bottom: 12px;
+        }
+
+        .model-copy p {
+            color: #9c9c9c;
+            line-height: 1.8;
+            font-size: 14px;
+            font-family: var(--font-data);
+        }
+
+        @media (max-width: 900px) {
+            .hero, .models, .spec-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .hero-visual {
+                min-height: 320px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="logo">MOTO<span>GP</span></div>
+        <a class="back-link" href="entrada1.html">VOLVER A LA HOME</a>
+    </header>
+
+    <main>
+        <section class="hero">
+            <div class="hero-copy">
+                <span class="eyebrow">Modulo de motos</span>
+                <h1>Parrilla <span>Visual</span></h1>
+                <p>Esta seccion ahora usa las motos reales que tienes en la carpeta. He sustituido los nombres genericos por equipos, marcas y dorsales para que la galeria quede mucho mas clara al navegar.</p>
+            </div>
+            <div class="hero-visual" aria-hidden="true"></div>
+        </section>
+
+        <section class="spec-grid">
+            <article class="spec-card">
+                <div class="spec-label">GALERIA</div>
+                <div class="spec-value">8 MOTOS</div>
+            </article>
+            <article class="spec-card">
+                <div class="spec-label">CATEGORIA</div>
+                <div class="spec-value">MOTOGP</div>
+            </article>
+            <article class="spec-card">
+                <div class="spec-label">EXTRA</div>
+                <div class="spec-value">1 STREET</div>
+            </article>
+            <article class="spec-card">
+                <div class="spec-label">MARCAS</div>
+                <div class="spec-value">5</div>
+            </article>
+        </section>
+
+        <section class="models">
+            <article class="model-card">
+                <img src="motogp3.jpg" alt="Ducati Lenovo Team dorsal 93">
+                <div class="model-copy">
+                    <h2>Ducati Lenovo 93</h2>
+                    <p>Ducati Desmosedici GP con decoracion oficial Lenovo. La imagen corresponde a la moto roja del dorsal 93 del equipo oficial Ducati.</p>
+                </div>
+            </article>
+            <article class="model-card">
+                <img src="motogp7.jpg" alt="Ducati VR46 dorsal 49">
+                <div class="model-copy">
+                    <h2>VR46 Ducati 49</h2>
+                    <p>Ducati Desmosedici GP con librea amarilla de Pertamina VR46. Es una de las imagenes mas reconocibles de la carpeta por el color fluor.</p>
+                </div>
+            </article>
+            <article class="model-card">
+                <img src="Monster.jpg" alt="Yamaha Monster Energy dorsal 20">
+                <div class="model-copy">
+                    <h2>Yamaha Monster 20</h2>
+                    <p>Yamaha YZR-M1 con patrocinio Monster Energy y ENEOS. Decoracion azul y negra del dorsal 20.</p>
+                </div>
+            </article>
+            <article class="model-card">
+                <img src="Honda.jpg" alt="Honda HRC Castrol dorsal 10">
+                <div class="model-copy">
+                    <h2>Honda HRC 10</h2>
+                    <p>Honda RC213V con decoracion HRC Castrol. La moto roja del dorsal 10 encaja muy bien como referencia visual del bloque Honda.</p>
+                </div>
+            </article>
+            <article class="model-card">
+                <img src="motogp9.jpg" alt="KTM Red Bull dorsal 37">
+                <div class="model-copy">
+                    <h2>KTM Red Bull 37</h2>
+                    <p>KTM RC16 oficial con la identidad negra y naranja de Red Bull KTM. El dorsal 37 aparece centrado en la toma frontal.</p>
+                </div>
+            </article>
+            <article class="model-card">
+                <img src="motogp10.jpg" alt="KTM Red Bull dorsal 12">
+                <div class="model-copy">
+                    <h2>KTM Red Bull 12</h2>
+                    <p>Segunda KTM RC16 de la galeria, esta vez con dorsal 12. Mantiene la misma base aerodinamica y el frontal caracteristico del equipo oficial.</p>
+                </div>
+            </article>
+            <article class="model-card">
+                <img src="motogp1 (2).jpg" alt="Aprilia Trackhouse dorsal 72">
+                <div class="model-copy">
+                    <h2>Aprilia Trackhouse 72</h2>
+                    <p>Aprilia RS-GP con los colores de Trackhouse. El dorsal 72 y la decoracion azul clara la distinguen rapidamente del resto.</p>
+                </div>
+            </article>
+            <article class="model-card">
+                <img src="motogp11.jpg" alt="Aprilia dorsal 25">
+                <div class="model-copy">
+                    <h2>Aprilia 25</h2>
+                    <p>Otra Aprilia RS-GP de la carpeta, con esquema azul y detalles fluor. Completa el bloque Aprilia dentro de la galeria.</p>
+                </div>
+            </article>
+        </section>
+    </main>
+</body>
+</html>

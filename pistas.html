@@ -24,7 +24,8 @@
             background-color: var(--black);
             color: #fff;
             font-family: 'Segoe UI', sans-serif;
-            overflow-x: hidden; /* Evita scroll horizontal */
+            overflow-x: hidden;
+            scroll-behavior: smooth;
         }
 
         /* CURSOR */
@@ -52,12 +53,14 @@
         
         .sys-status { font-family: var(--font-data); font-size: 12px; color: var(--red); }
 
-        /* LAYOUT PRINCIPAL */
+        /* ================================================================
+           [02] LAYOUT PRINCIPAL (TRACK DATA)
+           ================================================================
+        */
         .track-container {
             display: flex; min-height: 100vh; width: 100vw;
         }
 
-        /* PANEL IZQUIERDO: EL MAPA */
         .map-display {
             flex: 1; position: relative;
             background: radial-gradient(circle at center, #111 0%, #000 100%);
@@ -69,7 +72,6 @@
         
         .map-display img {
             width: 70%; max-height: 70vh; object-fit: contain;
-            /* SE ELIMINÓ grayscale(100%) AQUÍ */
             filter: drop-shadow(0 0 20px rgba(225,0,0,0.3)) contrast(150%);
             transition: transform 0.1s ease-out, filter 0.3s ease-out;
             transform-style: preserve-3d;
@@ -84,7 +86,6 @@
         }
         @keyframes scan { 0% { top: 0; } 100% { top: 100%; } }
 
-        /* PANEL DERECHO: DATOS TÉCNICOS */
         .data-panel {
             width: 450px; background: var(--grey-900); padding: 100px 50px;
             display: flex; flex-direction: column; justify-content: center;
@@ -107,56 +108,79 @@
         }
 
         /* ================================================================
-           [02] RESPONSIVIDAD (OPTIMIZACIÓN MÓVIL)
+           [03] SELECTOR DE CIRCUITOS Y ANIMACIÓN
+           ================================================================
+        */
+        .selector-container {
+            padding: 80px 50px;
+            background: #020202;
+            border-top: 1px solid #222;
+            position: relative;
+        }
+        .selector-title {
+            font-family: var(--font-racing); font-size: 30px;
+            color: #fff; margin-bottom: 40px; text-align: center;
+        }
+        .selector-title span { color: var(--red); }
+
+        .maps-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+            gap: 20px;
+            position: relative;
+            z-index: 10;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        
+        .map-card {
+            background: var(--grey-900);
+            border: 1px solid #222;
+            padding: 30px 20px;
+            text-align: center;
+            transition: var(--transition-fast);
+            position: relative;
+        }
+        
+        /* Efecto hover normal (se desactiva cuando se está expandiendo) */
+        .map-card:hover:not(.is-expanding) {
+            border-color: var(--red);
+            transform: translateY(-5px);
+            background: #0a0a0a;
+        }
+        
+        .map-name { font-family: var(--font-racing); font-size: 20px; color: #fff; }
+        .map-data { font-family: var(--font-data); font-size: 12px; color: #888; margin-top: 10px; }
+        .scan-btn { margin-top: 20px; font-family: var(--font-data); font-size: 10px; color: var(--red); letter-spacing: 1px;}
+
+        /* Animación de latido (Pulse) */
+        @keyframes pulseClickAnim {
+            0%   { transform: scale(1); background: #0a0a0a; border-color: var(--red); }
+            50%  { transform: scale(1.08); background: rgba(225,0,0,0.3); border-color: #fff; box-shadow: 0 0 40px rgba(225,0,0,1); }
+            100% { transform: scale(1); background: #0a0a0a; border-color: var(--red); }
+        }
+        
+        .clicked-pulse {
+            animation: pulseClickAnim 0.35s ease-in-out forwards !important;
+            pointer-events: none;
+        }
+
+        /* ================================================================
+           [04] RESPONSIVIDAD
            ================================================================
         */
         @media (max-width: 850px) {
-            * { cursor: auto; } /* Restaura el cursor normal en pantallas pequeñas */
-            #pro-cursor { display: none; } /* Oculta el cursor custom en móvil */
-
-            header {
-                padding: 15px 20px;
-                flex-direction: column;
-                gap: 15px;
-            }
-
-            .track-container {
-                flex-direction: column; /* Apila el mapa y los datos verticalmente */
-            }
-
-            .map-display {
-                border-right: none;
-                border-bottom: 1px solid #333;
-                min-height: 50vh; /* El mapa ocupa la mitad superior */
-                padding-top: 80px; /* Deja espacio para el header */
-            }
-
-            .map-display img {
-                width: 90%;
-            }
-
-            .data-panel {
-                width: 100%;
-                padding: 40px 25px;
-                align-items: center; /* Centra el contenido en móvil */
-                text-align: center;
-            }
-
-            .track-title {
-                font-size: 35px;
-            }
-
-            .stats-grid {
-                width: 100%;
-                gap: 15px;
-            }
-
-            .stat-box {
-                border-left: none;
-                border-top: 2px solid var(--red); /* Cambia la línea de diseño para que quede mejor centrada */
-                padding-left: 0;
-                padding-top: 10px;
-            }
+            * { cursor: auto; }
+            #pro-cursor { display: none; }
+            header { padding: 15px 20px; flex-direction: column; gap: 15px; }
+            .track-container { flex-direction: column; }
+            .map-display { border-right: none; border-bottom: 1px solid #333; min-height: 50vh; padding-top: 80px; }
+            .map-display img { width: 90%; }
+            .data-panel { width: 100%; padding: 40px 25px; align-items: center; text-align: center; }
+            .track-title { font-size: 35px; }
+            .stats-grid { width: 100%; gap: 15px; }
+            .stat-box { border-left: none; border-top: 2px solid var(--red); padding-left: 0; padding-top: 10px; }
+            .selector-container { padding: 50px 20px; }
         }
     </style>
 </head>
@@ -165,8 +189,8 @@
     <div id="pro-cursor"><div class="cursor-dot"></div></div>
 
     <header>
-        <a href="entrada1.html#circuit-maps" class="btn-back"> < VOLVER ATRÁS</a>
-        <div class="sys-status">[ LIVE_TELEMETRY_FEED ]</div>
+        <a href="entrada1.html" class="btn-back"> < VER OTROS CIRCUITOS</a>
+        <div class="sys-status">[ Directo ]</div>
     </header>
 
     <div class="track-container">
@@ -203,8 +227,14 @@
         </div>
     </div>
 
+    <div class="selector-container" id="circuit-maps">
+        <h2 class="selector-title">SELECCIONAR <span>CIRCUITO</span></h2>
+        <div class="maps-grid" id="maps-target">
+            </div>
+    </div>
+
     <script>
-        // 1. Cursor Personalizado (Solo activo si no estamos en móvil)
+        // 1. Cursor Personalizado
         const cursor = document.getElementById('pro-cursor');
         if (window.innerWidth > 850) {
             document.addEventListener('mousemove', e => {
@@ -213,75 +243,36 @@
             });
         }
 
-        // 2. Base de datos de circuitos COMPLETA
+        // 2. Base de datos de circuitos
+        const trackImageFallback = "jerez.png";
+        const availableTrackImages = new Set(["assen.png", "jerez.png", "mugello.png", "philipisland.png", "sachsenring.png", "valencia.png"]);
+        const resolveTrackImage = (imageName) => availableTrackImages.has(imageName) ? imageName : trackImageFallback;
+
         const trackData = {
-            "jerez": {
-                name: "JEREZ",
-                length: "4.42 km",
-                curves: "13 (5 Izq, 8 Der)",
-                record: "1'36.170",
-                speed: "300.5 km/h",
-                desc: "Circuito muy técnico caracterizado por fuertes frenadas y curvas rápidas y enlazadas. La gestión del neumático delantero es crítica en las curvas de alta velocidad del sector 3.",
-                img: "jerez.png" 
-            },
-            "mugello": {
-                name: "MUGELLO",
-                length: "5.25 km",
-                curves: "15 (6 Izq, 9 Der)",
-                record: "1'44.855",
-                speed: "366.1 km/h",
-                desc: "Una de las rectas más rápidas del campeonato combinada con cambios de rasante ciegos. Exige un motor potente y una aerodinámica perfecta para evitar que la moto despegue en el rasante.",
-                img: "mugello.png" 
-            },
-            "assen": {
-                name: "ASSEN",
-                length: "4.54 km",
-                curves: "18 (6 Izq, 12 Der)",
-                record: "1'31.504",
-                speed: "318.4 km/h",
-                desc: "La 'Catedral' del motociclismo. Un trazado muy rápido y fluido donde los pilotos pasan gran parte de la vuelta inclinados. La chicane final es el punto crítico para adelantar en la última vuelta.",
-                img: "assen.png"
-            },
-            "phillip-island": {
-                name: "PHILLIP_IS",
-                length: "4.45 km",
-                curves: "12 (7 Izq, 5 Der)",
-                record: "1'27.246",
-                speed: "349.5 km/h",
-                desc: "Posiblemente el circuito más espectacular del mundo. Una pista rapidísima a la orilla del mar donde la valentía del piloto y el control del acelerador en curvas largas de izquierdas son clave.",
-                img: "philipisland.png"
-            },
-            "sachsenring": {
-                name: "SACHSENR.",
-                length: "3.67 km",
-                curves: "13 (10 Izq, 3 Der)",
-                record: "1'19.765",
-                speed: "304.2 km/h",
-                desc: "Un circuito ratonero, lento y asimétrico. Los neumáticos sufren un estrés brutal en el lado izquierdo. La curva 11 ('Waterfall') es una bajada ciega a derechas rapidísima tras estar mucho tiempo inclinados a la izquierda.",
-                img: "sachsenring.png"
-            },
-            "valencia": {
-                name: "VALENCIA",
-                length: "4.00 km",
-                curves: "14 (9 Izq, 5 Der)",
-                record: "1'28.931",
-                speed: "337.5 km/h",
-                desc: "Trazado estilo 'estadio', estrecho y con muchas curvas lentas. Suele albergar la carrera final de la temporada, convirtiéndose en un escenario de alta tensión para la resolución de campeonatos.",
-                img: "valencia.png"
-            }
+            "qatar": { name: "LUSAIL", length: "5.38 km", curves: "16 (6 Izq, 10 Der)", record: "1'50.789", speed: "350.0 km/h", desc: "Carrera nocturna bajo los focos del desierto. La enorme recta de meta exige pura potencia.", img: resolveTrackImage("qatar.png") },
+            "portimao": { name: "PORTIMÃO", length: "4.59 km", curves: "15 (6 Izq, 9 Der)", record: "1'36.836", speed: "340.5 km/h", desc: "La montaña rusa del Algarve. Un trazado muy físico con desniveles brutales y curvas ciegas.", img: resolveTrackImage("portimao.png") },
+            "cota": { name: "COTA", length: "5.51 km", curves: "20 (11 Izq, 9 Der)", record: "2'01.397", speed: "345.1 km/h", desc: "El circuito más físico del mundial en Texas. Combina un primer sector vertiginoso con una larguísima recta.", img: resolveTrackImage("cota.png") },
+            "jerez": { name: "JEREZ", length: "4.42 km", curves: "13 (5 Izq, 8 Der)", record: "1'36.170", speed: "300.5 km/h", desc: "Circuito muy técnico caracterizado por fuertes frenadas y curvas rápidas y enlazadas.", img: resolveTrackImage("jerez.png") },
+            "lemans": { name: "LE MANS", length: "4.19 km", curves: "14 (5 Izq, 9 Der)", record: "1'30.450", speed: "323.5 km/h", desc: "Trazado de Stop and Go. Grandes frenadas y fuertes aceleraciones desde baja velocidad.", img: resolveTrackImage("lemans.png") },
+            "mugello": { name: "MUGELLO", length: "5.25 km", curves: "15 (6 Izq, 9 Der)", record: "1'44.855", speed: "366.1 km/h", desc: "Una de las rectas más rápidas del campeonato combinada con cambios de rasante ciegos.", img: resolveTrackImage("mugello.png") },
+            "catalunya": { name: "CATALUNYA", length: "4.66 km", curves: "14 (6 Izq, 8 Der)", record: "1'38.680", speed: "355.0 km/h", desc: "Trazado técnico con curvas largas de alta velocidad y una tremenda recta de meta.", img: resolveTrackImage("catalunya.png") },
+            "assen": { name: "ASSEN", length: "4.54 km", curves: "18 (6 Izq, 12 Der)", record: "1'31.504", speed: "318.4 km/h", desc: "La Catedral del motociclismo. Un trazado muy rápido y fluido donde los pilotos pasan gran parte inclinados.", img: resolveTrackImage("assen.png") },
+            "sachsenring": { name: "SACHSENR.", length: "3.67 km", curves: "13 (10 Izq, 3 Der)", record: "1'19.765", speed: "304.2 km/h", desc: "Un circuito ratonero, lento y asimétrico. Los neumáticos sufren un estrés brutal en el lado izquierdo.", img: resolveTrackImage("sachsenring.png") },
+            "silverstone": { name: "SILVERST.", length: "5.90 km", curves: "18 (8 Izq, 10 Der)", record: "1'57.309", speed: "330.4 km/h", desc: "Uno de los trazados más largos, anchos y rápidos. Requiere una moto excepcionalmente ágil.", img: resolveTrackImage("silverstone.png") },
+            "redbullring": { name: "RB RING", length: "4.35 km", curves: "11 (3 Izq, 8 Der)", record: "1'28.533", speed: "315.0 km/h", desc: "El templo de la pura potencia. Rectas unidas por fuertes y abruptas frenadas.", img: resolveTrackImage("redbullring.png") },
+            "misano": { name: "MISANO", length: "4.23 km", curves: "16 (6 Izq, 10 Der)", record: "1'30.390", speed: "300.2 km/h", desc: "Pista técnica, plana y con poco margen de error a orillas del Adriático.", img: resolveTrackImage("misano.png") },
+            "aragon": { name: "MOTORLAND", length: "5.08 km", curves: "17 (10 Izq, 7 Der)", record: "1'46.069", speed: "345.8 km/h", desc: "Destaca por su espectacular sacacorchos inverso y una larguísima recta trasera en bajada.", img: resolveTrackImage("aragon.png") },
+            "phillipisland": { name: "PHILLIP_IS", length: "4.45 km", curves: "12 (7 Izq, 5 Der)", record: "1'27.246", speed: "349.5 km/h", desc: "Una pista rapidísima a la orilla del mar donde la valentía del piloto es la clave.", img: resolveTrackImage("philipisland.png") },
+            "sepang": { name: "SEPANG", length: "5.54 km", curves: "15 (5 Izq, 10 Der)", record: "1'57.491", speed: "335.5 km/h", desc: "Asfalto abrasivo y calor extremo. Dos inmensas rectas paralelas terminan en frenadas críticas.", img: resolveTrackImage("sepang.png") },
+            "valencia": { name: "VALENCIA", length: "4.00 km", curves: "14 (9 Izq, 5 Der)", record: "1'28.931", speed: "337.5 km/h", desc: "Trazado estilo estadio, muy estrecho y con multitud de curvas lentas.", img: resolveTrackImage("valencia.png") }
         };
 
         // 3. Inyección de datos
         const urlParams = new URLSearchParams(window.location.search);
         let trackId = urlParams.get('id');
-
-        // Selecciona Jerez por defecto si no hay ID o es incorrecto
-        if (!trackId || !trackData[trackId]) {
-            trackId = "jerez"; 
-        }
+        if (!trackId || !trackData[trackId]) { trackId = "jerez"; } // Carga Jerez por defecto si no hay ID
 
         const data = trackData[trackId];
-
         document.getElementById('track-name').innerHTML = `${data.name}<span>_</span>`;
         document.getElementById('track-length').innerText = data.length;
         document.getElementById('track-curves').innerText = data.curves;
@@ -290,41 +281,101 @@
         document.getElementById('track-desc').innerText = data.desc;
         document.getElementById('map-img').src = data.img;
 
-        // =========================================================
-        // 4. EFECTO HOVER 3D INTERACTIVO
-        // =========================================================
+        // 4. Efecto Hover 3D
         const container3D = document.getElementById('3d-container');
         const img3D = document.getElementById('map-img');
-
-        // Solo aplicamos el efecto 3D si estamos en escritorio para no volver loco el scroll en móviles
         if (window.innerWidth > 850) {
             container3D.addEventListener('mousemove', (e) => {
                 const rect = container3D.getBoundingClientRect();
                 const x = e.clientX - rect.left;
                 const y = e.clientY - rect.top;
-                
-                const centerX = rect.width / 2;
-                const centerY = rect.height / 2;
-                
-                const rotateX = ((y - centerY) / centerY) * -20; 
-                const rotateY = ((x - centerX) / centerX) * 20;
+                const rotateX = ((y - (rect.height / 2)) / (rect.height / 2)) * -20; 
+                const rotateY = ((x - (rect.width / 2)) / (rect.width / 2)) * 20;
 
-                // SE ELIMINÓ grayscale(100%) AQUÍ
                 img3D.style.transform = `rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale3d(1.05, 1.05, 1.05)`;
                 img3D.style.filter = `drop-shadow(${rotateY * -1}px ${rotateX * 1 + 20}px 30px rgba(225,0,0,0.6)) contrast(150%)`;
             });
-
             container3D.addEventListener('mouseleave', () => {
                 img3D.style.transition = 'transform 0.5s ease-out, filter 0.5s ease-out';
                 img3D.style.transform = `rotateX(0deg) rotateY(0deg) scale3d(1, 1, 1)`;
-                // SE ELIMINÓ grayscale(100%) AQUÍ
                 img3D.style.filter = `drop-shadow(0 0 20px rgba(225,0,0,0.3)) contrast(150%)`;
-                
-                setTimeout(() => {
-                    img3D.style.transition = 'transform 0.1s ease-out, filter 0.3s ease-out';
-                }, 500);
+                setTimeout(() => { img3D.style.transition = 'transform 0.1s ease-out, filter 0.3s ease-out'; }, 500);
             });
         }
+
+        // 5. CREADOR DEL MENÚ DE CIRCUITOS Y ANIMACIÓN DE EXPANSIÓN
+        const gridContainer = document.getElementById('maps-target');
+        
+        Object.keys(trackData).forEach(key => {
+            const circuit = trackData[key];
+            const card = document.createElement('div');
+            card.className = 'map-card';
+            
+            // Marcar visualmente el circuito actual en el menú
+            if (key === trackId) { card.style.borderColor = '#444'; }
+            
+            card.innerHTML = `
+                <div class="map-name">${circuit.name}</div>
+                <div class="map-data">${circuit.length} // ${circuit.curves.split(' ')[0]} CURVAS</div>
+                <div class="scan-btn">[ INICIAR ESCANEO ]</div>
+            `;
+
+            // EVENTO PRINCIPAL DE ANIMACIÓN Y TRANSICIÓN
+            card.onclick = function(e) {
+                // Evitar clics múltiples si ya hay una animación en curso
+                if (document.querySelector('.is-expanding')) return;
+                
+                // Marcamos que esta tarjeta se está expandiendo
+                this.classList.add('is-expanding');
+
+                // PASO 1: Obtener coordenadas de la tarjeta clickeada
+                const rect = this.getBoundingClientRect();
+                
+                // PASO 2: Extraer la tarjeta del grid y fijarla en la pantalla exactamente donde estaba
+                this.style.position = 'fixed';
+                this.style.top = rect.top + 'px';
+                this.style.left = rect.left + 'px';
+                this.style.width = rect.width + 'px';
+                this.style.height = rect.height + 'px';
+                this.style.zIndex = '99999';
+                this.style.margin = '0';
+                
+                // PASO 3: Disparar el "latido"
+                this.classList.add('clicked-pulse');
+                
+                // PASO 4: Tras el latido, expandir a pantalla completa
+                setTimeout(() => {
+                    this.classList.remove('clicked-pulse'); // Quitamos latido
+                    
+                    // Forzamos transición de tamaño y color
+                    this.style.transition = 'all 0.6s cubic-bezier(0.8, 0, 0.2, 1)';
+                    
+                    // Expansión total
+                    this.style.top = '0px';
+                    this.style.left = '0px';
+                    this.style.width = '100vw';
+                    this.style.height = '100vh';
+                    
+                    // Oscurecer la pantalla
+                    this.style.backgroundColor = 'var(--black)'; 
+                    this.style.borderColor = 'var(--black)';
+                    
+                    // Desvanecer el texto interno
+                    Array.from(this.children).forEach(child => {
+                        child.style.transition = 'opacity 0.2s ease-out';
+                        child.style.opacity = '0';
+                    });
+                    
+                }, 350); // 350ms (duración del latido)
+
+                // PASO 5: Navegar cuando la pantalla ya está en negro
+                setTimeout(() => {
+                    window.location.href = `?id=${key}`;
+                }, 900); // 350ms (latido) + 550ms (expansión)
+            };
+
+            gridContainer.appendChild(card);
+        });
     </script>
 </body>
 </html>

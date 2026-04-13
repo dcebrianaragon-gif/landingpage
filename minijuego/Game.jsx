@@ -8,6 +8,7 @@ import Minimap from '@/components/game/Minimap';
 import GameMenu from '@/components/game/GameMenu';
 import { Link } from 'react-router-dom';
 import { Settings } from 'lucide-react';
+import { localData } from '@/data/localData.js';
 
 export default function Game() {
   const containerRef = useRef(null);
@@ -59,12 +60,32 @@ export default function Game() {
 
   const { data: circuits = [], isLoading: loadingCircuits } = useQuery({
     queryKey: ['circuits'],
-    queryFn: () => base44.entities.Circuit.list(),
+    queryFn: async () => {
+      try {
+        const remoteCircuits = await base44.entities.Circuit.list();
+        if (Array.isArray(remoteCircuits) && remoteCircuits.length > 0) {
+          return remoteCircuits;
+        }
+      } catch (error) {
+        console.warn('Fallo al cargar circuitos remotos, usando datos locales.', error);
+      }
+      return localData.listCircuits();
+    },
   });
 
   const { data: bikes = [], isLoading: loadingBikes } = useQuery({
     queryKey: ['bikes'],
-    queryFn: () => base44.entities.Bike.list(),
+    queryFn: async () => {
+      try {
+        const remoteBikes = await base44.entities.Bike.list();
+        if (Array.isArray(remoteBikes) && remoteBikes.length > 0) {
+          return remoteBikes;
+        }
+      } catch (error) {
+        console.warn('Fallo al cargar motos remotas, usando datos locales.', error);
+      }
+      return localData.listBikes();
+    },
   });
 
   // Set defaults when data loads
