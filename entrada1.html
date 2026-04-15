@@ -89,7 +89,6 @@
         nav a:hover::before { width: 100%; }
         nav a.is-active { opacity: 1; color: #fff; }
         nav a.is-active::before { width: 100%; background: #fff; }
-
         main, footer {
             opacity: 1;
             transform: translateY(0);
@@ -559,10 +558,31 @@
         });
     }
 
+    function restoreHomeScroll() {
+        const storedScroll = sessionStorage.getItem('entrada1ScrollY');
+        if (!storedScroll) return;
+
+        sessionStorage.removeItem('entrada1ScrollY');
+        requestAnimationFrame(() => {
+            window.scrollTo(0, parseInt(storedScroll, 10) || 0);
+            revealElements();
+        });
+    }
+
+    function registerHomeStateLinks() {
+        document.querySelectorAll('a[href="motos.html"]').forEach(link => {
+            link.addEventListener('click', () => {
+                sessionStorage.setItem('entrada1ScrollY', String(window.scrollY));
+            });
+        });
+    }
+
     document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('body-main').classList.add('ready');
         initTeams();
         revealElements();
+        restoreHomeScroll();
+        registerHomeStateLinks();
     });
 
     let lastScroll = 0;
