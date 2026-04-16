@@ -5,7 +5,16 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MOTOGP™ ULTIMATE TERMINAL | PROTOCOL 2026</title>
     <script>
-        if (sessionStorage.getItem('entrada1LoaderDone') !== 'true') {
+        function safeSessionStorageGet(key) {
+            try {
+                return window.sessionStorage.getItem(key);
+            } catch (error) {
+                console.warn('No se pudo leer sessionStorage:', error);
+                return null;
+            }
+        }
+
+        if (safeSessionStorageGet('entrada1LoaderDone') !== 'true') {
             window.location.replace('loadervideo.html');
         }
     </script>
@@ -559,10 +568,22 @@
     }
 
     function restoreHomeScroll() {
-        const storedScroll = sessionStorage.getItem('entrada1ScrollY');
+        let storedScroll = null;
+
+        try {
+            storedScroll = sessionStorage.getItem('entrada1ScrollY');
+        } catch (error) {
+            console.warn('No se pudo restaurar el scroll guardado:', error);
+        }
+
         if (!storedScroll) return;
 
-        sessionStorage.removeItem('entrada1ScrollY');
+        try {
+            sessionStorage.removeItem('entrada1ScrollY');
+        } catch (error) {
+            console.warn('No se pudo limpiar el scroll guardado:', error);
+        }
+
         requestAnimationFrame(() => {
             window.scrollTo(0, parseInt(storedScroll, 10) || 0);
             revealElements();
@@ -572,7 +593,11 @@
     function registerHomeStateLinks() {
         document.querySelectorAll('a[href="motos.html"]').forEach(link => {
             link.addEventListener('click', () => {
-                sessionStorage.setItem('entrada1ScrollY', String(window.scrollY));
+                try {
+                    sessionStorage.setItem('entrada1ScrollY', String(window.scrollY));
+                } catch (error) {
+                    console.warn('No se pudo guardar el scroll actual:', error);
+                }
             });
         });
     }
@@ -687,6 +712,12 @@ document.addEventListener("DOMContentLoaded", () => {
     const overlayClose = document.getElementById('track-overlay-close');
     const container3D = document.getElementById('3d-container');
     const img3D = document.getElementById('map-img');
+
+    if (!body || !mapsTarget || !overlay || !overlayClose || !img3D) {
+        console.warn('Faltan elementos del DOM necesarios para inicializar los circuitos.');
+        return;
+    }
+
     const trackImageFallback = "jerez.png";
     const availableTrackImages = new Set(["assen.png", "jerez.png", "mugello.png", "philipisland.png", "sachsenring.png", "valencia.png"]);
     const resolveTrackImage = (imageName) => availableTrackImages.has(imageName) ? imageName : trackImageFallback;

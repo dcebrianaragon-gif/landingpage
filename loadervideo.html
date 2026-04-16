@@ -230,7 +230,7 @@ body.content-visible #main-content {
 
     <div id="loader">
         <video id="video-bg" autoplay muted playsinline loop>
-            <source src="Moto_en_túnel_en_primera_persona.mp4" type="video/mp4">
+            <source src="Moto_en_t%C3%BAnel_en_primera_persona.mp4" type="video/mp4">
         </video>
         
         <div id="counter-wrapper">
@@ -251,6 +251,11 @@ body.content-visible #main-content {
             const counterElement = document.getElementById("counter");
             const body = document.body;
             let isTransitioning = false;
+
+            if (!counterElement) {
+                console.warn("No se encontro el contador del loader.");
+                return;
+            }
             
             // Configuración de la animación
             const duration = 3000; // 3 segundos de carga
@@ -302,7 +307,12 @@ body.content-visible #main-content {
 
                 // 3. Entramos en la portada tras mostrar el mensaje y cerrar el loader
                 setTimeout(() => {
-                    sessionStorage.setItem("entrada1LoaderDone", "true");
+                    try {
+                        sessionStorage.setItem("entrada1LoaderDone", "true");
+                    } catch (error) {
+                        console.warn("No se pudo guardar el estado del loader:", error);
+                    }
+
                     window.location.replace("entrada1.html");
                 }, 2600);
             }
