@@ -383,6 +383,41 @@
                 <li><a href="#teams">Equipos</a></li>
                 <li><a href="motos.html">Motos 2026</a></li>
                 <li><a href="minijuego3d.html" style="color:var(--red);text-shadow:0 0 5px var(--red);">[ Simulador 3D ]</a></li>
+                <li><style>
+    .btn-registro-motogp {
+        display: inline-block; /* Permite ajustar márgenes y relleno como un botón */
+        background: linear-gradient(135deg, #e10600 0%, #8a0400 100%); /* Rojo Racing */
+        color: white;
+        padding: 15px 35px;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        font-size: 18px;
+        font-weight: bold;
+        font-style: italic; /* Letra inclinada para dar velocidad */
+        text-transform: uppercase;
+        text-decoration: none; /* Quita la línea de abajo típica de los enlaces */
+        border-radius: 6px;
+        border: 2px solid #111; /* Borde oscuro */
+        box-shadow: 0 4px 15px rgba(225, 6, 0, 0.4); /* Brillo rojo alrededor */
+        transition: all 0.3s ease; /* Animación suave */
+        cursor: pointer;
+    }
+
+    /* Efecto cuando el ratón pasa por encima */
+    .btn-registro-motogp:hover {
+        transform: translateY(-3px) scale(1.05); /* Se levanta y se hace un poco más grande */
+        box-shadow: 0 8px 25px rgba(225, 6, 0, 0.7); /* El brillo se hace más intenso */
+        background: linear-gradient(135deg, #ff1a1a 0%, #c40500 100%);
+    }
+    
+    /* Efecto cuando haces clic (se hunde) */
+    .btn-registro-motogp:active {
+        transform: translateY(2px) scale(0.98);
+        box-shadow: 0 2px 10px rgba(225, 6, 0, 0.4);
+    }
+</style>
+
+
+<a href="registro.html" class="btn-registro-motogp">🏁 Fichar Nuevo Piloto</a></li>
             </ul>
         </nav>
     </header>
@@ -853,5 +888,301 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 });
 </script>
+<style>
+    /* El botón flotante del Piloto/Ingeniero */
+    #pilot-ai-btn {
+        position: fixed; bottom: 30px; right: 30px; width: 70px; height: 70px;
+        background: linear-gradient(135deg, #e10600 0%, #8a0400 100%);
+        border: 3px solid #111; border-radius: 50%;
+        box-shadow: 0 4px 15px rgba(225, 6, 0, 0.4);
+        cursor: pointer; display: flex; justify-content: center; align-items: center;
+        font-size: 30px; transition: transform 0.3s, box-shadow 0.3s; z-index: 1000;
+    }
+    #pilot-ai-btn:hover { transform: scale(1.1); box-shadow: 0 6px 20px rgba(225, 6, 0, 0.6); }
+
+    /* El panel de comunicación (Chatbox) */
+    #ai-radio-panel {
+        position: fixed; bottom: 120px; right: 30px; width: 320px;
+        background: #1a1a1a; border: 2px solid #333; border-top: 4px solid #e10600;
+        border-radius: 10px; box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+        display: none; flex-direction: column; z-index: 999;
+        font-family: 'Segoe UI', Tahoma, sans-serif; overflow: hidden;
+    }
+    #ai-radio-panel.active { display: flex; animation: popUp 0.3s ease-out; }
+
+    .radio-header { background: #222; padding: 15px; color: white; font-weight: bold; font-style: italic; text-transform: uppercase; border-bottom: 1px solid #444; display: flex; justify-content: space-between; }
+    .radio-body { height: 300px; padding: 15px; overflow-y: auto; color: #ddd; font-size: 14px; display: flex; flex-direction: column; gap: 10px; }
+    
+    .msg { padding: 10px; border-radius: 8px; max-width: 85%; line-height: 1.4; }
+    .msg-ia { background: #333; align-self: flex-start; border-left: 3px solid #e10600; }
+    .msg-user { background: #e10600; color: white; align-self: flex-end; }
+
+    .radio-config {
+        display: flex; flex-direction: column; gap: 8px; padding: 12px 15px;
+        background: #161616; border-bottom: 1px solid #303030;
+    }
+    .radio-config label {
+        color: #bbb; font-size: 12px; letter-spacing: 0.5px;
+    }
+    .radio-config-row {
+        display: flex; gap: 8px; align-items: center;
+    }
+    .radio-config input {
+        flex: 1; padding: 10px; background: #111; border: 1px solid #444;
+        color: white; border-radius: 4px; outline: none;
+    }
+    .radio-config button {
+        background: transparent; color: #fff; border: 1px solid #555;
+        padding: 10px 12px; border-radius: 4px; cursor: pointer; white-space: nowrap;
+    }
+    .radio-hint {
+        color: #8f8f8f; font-size: 12px; line-height: 1.4;
+    }
+
+    .radio-footer { display: flex; padding: 10px; background: #222; border-top: 1px solid #444; }
+    .radio-footer input { flex: 1; padding: 10px; background: #111; border: 1px solid #444; color: white; border-radius: 4px; outline: none; }
+    .radio-footer button { background: #e10600; color: white; border: none; padding: 10px 15px; margin-left: 10px; border-radius: 4px; cursor: pointer; font-weight: bold; }
+    .radio-footer button:disabled { opacity: 0.55; cursor: wait; }
+
+    @keyframes popUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+</style>
+
+<div id="pilot-ai-btn" onclick="toggleRadio()">🪖</div>
+
+<div id="ai-radio-panel">
+    <div class="radio-header">
+        <span>📡 Team Radio (Muro)</span>
+        <span style="cursor:pointer; color:#888;" onclick="toggleRadio()">✖</span>
+    </div>
+    <div class="radio-config">
+        <label for="geminiApiKey">Clave API de Gemini opcional</label>
+        <div class="radio-config-row">
+            <input type="password" id="geminiApiKey" placeholder="Pega tu API key aquí">
+            <button type="button" onclick="guardarApiKey()">Guardar</button>
+        </div>
+        <div class="radio-hint" id="apiKeyStatus">Sin clave el ingeniero responde en modo local. Si guardas una clave, intentará usar Gemini.</div>
+    </div>
+    <div class="radio-body" id="chat-box">
+        <div class="msg msg-ia">
+            <strong>Ingeniero:</strong> Conexión establecida. Los calentadores están fuera y la pista está a 42ºC. ¿Cómo notas la moto en la vuelta de calentamiento?
+        </div>
+    </div>
+    <div class="radio-footer">
+        <input type="text" id="userInput" placeholder="Hablar por radio..." onkeypress="handleEnter(event)">
+        <button id="sendButton" onclick="enviarMensaje()">Enviar</button>
+    </div>
+</div>
+
+<script>
+    const GEMINI_STORAGE_KEY = 'motogpGeminiApiKey';
+    const GEMINI_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent';
+
+    function escapeHtml(texto) {
+        const div = document.createElement('div');
+        div.textContent = texto;
+        return div.innerHTML;
+    }
+
+    function appendMessage(chatBox, className, speaker, message, extraStyle = '') {
+        const safeSpeaker = escapeHtml(speaker);
+        const safeMessage = escapeHtml(message).replace(/\n/g, '<br>');
+        chatBox.innerHTML += `<div class="msg ${className}"${extraStyle ? ` style="${extraStyle}"` : ''}><strong>${safeSpeaker}:</strong> ${safeMessage}</div>`;
+        chatBox.scrollTop = chatBox.scrollHeight;
+    }
+
+    function obtenerApiKey() {
+        return localStorage.getItem(GEMINI_STORAGE_KEY)?.trim() || '';
+    }
+
+    function actualizarEstadoApiKey() {
+        const input = document.getElementById('geminiApiKey');
+        const status = document.getElementById('apiKeyStatus');
+        const hasKey = Boolean(obtenerApiKey());
+
+        if (input) input.value = obtenerApiKey();
+        if (status) {
+            status.textContent = hasKey
+                ? 'Clave guardada. El ingeniero intentará usar Gemini; si falla, caerá al modo local.'
+                : 'Modo local activo. El chat funciona sin API key y responde desde la propia página.';
+        }
+    }
+
+    function elegirElemento(lista) {
+        return lista[Math.floor(Math.random() * lista.length)];
+    }
+
+    function generarRespuestaLocal(mensaje) {
+        const texto = mensaje.toLowerCase();
+
+        const aperturas = [
+            'Recibido. Datos claros desde el muro.',
+            'Copiado, piloto. Tengo telemetría suficiente.',
+            'Entendido. Te leo limpio por radio.',
+            'Recibido. Ajuste localizado.'
+        ];
+
+        const cierres = [
+            'Mantén referencia en el ápice y dame otra vuelta.',
+            'Confirma en el siguiente sector y vemos si abre gas antes.',
+            'Sigue empujando, pero sin castigar el trasero.',
+            'Necesito una vuelta más para cerrar diagnóstico.'
+        ];
+
+        const reglas = [
+            {
+                test: /grip|agarre|patina|patina|desliza|resbala|slide|trasera|rear/,
+                respuesta: 'La trasera está trabajando fuera de ventana. Prueba entrada un poco más recta, abre gas medio metro más tarde y usa mapa más suave a la salida para recuperar tracción.'
+            },
+            {
+                test: /delante|delantera|front|subvir|no gira|gira poco|mete/,
+                respuesta: 'La moto no está cargando suficiente delante en mitad de curva. Suelta freno de forma más progresiva, busca el ápice un poco más tarde y mantén presión inicial para ayudar al giro.'
+            },
+            {
+                test: /freno|frenada|bloquea|bloqueo|pasado|parar/,
+                respuesta: 'Estamos al límite en la frenada. Retrasa menos la referencia, entra con la moto más estable y evita soltar la maneta de golpe porque estás descargando demasiado rápido el tren delantero.'
+            },
+            {
+                test: /wheelie|caballito|levanta|levanta mucho/,
+                respuesta: 'Hay demasiado lift en aceleración. Usa mapa de motor más contenido y abre más progresivo en primera fase; necesitamos mantener la rueda delantera tocando pista para no perder drive.'
+            },
+            {
+                test: /neumatic|goma|blando|duro|medium|duro|temperatura/,
+                respuesta: 'La goma se está saliendo de la ventana ideal. No la deslices en apoyo largo y gestiona mejor la salida para no cocinar el compuesto trasero en las dos próximas vueltas.'
+            },
+            {
+                test: /recta|velocidad punta|rebufo|motor|corta|potencia/,
+                respuesta: 'En recta no estamos maximizando drive. Prioriza salida limpia de la última curva y usa el rebufo si tienes referencia delante; el problema nace antes de la recta, no al final.'
+            },
+            {
+                test: /vibra|vibracion|chattering|rebota|bota/,
+                respuesta: 'Tenemos chatter en apoyo. Reduce agresividad en la entrada, evita cargar tanto ángulo tan pronto y déjame comparar si aparece por frecuencia en el tercer sector.'
+            },
+            {
+                test: /lluvia|mojado|agua|wet/,
+                respuesta: 'Condición delicada. Busca menos ángulo, entrada redonda y gas muy progresivo. En mojado vale más mantener temperatura y confianza que atacar una sola frenada.'
+            }
+        ];
+
+        const regla = reglas.find((item) => item.test.test(texto));
+        const diagnostico = regla
+            ? regla.respuesta
+            : 'La base no está mal, pero la moto pide una trazada más limpia. Prioriza estabilidad en entrada, paciencia en el centro y acelera solo cuando la veas realmente cerrada.';
+
+        return `${elegirElemento(aperturas)} ${diagnostico}\n\n${elegirElemento(cierres)}`;
+    }
+
+    function guardarApiKey() {
+        const input = document.getElementById('geminiApiKey');
+        const apiKey = input.value.trim();
+
+        if (!apiKey) {
+            localStorage.removeItem(GEMINI_STORAGE_KEY);
+            actualizarEstadoApiKey();
+            return;
+        }
+
+        localStorage.setItem(GEMINI_STORAGE_KEY, apiKey);
+        actualizarEstadoApiKey();
+    }
+
+    // --- 1. LÓGICA DE LA INTERFAZ ---
+    function toggleRadio() {
+        document.getElementById('ai-radio-panel').classList.toggle('active');
+    }
+
+    function handleEnter(event) {
+        if (event.key === "Enter") enviarMensaje();
+    }
+
+    async function enviarMensaje() {
+        const inputField = document.getElementById('userInput');
+        const mensajeTexto = inputField.value.trim();
+        const chatBox = document.getElementById('chat-box');
+        const sendButton = document.getElementById('sendButton');
+
+        if (mensajeTexto === "") return;
+
+        appendMessage(chatBox, 'msg-user', 'Tú', mensajeTexto);
+        inputField.value = ""; 
+        if (sendButton) sendButton.disabled = true;
+
+        try {
+            await conectarConIAReal(mensajeTexto, chatBox);
+        } finally {
+            if (sendButton) sendButton.disabled = false;
+        }
+    }
+
+    // --- 2. CONEXIÓN CON LA IA (GEMINI API) ---
+    async function conectarConIAReal(mensaje, chatBox) {
+        const apiKey = obtenerApiKey();
+        
+        // Mensaje de carga mientras piensa
+        const idCarga = "carga-" + Date.now();
+        chatBox.innerHTML += `<div id="${idCarga}" class="msg msg-ia" style="color: #aaa;"><strong>Ingeniero:</strong> Revisando telemetría... ⏳</div>`;
+        chatBox.scrollTop = chatBox.scrollHeight;
+
+        if (!apiKey) {
+            await new Promise((resolve) => setTimeout(resolve, 500));
+            document.getElementById(idCarga)?.remove();
+            appendMessage(chatBox, 'msg-ia', 'Ingeniero', generarRespuestaLocal(mensaje));
+            return;
+        }
+
+        const contexto = "Eres el ingeniero de pista jefe de un equipo de MotoGP. Estás hablando por radio con tu piloto durante una sesión. Sé técnico, usa jerga de carreras real (grip, ápice, rebufo, compuesto duro/blando, setup, frenada, mapas de motor). Responde de forma muy directa y breve, en 1 o 2 párrafos cortos como máximo, porque estás en medio de la carrera. El piloto te dice esto por la radio: ";
+        
+        try {
+            const respuesta = await fetch(GEMINI_URL, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "x-goog-api-key": apiKey
+                },
+                body: JSON.stringify({
+                    contents: [{
+                        role: "user",
+                        parts: [{ text: contexto + mensaje }]
+                    }],
+                    generationConfig: {
+                        temperature: 0.8,
+                        maxOutputTokens: 220
+                    }
+                })
+            });
+
+            if (!respuesta.ok) {
+                const errorText = await respuesta.text();
+                throw new Error(`Gemini devolvió ${respuesta.status}: ${errorText}`);
+            }
+
+            const datos = await respuesta.json();
+            
+            // Borramos el mensaje de "Revisando..."
+            document.getElementById(idCarga)?.remove();
+
+            // Verificamos si la IA nos devolvió un mensaje correcto
+            const respuestaIA = datos?.candidates?.[0]?.content?.parts
+                ?.map((part) => part.text || '')
+                .join('\n')
+                .trim();
+
+            if (respuestaIA) {
+                const respuestaLimpia = respuestaIA.replace(/\*\*/g, '');
+                appendMessage(chatBox, 'msg-ia', 'Ingeniero', respuestaLimpia);
+            } else {
+                appendMessage(chatBox, 'msg-ia', 'Ingeniero', 'Repite, piloto. Hay interferencias en el canal.', 'color: #ffaa00;');
+            }
+
+        } catch (error) {
+            document.getElementById(idCarga)?.remove();
+            appendMessage(chatBox, 'msg-ia', 'Sistema', 'Gemini no respondió. Sigo en modo local para no cortar la radio.', 'color: #ffaa00;');
+            appendMessage(chatBox, 'msg-ia', 'Ingeniero', generarRespuestaLocal(mensaje));
+            console.error("Error con la API:", error);
+        }
+    }
+
+    actualizarEstadoApiKey();
+</script>
+
 </body>
 </html>

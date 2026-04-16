@@ -3,176 +3,292 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Registro - Mi Sitio</title>
+    <title>Registro MotoGP</title>
     <style>
-        /* Diseño general de la página */
+        :root {
+            --red: #e10600;
+            --bg: #111;
+            --panel: #1a1a1a;
+            --line: #333;
+            --text: #fff;
+            --muted: #9a9a9a;
+        }
+
+        * { box-sizing: border-box; }
+
         body {
+            margin: 0;
+            min-height: 100vh;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #f4f7f6;
+            background: radial-gradient(circle at top, rgba(225, 6, 0, 0.12), transparent 28%), var(--bg);
+            color: var(--text);
             display: flex;
             justify-content: center;
             align-items: center;
-            height: 100vh;
-            margin: 0;
+            padding: 24px;
         }
-        
-        /* Contenedor del formulario (La tarjeta blanca) */
-        .register-container {
-            background-color: white;
-            padding: 40px;
-            border-radius: 10px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
-            width: 100%;
-            max-width: 400px;
-            box-sizing: border-box;
+
+        .box {
+            width: min(100%, 460px);
+            background: var(--panel);
+            padding: 36px;
+            border-radius: 14px;
+            border: 1px solid var(--line);
+            border-left: 5px solid var(--red);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.35);
         }
-        
-        .register-container h2 {
-            text-align: center;
-            color: #333;
-            margin-top: 0;
-            margin-bottom: 25px;
+
+        h1 {
+            margin: 0 0 14px;
+            color: var(--red);
+            font-style: italic;
+            text-transform: uppercase;
+            letter-spacing: 1px;
         }
-        
-        /* Estilos de los campos de entrada */
-        .form-group {
-            margin-bottom: 20px;
+
+        p {
+            margin: 0 0 20px;
+            color: var(--muted);
+            line-height: 1.5;
         }
-        
-        .form-group label {
-            display: block;
-            margin-bottom: 8px;
-            color: #555;
-            font-weight: 500;
+
+        .server-box {
+            margin-bottom: 18px;
+            padding: 12px;
+            background: #151515;
+            border: 1px solid #2a2a2a;
+            border-radius: 6px;
+            color: #cfcfcf;
+            font-size: 13px;
+            line-height: 1.5;
         }
-        
-        .form-group input {
+
+        input {
             width: 100%;
             padding: 12px;
-            border: 1px solid #ccc;
+            margin-bottom: 14px;
+            background: #333;
+            border: 1px solid #444;
+            color: white;
             border-radius: 6px;
-            box-sizing: border-box;
-            font-size: 15px;
-            transition: border-color 0.3s;
+            font-size: 14px;
         }
-        
-        .form-group input:focus {
-            border-color: #00bcd4; /* Color cyan que combina con tu juego */
-            outline: none;
-            box-shadow: 0 0 5px rgba(0, 188, 212, 0.3);
-        }
-        
-        /* Botón de registro */
-        .btn-submit {
+
+        button {
             width: 100%;
-            padding: 14px;
-            background-color: #00bcd4;
+            background: var(--red);
             color: white;
             border: none;
-            border-radius: 6px;
-            font-size: 16px;
+            padding: 14px 16px;
             font-weight: bold;
             cursor: pointer;
-            transition: background-color 0.3s, transform 0.1s;
+            text-transform: uppercase;
+            border-radius: 6px;
+            transition: background 0.2s ease, transform 0.2s ease;
         }
-        
-        .btn-submit:hover {
-            background-color: #008ba3;
+
+        button:hover {
+            background: #ff1a1a;
+            transform: translateY(-1px);
         }
-        
-        .btn-submit:active {
-            transform: scale(0.98);
+
+        button:disabled {
+            opacity: 0.6;
+            cursor: wait;
         }
-        
-        /* Mensajes de error y enlaces */
-        .error-message {
-            color: #ff4444;
+
+        .status {
+            margin-top: 18px;
             font-size: 14px;
-            text-align: center;
-            margin-top: 15px;
-            display: none; /* Oculto por defecto */
+            color: var(--muted);
+            line-height: 1.5;
+            white-space: pre-line;
         }
-        
-        .login-link {
-            text-align: center;
-            margin-top: 25px;
-            font-size: 14px;
-            color: #666;
+
+        .status.ok { color: #a7ffb0; }
+        .status.warn { color: #ffd36c; }
+        .status.error { color: #ff8b8b; }
+    </style>
+    <style>
+        .records-container {
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid var(--line);
         }
-        
-        .login-link a {
-            color: #00bcd4;
-            text-decoration: none;
-            font-weight: bold;
+        .records-container h2 {
+            margin-bottom: 15px;
+            font-size: 16px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--muted);
         }
-        
-        .login-link a:hover {
-            text-decoration: underline;
+        #recordsList {
+            list-style: none;
+            padding: 0;
+            max-height: 240px;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
         }
+        #recordsList li {
+            background: #222;
+            padding: 10px 14px;
+            margin-bottom: 8px;
+            border-radius: 4px;
+            font-size: 13px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        #recordsList .record-main { font-weight: bold; }
+        #recordsList .record-meta { font-size: 11px; color: #888; text-align: right; }
+        #recordsList::-webkit-scrollbar { width: 4px; }
+        #recordsList::-webkit-scrollbar-track { background: #111; }
+        #recordsList::-webkit-scrollbar-thumb { background: var(--red); }
     </style>
 </head>
 <body>
+    <div class="box">
+        <h1>MotoGP Registry</h1>
+        <p>El registro se guarda directamente en tu `fichajeregistros.json` cuando abras esta página desde el servidor local.</p>
 
-    <div class="register-container">
-        <h2>Crear una Cuenta</h2>
-        
-        <form id="registerForm">
-            <div class="form-group">
-                <label for="username">Nombre de Piloto</label>
-                <input type="text" id="username" placeholder="Ej: SpeedRacer99" required minlength="3">
-            </div>
-            
-            <div class="form-group">
-                <label for="email">Correo electrónico</label>
-                <input type="email" id="email" placeholder="tu@email.com" required>
-            </div>
-            
-            <div class="form-group">
-                <label for="password">Contraseña</label>
-                <input type="password" id="password" placeholder="Mínimo 6 caracteres" required minlength="6">
-            </div>
-            
-            <div class="form-group">
-                <label for="confirmPassword">Confirmar contraseña</label>
-                <input type="password" id="confirmPassword" placeholder="Repite tu contraseña" required minlength="6">
-            </div>
-            
-            <button type="submit" class="btn-submit">Registrarse e ir a la entrada</button>
-            <p id="errorMsg" class="error-message">Las contraseñas no coinciden.</p>
-        </form>
-        
-        <div class="login-link">
-            ¿Ya tienes cuenta? <a href="#">Inicia sesión aquí</a>
+        <div class="server-box" id="serverInfo">Comprobando conexión con el servidor local...</div>
+
+        <input type="text" id="name" placeholder="Nombre del piloto">
+        <input type="text" id="team" placeholder="Escudería">
+        <input type="email" id="email" placeholder="Correo electrónico">
+
+        <button type="button" id="btnSave">Registrar piloto</button>
+
+        <div id="msg" class="status">Listo para nueva entrada...</div>
+
+        <div class="records-container">
+            <h2>Pilotos Fichados</h2>
+            <ul id="recordsList"></ul>
         </div>
     </div>
 
     <script>
-        // Lógica de validación y redirección
-        document.getElementById('registerForm').addEventListener('submit', function(e) {
-            e.preventDefault(); // Evita que la página se recargue al enviar el formulario
+        const API_BASE = window.location.origin;
 
-            const username = document.getElementById('username').value;
-            const password = document.getElementById('password').value;
-            const confirmPassword = document.getElementById('confirmPassword').value;
-            const errorMsg = document.getElementById('errorMsg');
+        function setStatus(message, type = '') {
+            const msg = document.getElementById('msg');
+            msg.className = `status${type ? ` ${type}` : ''}`;
+            msg.textContent = message;
+        }
 
-            // 1. Validar que las contraseñas sean iguales
-            if (password !== confirmPassword) {
-                errorMsg.style.display = 'block';
-                return; // Detiene la ejecución aquí si hay error
+        function setServerInfo(message, type = '') {
+            const info = document.getElementById('serverInfo');
+            info.textContent = message;
+            info.style.borderColor = type === 'error' ? '#6a1a1a' : '#2a2a2a';
+        }
+
+        function clearForm() {
+            document.getElementById('name').value = '';
+            document.getElementById('team').value = '';
+            document.getElementById('email').value = '';
+        }
+
+        function buildRecord() {
+            const name = document.getElementById('name').value.trim();
+            const team = document.getElementById('team').value.trim();
+            const email = document.getElementById('email').value.trim();
+
+            if (!name || !team || !email) {
+                throw new Error('Por favor, rellena nombre, escudería y correo.');
             }
 
-            // Si todo está correcto, ocultamos el error (por si estaba visible)
-            errorMsg.style.display = 'none';
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(email)) {
+                throw new Error('Por favor, introduce un correo electrónico válido.');
+            }
 
-            // 2. Guardar el nombre de usuario en el navegador (opcional, como hicimos en el juego)
-            localStorage.setItem('motoPlayer', username);
+            return {
+                piloto: name,
+                escuderia: team,
+                email
+            };
+        }
 
-            // 3. Redirigir al usuario a entrada1.html
-            // Nota: Para que esto funcione, entrada1.html debe estar en la misma carpeta que este archivo.
-            window.location.href = 'entrada1.html';
-        });
+        async function checkServer() {
+            try {
+                const response = await fetch(`${API_BASE}/api/registros`, { cache: 'no-store' });
+                if (!response.ok) {
+                    throw new Error(`Servidor devolvió ${response.status}`);
+                }
+
+                const data = await response.json();
+                setServerInfo(`Servidor conectado. Archivo activo: .vscode/fichajeregistros.json. Registros actuales: ${data.length}.`);
+                setStatus(`Base de datos conectada. ${data.length} pilotos en el registro.`, 'ok');
+                loadRecords();
+            } catch (error) {
+                console.error(error);
+                setServerInfo('Servidor local no disponible. Arranca `node server.js` y abre esta página desde http://localhost:5500/registro.html', 'error');
+                setStatus('No hay conexión con el servidor local, así que no puedo guardar en el JSON todavía.', 'error');
+            }
+        }
+
+        async function loadRecords() {
+            try {
+                const response = await fetch(`${API_BASE}/api/registros`, { cache: 'no-store' });
+                if (!response.ok) return;
+
+                const records = await response.json();
+                const list = document.getElementById('recordsList');
+                list.innerHTML = '';
+
+                if (records.length === 0) {
+                    list.innerHTML = '<li>No hay pilotos fichados todavía.</li>';
+                    return;
+                }
+
+                records.reverse().forEach(record => {
+                    const li = document.createElement('li');
+                    li.innerHTML = `
+                        <div class="record-main">${record.piloto} <span style="color: #888; font-weight: normal;">(${record.escuderia})</span></div>
+                        <div class="record-meta">${record.email}<br><span style="font-size: 10px;">${record.fecha_registro}</span></div>
+                    `;
+                    list.appendChild(li);
+                });
+            } catch (error) {
+                console.error('Error cargando registros:', error);
+            }
+        }
+
+        async function saveRecord() {
+            const btn = document.getElementById('btnSave');
+
+            try {
+                const payload = buildRecord();
+                btn.disabled = true;
+
+                const response = await fetch(`${API_BASE}/api/registros`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(payload)
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.error || 'No se pudo guardar el registro.');
+                }
+
+                clearForm();
+                setStatus(`Registro guardado correctamente. Total actual: ${data.total}.`, 'ok');
+                setServerInfo(`Servidor conectado. Registros actuales: ${data.total}.`);
+                loadRecords();
+            } catch (error) {
+                console.error(error);
+                setStatus(error.message || 'No se pudo guardar el registro.', 'error');
+            } finally {
+                btn.disabled = false;
+            }
+        }
+
+        document.getElementById('btnSave').addEventListener('click', saveRecord);
+        checkServer();
     </script>
-
 </body>
 </html>
