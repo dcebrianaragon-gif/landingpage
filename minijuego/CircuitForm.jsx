@@ -11,6 +11,9 @@ export default function CircuitForm({ initial, onSave, onCancel, saving }) {
     flag: initial?.flag || 'ES',
     laps: initial?.laps || 5,
     track_width: initial?.track_width || 13,
+    image_url: initial?.image_url || '',
+    image_aspect: initial?.image_aspect || 1,
+    image_scale: initial?.image_scale || 1.7,
     waypoints: initial?.waypoints || [],
   });
 

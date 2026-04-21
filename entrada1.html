@@ -47,6 +47,9 @@
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             overflow-x: hidden; -webkit-font-smoothing: antialiased; scroll-behavior: smooth;
         }
+        html {
+            scroll-behavior: smooth;
+        }
         
         /* Scanlines Overlay */
         body::after {
@@ -203,6 +206,18 @@
         .team-card:hover img { opacity: 0.9; filter: grayscale(0); }
         .team-label { position: absolute; bottom: 50px; left: 60px; font-family: var(--font-racing); font-size: 45px; pointer-events: none; transition: 0.5s; }
         .team-card:hover .team-label { bottom: 60px; text-shadow: 0 0 20px #000; }
+        .team-card-link { text-decoration: none; color: inherit; display: block; }
+        .team-card-launching { z-index: 60 !important; pointer-events: none; }
+        .team-card-launching img {
+            opacity: 1;
+            filter: grayscale(0) contrast(1.28) saturate(1.25) brightness(1.08);
+            transform-origin: 54% 56%;
+            animation: motoLaunchImage 1.05s cubic-bezier(0.12, 0.86, 0.16, 1) forwards;
+        }
+        .team-card-launching .team-label,
+        .team-card-launching .team-meta {
+            animation: motoLaunchFade 0.55s ease forwards;
+        }
         .team-meta {
             position: absolute; top: 24px; left: 24px; right: 24px; display: flex; justify-content: space-between; align-items: center;
             font-family: var(--font-data); font-size: 10px; letter-spacing: 2px; color: rgba(255,255,255,0.78);
@@ -210,34 +225,217 @@
         .team-meta span {
             padding: 7px 10px; border: 1px solid rgba(255,255,255,0.16); background: rgba(0,0,0,0.4);
         }
+        .moto-launch-overlay {
+            position: fixed; inset: 0; z-index: 999999; pointer-events: none; overflow: hidden;
+            background:
+                radial-gradient(circle at center, rgba(225,0,0,0.16), transparent 30%),
+                rgba(0,0,0,0);
+            opacity: 0;
+            transition: opacity 0.2s ease;
+        }
+        .moto-launch-overlay.active { opacity: 1; }
+        .moto-launch-speedlines {
+            position: absolute;
+            inset: -12% -18%;
+            opacity: 0;
+            transform: skewX(-18deg) translateX(-8%);
+            background:
+                repeating-linear-gradient(
+                    102deg,
+                    transparent 0 34px,
+                    rgba(255,255,255,0.24) 35px 37px,
+                    transparent 38px 88px
+                ),
+                repeating-linear-gradient(
+                    102deg,
+                    transparent 0 74px,
+                    rgba(225,0,0,0.32) 75px 79px,
+                    transparent 80px 150px
+                );
+            mix-blend-mode: screen;
+        }
+        .moto-launch-overlay.active .moto-launch-speedlines {
+            animation: launchSpeedlines 0.9s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+        .moto-launch-smoke,
+        .moto-launch-smoke::before,
+        .moto-launch-smoke::after {
+            content: '';
+            position: absolute;
+            left: 50%;
+            bottom: 14%;
+            width: 24vw;
+            height: 24vw;
+            max-width: 360px;
+            max-height: 360px;
+            min-width: 180px;
+            min-height: 180px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(255,255,255,0.24) 0%, rgba(200,200,200,0.16) 28%, rgba(120,120,120,0.08) 48%, rgba(20,20,20,0) 72%);
+            filter: blur(18px);
+            transform: translate(-50%, 0) scale(0.35);
+            opacity: 0;
+        }
+        .moto-launch-overlay.active .moto-launch-smoke { animation: smokeRiseMain 1.05s cubic-bezier(0.18, 0.9, 0.2, 1) forwards; }
+        .moto-launch-overlay.active .moto-launch-smoke::before {
+            animation: smokeRiseLeft 1.1s cubic-bezier(0.18, 0.9, 0.2, 1) 0.06s forwards;
+        }
+        .moto-launch-overlay.active .moto-launch-smoke::after {
+            animation: smokeRiseRight 1.15s cubic-bezier(0.18, 0.9, 0.2, 1) 0.1s forwards;
+        }
+        .moto-launch-flash {
+            position: absolute; inset: 0;
+            background:
+                radial-gradient(circle at center, rgba(255,255,255,0.22), rgba(225,0,0,0.14) 24%, rgba(0,0,0,0) 56%),
+                linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.16) 48%, transparent 68%);
+            opacity: 0;
+        }
+        .moto-launch-overlay.active .moto-launch-flash { animation: launchFlash 0.85s ease-out forwards; }
+        @keyframes motoLaunchImage {
+            0% { transform: translate3d(0, 0, 0) rotate(0deg) scale(1); }
+            8% { transform: translate3d(-7px, 2px, 0) rotate(-0.7deg) scale(1.025); }
+            16% { transform: translate3d(8px, -2px, 0) rotate(0.55deg) scale(1.045); }
+            28% { transform: translate3d(-5px, -5px, 0) rotate(-0.35deg) scale(1.08); }
+            48% { transform: translate3d(18px, -16px, 0) rotate(0.9deg) scale(1.22); }
+            72% { transform: translate3d(88px, -52px, 0) rotate(1.8deg) scale(1.58); opacity: 1; }
+            100% { transform: translate3d(210px, -105px, 0) rotate(2.6deg) scale(2.05); opacity: 0.2; }
+        }
+        @keyframes motoLaunchFade {
+            from { opacity: 1; transform: translateY(0); }
+            to { opacity: 0; transform: translateY(24px); }
+        }
+        @keyframes smokeRiseMain {
+            0% { opacity: 0; transform: translate(-50%, 24px) scale(0.28); }
+            20% { opacity: 0.9; }
+            100% { opacity: 0; transform: translate(-50%, -180px) scale(1.6); }
+        }
+        @keyframes smokeRiseLeft {
+            0% { opacity: 0; transform: translate(-80%, 22px) scale(0.22); }
+            18% { opacity: 0.75; }
+            100% { opacity: 0; transform: translate(-135%, -200px) scale(1.3); }
+        }
+        @keyframes smokeRiseRight {
+            0% { opacity: 0; transform: translate(-10%, 18px) scale(0.24); }
+            18% { opacity: 0.72; }
+            100% { opacity: 0; transform: translate(24%, -190px) scale(1.35); }
+        }
+        @keyframes launchFlash {
+            0% { opacity: 0; }
+            18% { opacity: 0.95; }
+            100% { opacity: 0; }
+        }
+        @keyframes launchSpeedlines {
+            0% { opacity: 0; transform: skewX(-18deg) translateX(-18%); }
+            16% { opacity: 0.95; }
+            100% { opacity: 0; transform: skewX(-18deg) translateX(28%); }
+        }
 
-        #motos-link { background: linear-gradient(135deg, #050505 0%, #0d0d0d 55%, #050505 100%); }
-        .motos-panel {
-            display: grid; grid-template-columns: 1.1fr 0.9fr; gap: 40px; align-items: center;
-            margin-top: 60px; border: 1px solid #1d1d1d; padding: 40px; background: rgba(255,255,255,0.02);
-            box-shadow: 0 25px 50px rgba(0,0,0,0.35);
+        #pilotos-link {
+            background:
+                radial-gradient(circle at top, rgba(225,0,0,0.12), transparent 32%),
+                linear-gradient(180deg, #040404 0%, #090909 58%, #040404 100%);
+            overflow: hidden;
         }
-        .motos-copy p {
-            font-family: var(--font-data); color: #8a8a8a; font-size: 15px; line-height: 1.9; max-width: 560px;
+        .pilotos-stage {
+            position: relative; min-height: 86vh; margin-top: 40px; border: 1px solid #1d1d1d;
+            display: grid; grid-template-columns: 1.05fr 0.95fr; align-items: stretch;
+            background: rgba(255,255,255,0.02); box-shadow: 0 25px 50px rgba(0,0,0,0.35);
         }
-        .motos-jump {
+        .pilotos-stage::before {
+            content: ''; position: absolute; inset: 0;
+            background:
+                linear-gradient(90deg, rgba(0,0,0,0.88) 0%, rgba(0,0,0,0.68) 45%, rgba(0,0,0,0.24) 100%),
+                linear-gradient(180deg, rgba(225,0,0,0.16), transparent 32%);
+            z-index: 0;
+            pointer-events: none;
+        }
+        .pilotos-stage::after {
+            content: ''; position: absolute; inset: auto 0 0; height: 45%;
+            background: linear-gradient(180deg, transparent, rgba(0,0,0,0.8));
+            pointer-events: none;
+            z-index: 0;
+        }
+        .pilotos-video {
+            position: absolute; inset: 0;
+            width: 100%; height: 100%;
+            object-fit: cover;
+            transform: scale(1.12);
+            opacity: 0.22;
+            transition: transform 1.2s cubic-bezier(0.16, 1, 0.3, 1), opacity 1.2s ease;
+            pointer-events: none;
+        }
+        .pilotos-stage.reveal.active .pilotos-video {
+            transform: scale(1);
+            opacity: 0.62;
+        }
+        .pilotos-copy,
+        .pilotos-grid {
+            position: relative; z-index: 1;
+        }
+        .pilotos-copy {
+            padding: 48px 42px; display: flex; flex-direction: column; justify-content: space-between;
+        }
+        .pilotos-copy h3 {
+            margin: 14px 0 20px; font-family: var(--font-racing); font-size: clamp(42px, 5vw, 72px);
+            line-height: 0.95; font-style: italic;
+        }
+        .pilotos-copy p {
+            max-width: 560px; font-family: var(--font-data); color: #b0b0b0; line-height: 1.9; font-size: 15px;
+        }
+        .pilotos-kickerline {
+            display: flex; gap: 10px; flex-wrap: wrap; margin-top: 24px;
+        }
+        .pilotos-kickerline span {
+            padding: 8px 11px; border: 1px solid rgba(255,255,255,0.12); background: rgba(0,0,0,0.35);
+            color: #d2d2d2; font-family: var(--font-data); font-size: 10px; letter-spacing: 1.6px;
+        }
+        .pilotos-jump {
             display: inline-block; margin-top: 28px; padding: 18px 34px; border: 1px solid var(--red);
             color: #fff; text-decoration: none; font-family: var(--font-data); letter-spacing: 3px; font-size: 12px;
             transition: var(--transition-fast); background: linear-gradient(90deg, rgba(225,0,0,0.12), transparent);
         }
-        .motos-jump:hover { background: var(--red); color: #fff; box-shadow: 0 0 28px rgba(225,0,0,0.35); }
-        .motos-visual {
-            min-height: 360px; background:
-                linear-gradient(180deg, rgba(225,0,0,0.08), rgba(0,0,0,0.05)),
-                url('imagenmoto.jpg') center/cover no-repeat;
-            border: 1px solid #222; clip-path: polygon(8% 0, 100% 0, 92% 100%, 0 100%);
-            position: relative; overflow: hidden;
+        .pilotos-jump:hover { background: var(--red); color: #fff; box-shadow: 0 0 28px rgba(225,0,0,0.35); }
+        .pilotos-grid {
+            display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; padding: 32px;
+            align-content: center;
         }
-        .motos-visual::after {
-            content: 'MOTO_DATA // EXTERNAL_MODULE';
-            position: absolute; left: 20px; bottom: 18px; font-family: var(--font-data);
-            font-size: 11px; letter-spacing: 2px; color: rgba(255,255,255,0.75);
-            background: rgba(0,0,0,0.45); padding: 8px 10px;
+        .piloto-card {
+            min-height: 230px; position: relative; overflow: hidden;
+            border: 1px solid rgba(255,255,255,0.1);
+            background: linear-gradient(180deg, rgba(255,255,255,0.04), rgba(225,0,0,0.03));
+            transform: translateY(46px);
+            opacity: 0;
+            transition: transform 0.9s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.9s ease, border-color 0.3s ease;
+        }
+        .pilotos-stage.reveal.active .piloto-card {
+            transform: translateY(0);
+            opacity: 1;
+        }
+        .pilotos-stage.reveal.active .piloto-card:nth-child(2) { transition-delay: 0.08s; }
+        .pilotos-stage.reveal.active .piloto-card:nth-child(3) { transition-delay: 0.16s; }
+        .pilotos-stage.reveal.active .piloto-card:nth-child(4) { transition-delay: 0.24s; }
+        .piloto-card:hover { border-color: rgba(225,0,0,0.55); }
+        .piloto-card img {
+            width: 100%; height: 100%; object-fit: cover; opacity: 0.82;
+            filter: saturate(0.95) contrast(1.02);
+        }
+        .piloto-card::after {
+            content: ''; position: absolute; inset: auto 0 0; height: 70%;
+            background: linear-gradient(180deg, transparent, rgba(0,0,0,0.92));
+        }
+        .piloto-card-copy {
+            position: absolute; left: 18px; right: 18px; bottom: 18px; z-index: 1;
+        }
+        .piloto-card-copy small {
+            display: block; margin-bottom: 8px; font-family: var(--font-data); font-size: 10px;
+            letter-spacing: 1.8px; color: rgba(255,255,255,0.7);
+        }
+        .piloto-card-copy strong {
+            display: block; font-family: var(--font-racing); font-size: 28px; font-style: italic; line-height: 1;
+        }
+        .piloto-card-copy span {
+            display: block; margin-top: 8px; font-family: var(--font-data); color: #b9b9b9; font-size: 12px;
+            letter-spacing: 1px;
         }
 
         .glossary-item { display: flex; justify-content: space-between; padding: 40px 0; border-bottom: 1px solid #111; transition: 0.4s; position: relative; overflow: hidden; }
@@ -347,8 +545,11 @@
             .teams-slider { padding: 40px 0; gap: 20px; }
             .team-card { flex: 0 0 85vw; height: 450px; }
             .team-label { bottom: 30px; left: 30px; font-size: 30px; }
-            .motos-panel { grid-template-columns: 1fr; padding: 24px; gap: 24px; }
-            .motos-visual { min-height: 240px; }
+            .pilotos-stage { grid-template-columns: 1fr; min-height: auto; }
+            .pilotos-copy { padding: 28px 22px 20px; }
+            .pilotos-copy h3 { font-size: 46px; }
+            .pilotos-grid { grid-template-columns: 1fr; padding: 0 22px 22px; }
+            .piloto-card { min-height: 260px; }
             .glossary-item { flex-direction: column; gap: 10px; padding: 25px 0; }
             .desc { width: 100%; }
             .track-container { flex-direction: column; }
@@ -364,6 +565,15 @@
             .btn-ignite { padding: 15px 30px; font-size: 16px; }
             .social-links { gap: 15px; }
             .social-icon { width: 50px; height: 50px; }
+        }
+        @media (max-width: 560px) {
+            .hero-copy p, .data-card p, .pilotos-copy p, .track-desc, .footer-note { font-size: 13px; line-height: 1.7; }
+            .team-meta { flex-direction: column; align-items: flex-start; gap: 8px; }
+            .pilotos-copy h3 { font-size: 38px; }
+            .piloto-card-copy strong { font-size: 24px; }
+            .maps-grid { grid-template-columns: 1fr; }
+            .radio-footer { flex-direction: column; gap: 10px; }
+            .radio-footer button { margin-left: 0; width: 100%; }
         }
     </style>
 </head>
@@ -381,8 +591,8 @@
                 <li><a href="#technical">Técnico</a></li>
                 <li><a href="#crash">Caídas</a></li>
                 <li><a href="#teams">Equipos</a></li>
-                <li><a href="motos.html">Motos 2026</a></li>
-                <li><a href="minijuego3d.html" style="color:var(--red);text-shadow:0 0 5px var(--red);">[ Simulador 3D ]</a></li>
+                <li><a href="pilotos.html">Pilotos 2026</a></li>
+                <li><a href="minijuego/dist/index.html#/Game" style="color:var(--red);text-shadow:0 0 5px var(--red);">[ Simulador 3D ]</a></li>
                 <li><style>
     .btn-registro-motogp {
         display: inline-block; /* Permite ajustar márgenes y relleno como un botón */
@@ -417,7 +627,7 @@
 </style>
 
 
-<a href="registro.html" class="btn-registro-motogp">🏁 Fichar Nuevo Piloto</a></li>
+                <a href="http://localhost:5501/registro.html" class="btn-registro-motogp">🏁 Fichar Nuevo Piloto</a></li>
             </ul>
         </nav>
     </header>
@@ -466,15 +676,60 @@
             <div class="teams-slider" id="team-target"></div>
         </section>
 
-        <section id="motos-link">
+        <section id="pilotos-link">
             <span class="section-kicker reveal">Modulo independiente</span>
-            <h2 class="reveal glitch" data-text="MOTOS 2026" style="font-family:var(--font-racing);font-size:60px;margin-bottom:20px;">MOTOS <span style="color:var(--red);">2026</span></h2>
-            <div class="motos-panel reveal">
-                <div class="motos-copy">
-                    <p>Las motos tienen su propio modulo separado para que esta portada mantenga ritmo, foco y mejor lectura. Desde aqui saltas a una vista dedicada con mas detalle.</p>
-                    <a href="motos.html" class="motos-jump">ABRIR MODULO DE MOTOS</a>
+            <h2 class="reveal glitch" data-text="PILOTOS 2026" style="font-family:var(--font-racing);font-size:60px;margin-bottom:20px;">PILOTOS <span style="color:var(--red);">2026</span></h2>
+            <div class="pilotos-stage reveal">
+                <video class="pilotos-video" autoplay muted loop playsinline preload="metadata" aria-hidden="true">
+                    <source src="imagenes/Video_de_MotoGP_Celebración_y_Carrera.mp4" type="video/mp4">
+                </video>
+                <div class="pilotos-copy">
+                    <div>
+                        <span class="section-kicker" style="margin-bottom:12px;">Entrada cinematica</span>
+                        <h3>CELEBRA<br>EL TALENTO</h3>
+                        <p>La seccion entra ahora con scroll normal y suave, sin el efecto horizontal raro. El fondo muestra una celebracion de pilotos mientras las fichas aparecen con retraso progresivo para que la entrada se sienta mucho mas limpia.</p>
+                        <div class="pilotos-kickerline">
+                            <span>RACE IQ</span>
+                            <span>CELEBRATION SHOT</span>
+                            <span>GRID ICONS</span>
+                        </div>
+                        <a href="pilotos.html" class="pilotos-jump">ABRIR MODULO DE PILOTOS</a>
+                    </div>
                 </div>
-                <div class="motos-visual" aria-hidden="true"></div>
+                <div class="pilotos-grid">
+                    <article class="piloto-card">
+                        <img src="imagenes/FRANCESCO BAGNAIA.webp" alt="Francesco Bagnaia">
+                        <div class="piloto-card-copy">
+                            <small>DUCATI LENOVO</small>
+                            <strong>BAGNAIA</strong>
+                            <span>Ritmo largo, precision en frenada y control de carrera.</span>
+                        </div>
+                    </article>
+                    <article class="piloto-card">
+                        <img src="imagenes/MARC MARQUEZ.webp" alt="Marc Marquez">
+                        <div class="piloto-card-copy">
+                            <small>DUCATI LENOVO</small>
+                            <strong>MARC</strong>
+                            <span>Agresividad en entrada, reflejos y lectura brutal del limite.</span>
+                        </div>
+                    </article>
+                    <article class="piloto-card">
+                        <img src="imagenes/FABIO QUARTARARO.webp" alt="Fabio Quartararo">
+                        <div class="piloto-card-copy">
+                            <small>MONSTER YAMAHA</small>
+                            <strong>QUARTARARO</strong>
+                            <span>Paso por curva muy fino y una sensibilidad enorme sobre la rueda delantera.</span>
+                        </div>
+                    </article>
+                    <article class="piloto-card">
+                        <img src="imagenes/PEDRO ACOSTA.webp" alt="Pedro Acosta">
+                        <div class="piloto-card-copy">
+                            <small>RED BULL KTM</small>
+                            <strong>ACOSTA</strong>
+                            <span>Instinto, verticalidad y capacidad para romper el ritmo del grupo.</span>
+                        </div>
+                    </article>
+                </div>
             </div>
         </section>
 
@@ -507,7 +762,7 @@
         <div class="track-container">
             <div class="map-display" id="3d-container">
                 <div class="scan-line"></div>
-                <img id="map-img" src="" alt="Track Map">
+                <img id="map-img" src="imagenes/jerez.png" alt="Mapa del circuito">
             </div>
             <div class="data-panel">
                 <h1 class="track-title" id="track-name">Cargando<span>...</span></h1>
@@ -626,7 +881,7 @@
     }
 
     function registerHomeStateLinks() {
-        document.querySelectorAll('a[href="motos.html"]').forEach(link => {
+        document.querySelectorAll('a[href="pilotos.html"]').forEach(link => {
             link.addEventListener('click', () => {
                 try {
                     sessionStorage.setItem('entrada1ScrollY', String(window.scrollY));
@@ -677,29 +932,34 @@
     function initTeams() {
         const container = document.getElementById('team-target');
         if (container.children.length > 0) return;
+        const teamImageBase = 'imagenes/';
+        const defaultTeamImage = `${teamImageBase}motogp10.jpg`;
         const teams = [
-            { name: "Ducati Lenovo", code: "DUC-01", riders: "Bagnaia // Marquez", img: "motogp3.jpg" },
-            { name: "Pertamina VR46", code: "VR4-02", riders: "Di Giannantonio // Morbidelli", img: "motogp7.jpg" },
-            { name: "Monster Yamaha", code: "YAM-03", riders: "Quartararo // Rins", img: "Monster.jpg" },
-            { name: "Red Bull KTM", code: "KTM-04", riders: "Binder // Acosta", img: "motogp9.jpg" },
-            { name: "Honda HRC", code: "HON-05", riders: "Marini // Mir", img: "Honda.jpg" },
-            { name: "Trackhouse Aprilia", code: "APR-06", riders: "Ogura // Fernandez", img: "motogp1 (2).jpg" }
+            { name: "Ducati Lenovo", code: "DUC-01", riders: "Bagnaia // Marquez", img: "motogp3.jpg", detail: "moto-detalle.html?id=ducati-lenovo-93" },
+            { name: "Pertamina VR46", code: "VR4-02", riders: "Di Giannantonio // Morbidelli", img: "motogp7.jpg", detail: "moto-detalle.html?id=vr46-49" },
+            { name: "Monster Yamaha", code: "YAM-03", riders: "Quartararo // Rins", img: "Monster.jpg", detail: "moto-detalle.html?id=yamaha-20" },
+            { name: "Red Bull KTM", code: "KTM-04", riders: "Binder // Acosta", img: "motogp9.jpg", detail: "moto-detalle.html?id=ktm-37" },
+            { name: "Honda HRC", code: "HON-05", riders: "Marini // Mir", img: "Honda.jpg", detail: "moto-detalle.html?id=honda-10" },
+            { name: "Trackhouse Aprilia", code: "APR-06", riders: "Ogura // Fernandez", img: "motogp1 (2).jpg", detail: "moto-detalle.html?id=trackhouse-72" }
         ];
         teams.forEach((team, i) => {
-            const card = document.createElement('div');
-            card.className = 'team-card reveal';
+            const card = document.createElement('a');
+            card.className = 'team-card team-card-link reveal';
+            card.href = team.detail;
             card.innerHTML = `
                 <div class="team-meta">
                     <span>${team.code}</span>
                     <span>${team.riders}</span>
                 </div>
-                <img src="${team.img}" alt="${team.name}">
+                <img src="${teamImageBase}${team.img}" alt="${team.name}" onerror="this.onerror=null;this.src='${defaultTeamImage}';">
                 <div class="team-label">
                     <span style="font-family:var(--font-data);font-size:12px;color:var(--red);background:#000;padding:2px 5px;">DATA_ID_0${i+1}</span><br>
                     ${team.name.toUpperCase()}
                 </div>`;
             container.appendChild(card);
         });
+
+        attachMotoLaunchSequence(container.querySelectorAll('.team-card-link'), 'team-card-launching');
         
         container.addEventListener('wheel', e => {
             if (e.deltaY !== 0) {
@@ -712,6 +972,38 @@
                 }
             }
         }, { passive: false });
+    }
+
+    function ensureMotoLaunchOverlay() {
+        let overlay = document.querySelector('.moto-launch-overlay');
+        if (overlay) return overlay;
+
+        overlay = document.createElement('div');
+        overlay.className = 'moto-launch-overlay';
+        overlay.innerHTML = '<div class="moto-launch-speedlines"></div><div class="moto-launch-flash"></div><div class="moto-launch-smoke"></div>';
+        document.body.appendChild(overlay);
+        return overlay;
+    }
+
+    function attachMotoLaunchSequence(elements, launchClassName) {
+        const overlay = ensureMotoLaunchOverlay();
+
+        elements.forEach((element) => {
+            element.addEventListener('click', (event) => {
+                event.preventDefault();
+
+                if (element.dataset.launching === 'true') return;
+                element.dataset.launching = 'true';
+                element.classList.add(launchClassName);
+                overlay.classList.remove('active');
+                void overlay.offsetWidth;
+                overlay.classList.add('active');
+
+                window.setTimeout(() => {
+                    window.location.href = element.href;
+                }, 980);
+            });
+        });
     }
 
     function initActiveNav() {
@@ -753,9 +1045,10 @@ document.addEventListener("DOMContentLoaded", () => {
         return;
     }
 
-    const trackImageFallback = "jerez.png";
+    const trackImageBase = 'imagenes/';
+    const trackImageFallback = `${trackImageBase}jerez.png`;
     const availableTrackImages = new Set(["assen.png", "jerez.png", "mugello.png", "philipisland.png", "sachsenring.png", "valencia.png"]);
-    const resolveTrackImage = (imageName) => availableTrackImages.has(imageName) ? imageName : trackImageFallback;
+    const resolveTrackImage = (imageName) => availableTrackImages.has(imageName) ? `${trackImageBase}${imageName}` : trackImageFallback;
 
     const trackData = {
         "qatar": { name: "LUSAIL", length: "5.38 km", curves: "16 (6 Izq, 10 Der)", record: "1'50.789", speed: "350.0 km/h", desc: "Carrera nocturna bajo los focos del desierto. La enorme recta de meta exige pura potencia.", img: resolveTrackImage("qatar.png") },
@@ -951,20 +1244,16 @@ document.addEventListener("DOMContentLoaded", () => {
 
 <div id="ai-radio-panel">
     <div class="radio-header">
-        <span>📡 Team Radio (Muro)</span>
-        <span style="cursor:pointer; color:#888;" onclick="toggleRadio()">✖</span>
+        <span>Team Radio (Muro)</span>
+        <span style="cursor:pointer; color:#888;" onclick="toggleRadio()">X</span>
     </div>
     <div class="radio-config">
-        <label for="geminiApiKey">Clave API de Gemini opcional</label>
-        <div class="radio-config-row">
-            <input type="password" id="geminiApiKey" placeholder="Pega tu API key aquí">
-            <button type="button" onclick="guardarApiKey()">Guardar</button>
-        </div>
-        <div class="radio-hint" id="apiKeyStatus">Sin clave el ingeniero responde en modo local. Si guardas una clave, intentará usar Gemini.</div>
+        <label for="userInput">Ingeniero local sin API</label>
+        <div class="radio-hint" id="apiKeyStatus">Modo local permanente. Responde sin clave API sobre pilotaje, setup, estrategia, neumaticos, circuitos y dudas generales de MotoGP.</div>
     </div>
     <div class="radio-body" id="chat-box">
         <div class="msg msg-ia">
-            <strong>Ingeniero:</strong> Conexión establecida. Los calentadores están fuera y la pista está a 42ºC. ¿Cómo notas la moto en la vuelta de calentamiento?
+            <strong>Ingeniero:</strong> Conexion establecida. Estoy en modo local permanente. Pideme ayuda de pilotaje, reglaje, estrategia, circuitos, neumaticos o cualquier duda general del paddock.
         </div>
     </div>
     <div class="radio-footer">
@@ -974,8 +1263,11 @@ document.addEventListener("DOMContentLoaded", () => {
 </div>
 
 <script>
-    const GEMINI_STORAGE_KEY = 'motogpGeminiApiKey';
-    const GEMINI_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent';
+    const aiRadioState = {
+        lastTopic: 'general',
+        lastTrack: '',
+        mood: 'neutral'
+    };
 
     function escapeHtml(texto) {
         const div = document.createElement('div');
@@ -990,108 +1282,255 @@ document.addEventListener("DOMContentLoaded", () => {
         chatBox.scrollTop = chatBox.scrollHeight;
     }
 
-    function obtenerApiKey() {
-        return localStorage.getItem(GEMINI_STORAGE_KEY)?.trim() || '';
-    }
-
-    function actualizarEstadoApiKey() {
-        const input = document.getElementById('geminiApiKey');
-        const status = document.getElementById('apiKeyStatus');
-        const hasKey = Boolean(obtenerApiKey());
-
-        if (input) input.value = obtenerApiKey();
-        if (status) {
-            status.textContent = hasKey
-                ? 'Clave guardada. El ingeniero intentará usar Gemini; si falla, caerá al modo local.'
-                : 'Modo local activo. El chat funciona sin API key y responde desde la propia página.';
-        }
-    }
-
     function elegirElemento(lista) {
         return lista[Math.floor(Math.random() * lista.length)];
     }
 
+    function normalizarTexto(texto) {
+        return texto
+            .toLowerCase()
+            .normalize('NFD')
+            .replace(/[\u0300-\u036f]/g, '');
+    }
+
+    function detectarCircuito(texto) {
+        const circuitos = [
+            ['jerez', 'Jerez'],
+            ['mugello', 'Mugello'],
+            ['assen', 'Assen'],
+            ['le mans', 'Le Mans'],
+            ['catalunya', 'Catalunya'],
+            ['aragon', 'Aragon'],
+            ['valencia', 'Valencia'],
+            ['sepang', 'Sepang'],
+            ['qatar', 'Qatar'],
+            ['phillip island', 'Phillip Island'],
+            ['silverstone', 'Silverstone'],
+            ['austin', 'Austin'],
+            ['misano', 'Misano'],
+            ['sachsenring', 'Sachsenring']
+        ];
+
+        const encontrado = circuitos.find(([clave]) => texto.includes(clave));
+        return encontrado ? encontrado[1] : '';
+    }
+
+    function construirRespuesta(secciones) {
+        return secciones.filter(Boolean).join('\n\n');
+    }
+
     function generarRespuestaLocal(mensaje) {
-        const texto = mensaje.toLowerCase();
+        const textoOriginal = mensaje.trim();
+        const texto = normalizarTexto(textoOriginal);
+        const circuito = detectarCircuito(texto);
+        if (circuito) aiRadioState.lastTrack = circuito;
 
         const aperturas = [
-            'Recibido. Datos claros desde el muro.',
-            'Copiado, piloto. Tengo telemetría suficiente.',
-            'Entendido. Te leo limpio por radio.',
-            'Recibido. Ajuste localizado.'
+            'Recibido desde el muro.',
+            'Copiado, te leo claro.',
+            'Entendido, tengo contexto.',
+            'Perfecto, vamos con eso.'
         ];
 
-        const cierres = [
-            'Mantén referencia en el ápice y dame otra vuelta.',
-            'Confirma en el siguiente sector y vemos si abre gas antes.',
-            'Sigue empujando, pero sin castigar el trasero.',
-            'Necesito una vuelta más para cerrar diagnóstico.'
+        const cierresTecnicos = [
+            'Dame una vuelta mas con esa referencia y comparamos.',
+            'Confirma en el siguiente sector si mejora la sensacion.',
+            'Prioriza limpieza en entrada y salida, no solo una frenada fuerte.',
+            'Si el cambio funciona, consolidamos y luego empujamos.'
         ];
 
-        const reglas = [
-            {
-                test: /grip|agarre|patina|patina|desliza|resbala|slide|trasera|rear/,
-                respuesta: 'La trasera está trabajando fuera de ventana. Prueba entrada un poco más recta, abre gas medio metro más tarde y usa mapa más suave a la salida para recuperar tracción.'
-            },
-            {
-                test: /delante|delantera|front|subvir|no gira|gira poco|mete/,
-                respuesta: 'La moto no está cargando suficiente delante en mitad de curva. Suelta freno de forma más progresiva, busca el ápice un poco más tarde y mantén presión inicial para ayudar al giro.'
-            },
-            {
-                test: /freno|frenada|bloquea|bloqueo|pasado|parar/,
-                respuesta: 'Estamos al límite en la frenada. Retrasa menos la referencia, entra con la moto más estable y evita soltar la maneta de golpe porque estás descargando demasiado rápido el tren delantero.'
-            },
-            {
-                test: /wheelie|caballito|levanta|levanta mucho/,
-                respuesta: 'Hay demasiado lift en aceleración. Usa mapa de motor más contenido y abre más progresivo en primera fase; necesitamos mantener la rueda delantera tocando pista para no perder drive.'
-            },
-            {
-                test: /neumatic|goma|blando|duro|medium|duro|temperatura/,
-                respuesta: 'La goma se está saliendo de la ventana ideal. No la deslices en apoyo largo y gestiona mejor la salida para no cocinar el compuesto trasero en las dos próximas vueltas.'
-            },
-            {
-                test: /recta|velocidad punta|rebufo|motor|corta|potencia/,
-                respuesta: 'En recta no estamos maximizando drive. Prioriza salida limpia de la última curva y usa el rebufo si tienes referencia delante; el problema nace antes de la recta, no al final.'
-            },
-            {
-                test: /vibra|vibracion|chattering|rebota|bota/,
-                respuesta: 'Tenemos chatter en apoyo. Reduce agresividad en la entrada, evita cargar tanto ángulo tan pronto y déjame comparar si aparece por frecuencia en el tercer sector.'
-            },
-            {
-                test: /lluvia|mojado|agua|wet/,
-                respuesta: 'Condición delicada. Busca menos ángulo, entrada redonda y gas muy progresivo. En mojado vale más mantener temperatura y confianza que atacar una sola frenada.'
-            }
-        ];
-
-        const regla = reglas.find((item) => item.test.test(texto));
-        const diagnostico = regla
-            ? regla.respuesta
-            : 'La base no está mal, pero la moto pide una trazada más limpia. Prioriza estabilidad en entrada, paciencia en el centro y acelera solo cuando la veas realmente cerrada.';
-
-        return `${elegirElemento(aperturas)} ${diagnostico}\n\n${elegirElemento(cierres)}`;
-    }
-
-    function guardarApiKey() {
-        const input = document.getElementById('geminiApiKey');
-        const apiKey = input.value.trim();
-
-        if (!apiKey) {
-            localStorage.removeItem(GEMINI_STORAGE_KEY);
-            actualizarEstadoApiKey();
-            return;
+        if (!texto) {
+            return 'Habla cuando quieras. Estoy listo para analizar pilotaje, setup, estrategia o cualquier duda de MotoGP.';
         }
 
-        localStorage.setItem(GEMINI_STORAGE_KEY, apiKey);
-        actualizarEstadoApiKey();
+        if (/hola|buenas|hey|que tal|estas ahi|radio check|check/.test(texto)) {
+            aiRadioState.lastTopic = 'saludo';
+            return construirRespuesta([
+                `${elegirElemento(aperturas)} Radio operativa y modo local activo.`,
+                'Puedes preguntarme por setup, neumaticos, carrera, clasificacion, reglamento, circuitos o sensaciones de la moto.'
+            ]);
+        }
+
+        if (/quien eres|que eres|funcionas sin api|sin api|sin clave|gemini|api/.test(texto)) {
+            aiRadioState.lastTopic = 'sistema';
+            return construirRespuesta([
+                'Soy tu ingeniero virtual local dentro de esta pagina. No necesito API ni conexion externa para responder.',
+                'No genero respuestas perfectas sobre hechos en tiempo real, pero si puedo ayudarte con tecnica de MotoGP, analisis de pilotaje, estrategia, reglajes y dudas generales.'
+            ]);
+        }
+
+        if (/gracias|perfecto|genial|vale|ok\b|entendido/.test(texto)) {
+            aiRadioState.lastTopic = 'cierre';
+            return `${elegirElemento(aperturas)} Seguimos en escucha. Si quieres, ahora afinamos frenada, traccion o plan de carrera.`;
+        }
+
+        if (/quien gana|quien es mejor|mejor piloto|favorito|campeon/.test(texto)) {
+            aiRadioState.lastTopic = 'opinion';
+            return construirRespuesta([
+                'Eso depende de si buscas velocidad pura, consistencia, gestion de neumaticos o capacidad de adelantar bajo presion.',
+                'En MotoGP el mejor suele ser quien combina frenada tardia, salida limpia, lectura tactica y cero errores durante todo el fin de semana.'
+            ]);
+        }
+
+        if (/reglamento|penalizacion|long lap|track limits|bandera|sancion|parque cerrado/.test(texto)) {
+            aiRadioState.lastTopic = 'reglamento';
+            return construirRespuesta([
+                `${elegirElemento(aperturas)} Si hablamos de reglamento, lo clave es no regalar sanciones evitables.`,
+                'Track limits, presion minima, salidas inseguras, adelantamientos agresivos y long lap suelen decidir mas de una carrera. Si me dices la situacion exacta, te la traduzco a lenguaje de muro.'
+            ]);
+        }
+
+        if (/estrategia|carrera|sprint|vueltas|atacar|conservar|gestion|plan/.test(texto)) {
+            aiRadioState.lastTopic = 'estrategia';
+            return construirRespuesta([
+                `${elegirElemento(aperturas)} La estrategia correcta depende de deposito, desgaste y trafico.`,
+                'En sprint conviene ser agresivo pronto pero sin quemar la trasera en las dos primeras vueltas. En carrera larga manda el ritmo repetible: entrada estable, menos spinning y adelantamientos donde no destroces la goma.',
+                elegirElemento(cierresTecnicos)
+            ]);
+        }
+
+        if (/neumatic|goma|soft|medium|hard|blando|medio|duro|presion|temperatura/.test(texto)) {
+            aiRadioState.lastTopic = 'neumaticos';
+            return construirRespuesta([
+                `${elegirElemento(aperturas)} El neumatico te cuenta toda la carrera si lo escuchas a tiempo.`,
+                'Si falta temperatura no tendras apoyo ni frenada consistente. Si te pasas de temperatura, aparece spinning, deriva y la moto deja de cerrar. El truco es no castigar la goma en los primeros metros de gas.',
+                'Si me dices si el problema es delante o detras, te doy ajuste y estilo de pilotaje.'
+            ]);
+        }
+
+        if (/freno|frenada|bloquea|bloqueo|me voy largo|no paro|stop|maneta/.test(texto)) {
+            aiRadioState.lastTopic = 'frenada';
+            return construirRespuesta([
+                `${elegirElemento(aperturas)} El problema esta en como cargas la rueda delantera al entrar.`,
+                'Prueba una entrada un poco mas recta, suelta freno con mas progresividad y evita el pico de presion demasiado brusco. Si bloquea mucho, probablemente estas entrando con demasiada velocidad o soltando la maneta muy tarde y muy seco.',
+                elegirElemento(cierresTecnicos)
+            ]);
+        }
+
+        if (/no gira|gira poco|subvir|subvira|delantera|frente|front|no cierra/.test(texto)) {
+            aiRadioState.lastTopic = 'giro';
+            return construirRespuesta([
+                `${elegirElemento(aperturas)} El tren delantero necesita una entrada mas limpia para terminar de girar.`,
+                'Si la moto no gira, necesitas liberar mejor la entrada. Busca un apice un poco mas tardio, frena con la moto menos cruzada y deja que el tren delantero cargue antes de pedir angulo maximo.',
+                'Tambien ayuda no abrir gas demasiado pronto, porque eso ensancha la salida y te roba giro.'
+            ]);
+        }
+
+        if (/trasera|patina|slide|spinning|resbala|agarre|grip|traccion/.test(texto)) {
+            aiRadioState.lastTopic = 'traccion';
+            return construirRespuesta([
+                `${elegirElemento(aperturas)} La trasera esta pidiendo una salida mas ordenada.`,
+                'Abre gas medio instante mas tarde y con menos pico inicial. Si atacas muy pronto, rompes la traccion y sobrecalientas la goma. Necesitamos mas drive y menos ruido.',
+                elegirElemento(cierresTecnicos)
+            ]);
+        }
+
+        if (/wheelie|caballito|se levanta|levanta delante/.test(texto)) {
+            aiRadioState.lastTopic = 'wheelie';
+            return construirRespuesta([
+                `${elegirElemento(aperturas)} Hay demasiada transferencia atras al abrir.`,
+                'Se corrige con gas mas progresivo, mejor posicion del cuerpo y un mapa menos agresivo al primer toque. Si la rueda delantera flota, pierdes aceleracion real aunque parezca que la moto empuja.'
+            ]);
+        }
+
+        if (/vibra|vibracion|chattering|rebota|bota/.test(texto)) {
+            aiRadioState.lastTopic = 'vibracion';
+            return construirRespuesta([
+                `${elegirElemento(aperturas)} Eso suena a chatter en apoyo o a una fase de entrada demasiado violenta.`,
+                'Evita tirar la moto de golpe, entra un poco mas limpio y no cargues tanto angulo tan pronto. Si aparece siempre en el mismo punto, puede ser combinacion de bache, carcasa y reparto de carga.'
+            ]);
+        }
+
+        if (/lluvia|mojado|agua|wet|humedo/.test(texto)) {
+            aiRadioState.lastTopic = 'lluvia';
+            return construirRespuesta([
+                `${elegirElemento(aperturas)} En mojado manda la suavidad.`,
+                'Menos angulo, menos brusquedad y mas tiempo con la moto equilibrada. Lo importante no es una curva heroica, sino enlazar diez curvas sin perder temperatura ni confianza.'
+            ]);
+        }
+
+        if (/salida|launch|holeshot|clutch|embrague/.test(texto)) {
+            aiRadioState.lastTopic = 'salida';
+            return construirRespuesta([
+                `${elegirElemento(aperturas)} En la salida todo es precision.`,
+                'Necesitas embrague estable, poco wheelie y no cruzar la moto al primer cambio de apoyo. La salida buena no es la mas espectacular, es la que te deja bien colocado en la primera frenada.'
+            ]);
+        }
+
+        if (/adelantar|adelantamiento|pasar|overtake|rebufo/.test(texto)) {
+            aiRadioState.lastTopic = 'adelantamiento';
+            return construirRespuesta([
+                `${elegirElemento(aperturas)} Para adelantar sin destruir la vuelta necesitas preparar la maniobra una curva antes.`,
+                'La clave es salir mejor de la curva previa, enseñar la moto pronto y llegar con la direccion ya bastante controlada. Si fuerzas demasiado la entrada, adelantas una vez y regalas dos curvas despues.'
+            ]);
+        }
+
+        if (/setup|reglaje|suspension|geometria|altura|precarga|rebote|compresion/.test(texto)) {
+            aiRadioState.lastTopic = 'setup';
+            return construirRespuesta([
+                `${elegirElemento(aperturas)} El setup siempre hay que leerlo junto al estilo de pilotaje.`,
+                'Si buscas giro, sueles querer una entrada mas libre y una moto menos perezosa en el cambio de direccion. Si buscas traccion, priorizas apoyo atras y una salida mas plantada. Dime el sintoma y te traduzco que tocar primero.'
+            ]);
+        }
+
+        if (/circuito|pista|sector|curva|trazado/.test(texto) || circuito) {
+            aiRadioState.lastTopic = 'circuito';
+            const nombreCircuito = circuito || aiRadioState.lastTrack || 'ese trazado';
+            return construirRespuesta([
+                `${elegirElemento(aperturas)} ${nombreCircuito} se lee mejor si separas las curvas que castigan la goma de las que abren tiempo.`,
+                'En cualquier circuito, el tiempo serio suele salir de una buena entrada en las frenadas grandes y de una salida limpia hacia la recta mas importante. Si quieres, te hago una mini guia de ese circuito.'
+            ]);
+        }
+
+        if (/marc|bagnaia|martin|acosta|quartararo|vinales|binder|bezzecchi|morbidelli/.test(texto)) {
+            aiRadioState.lastTopic = 'pilotos';
+            return construirRespuesta([
+                `${elegirElemento(aperturas)} Cada piloto fuerte destaca por una mezcla distinta de frenada, giro minimo y gestion de goma.`,
+                'Unos ganan con agresividad en entrada, otros con limpieza y repeticion. Si me dices el nombre concreto, te describo su estilo de pilotaje y donde suele marcar diferencia.'
+            ]);
+        }
+
+        if (/que hago|ayudame|estoy perdido|no se|explicame|como funciona/.test(texto)) {
+            aiRadioState.lastTopic = 'ayuda';
+            return construirRespuesta([
+                'Te cubro lo importante. Puedes preguntarme por una de estas cuatro cosas: pilotaje, setup, estrategia o MotoGP general.',
+                'Ejemplos: "la trasera patina", "explicame el long lap", "que hago para frenar mejor" o "como se gestiona una sprint".'
+            ]);
+        }
+
+        if (/animo|motivame|vamos|nervioso|tenso|presion/.test(texto)) {
+            aiRadioState.lastTopic = 'motivacion';
+            return construirRespuesta([
+                `${elegirElemento(aperturas)} Respira y simplifica la vuelta.`,
+                'No necesitas una maniobra magica. Solo repetir referencias, soltar freno limpio y abrir con disciplina. Cuando el piloto ordena la cabeza, la moto empieza a hablar claro.'
+            ]);
+        }
+
+        aiRadioState.lastTopic = 'general';
+        return construirRespuesta([
+            `${elegirElemento(aperturas)} Puedo ayudarte aunque la pregunta sea amplia.`,
+            'Si es tecnica, te lo traduzco a pilotaje o setup. Si es general, te respondo en clave MotoGP. Ahora mismo la mejor lectura es esta: busca una base estable, evita exagerar la entrada y construye la vuelta desde la salida de curva.',
+            'Si quieres algo mas fino, dime en una frase donde esta el problema: frenada, giro, traccion, neumaticos, estrategia o reglamento.'
+        ]);
     }
 
-    // --- 1. LÓGICA DE LA INTERFAZ ---
     function toggleRadio() {
         document.getElementById('ai-radio-panel').classList.toggle('active');
     }
 
     function handleEnter(event) {
-        if (event.key === "Enter") enviarMensaje();
+        if (event.key === 'Enter') enviarMensaje();
+    }
+
+    async function responderIA(mensaje, chatBox) {
+        const idCarga = `carga-${Date.now()}`;
+        chatBox.innerHTML += `<div id="${idCarga}" class="msg msg-ia" style="color: #aaa;"><strong>Ingeniero:</strong> Revisando telemetria...</div>`;
+        chatBox.scrollTop = chatBox.scrollHeight;
+
+        await new Promise((resolve) => setTimeout(resolve, 280));
+
+        document.getElementById(idCarga)?.remove();
+        appendMessage(chatBox, 'msg-ia', 'Ingeniero', generarRespuestaLocal(mensaje));
     }
 
     async function enviarMensaje() {
@@ -1100,88 +1539,18 @@ document.addEventListener("DOMContentLoaded", () => {
         const chatBox = document.getElementById('chat-box');
         const sendButton = document.getElementById('sendButton');
 
-        if (mensajeTexto === "") return;
+        if (mensajeTexto === '') return;
 
-        appendMessage(chatBox, 'msg-user', 'Tú', mensajeTexto);
-        inputField.value = ""; 
+        appendMessage(chatBox, 'msg-user', 'Tu', mensajeTexto);
+        inputField.value = '';
         if (sendButton) sendButton.disabled = true;
 
         try {
-            await conectarConIAReal(mensajeTexto, chatBox);
+            await responderIA(mensajeTexto, chatBox);
         } finally {
             if (sendButton) sendButton.disabled = false;
         }
     }
-
-    // --- 2. CONEXIÓN CON LA IA (GEMINI API) ---
-    async function conectarConIAReal(mensaje, chatBox) {
-        const apiKey = obtenerApiKey();
-        
-        // Mensaje de carga mientras piensa
-        const idCarga = "carga-" + Date.now();
-        chatBox.innerHTML += `<div id="${idCarga}" class="msg msg-ia" style="color: #aaa;"><strong>Ingeniero:</strong> Revisando telemetría... ⏳</div>`;
-        chatBox.scrollTop = chatBox.scrollHeight;
-
-        if (!apiKey) {
-            await new Promise((resolve) => setTimeout(resolve, 500));
-            document.getElementById(idCarga)?.remove();
-            appendMessage(chatBox, 'msg-ia', 'Ingeniero', generarRespuestaLocal(mensaje));
-            return;
-        }
-
-        const contexto = "Eres el ingeniero de pista jefe de un equipo de MotoGP. Estás hablando por radio con tu piloto durante una sesión. Sé técnico, usa jerga de carreras real (grip, ápice, rebufo, compuesto duro/blando, setup, frenada, mapas de motor). Responde de forma muy directa y breve, en 1 o 2 párrafos cortos como máximo, porque estás en medio de la carrera. El piloto te dice esto por la radio: ";
-        
-        try {
-            const respuesta = await fetch(GEMINI_URL, {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    "x-goog-api-key": apiKey
-                },
-                body: JSON.stringify({
-                    contents: [{
-                        role: "user",
-                        parts: [{ text: contexto + mensaje }]
-                    }],
-                    generationConfig: {
-                        temperature: 0.8,
-                        maxOutputTokens: 220
-                    }
-                })
-            });
-
-            if (!respuesta.ok) {
-                const errorText = await respuesta.text();
-                throw new Error(`Gemini devolvió ${respuesta.status}: ${errorText}`);
-            }
-
-            const datos = await respuesta.json();
-            
-            // Borramos el mensaje de "Revisando..."
-            document.getElementById(idCarga)?.remove();
-
-            // Verificamos si la IA nos devolvió un mensaje correcto
-            const respuestaIA = datos?.candidates?.[0]?.content?.parts
-                ?.map((part) => part.text || '')
-                .join('\n')
-                .trim();
-
-            if (respuestaIA) {
-                const respuestaLimpia = respuestaIA.replace(/\*\*/g, '');
-                appendMessage(chatBox, 'msg-ia', 'Ingeniero', respuestaLimpia);
-            } else {
-                appendMessage(chatBox, 'msg-ia', 'Ingeniero', 'Repite, piloto. Hay interferencias en el canal.', 'color: #ffaa00;');
-            }
-
-        } catch (error) {
-            document.getElementById(idCarga)?.remove();
-            appendMessage(chatBox, 'msg-ia', 'Sistema', 'Gemini no respondió. Sigo en modo local para no cortar la radio.', 'color: #ffaa00;');
-            appendMessage(chatBox, 'msg-ia', 'Ingeniero', generarRespuestaLocal(mensaje));
-            console.error("Error con la API:", error);
-        }
-    }
-
-    actualizarEstadoApiKey();
 </script>
 
 </body>

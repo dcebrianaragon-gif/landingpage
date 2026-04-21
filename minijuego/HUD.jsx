@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { memo } from 'react';
 
 const RPM_COLORS = [
   '#00f2ff', '#00f2ff', '#00f2ff', '#00f2ff',
@@ -7,7 +7,7 @@ const RPM_COLORS = [
   '#e10000', '#e10000', '#e10000', '#e10000',
 ];
 
-export default function HUD({ gameState, onBack }) {
+function HUD({ gameState, onBack }) {
   const {
     lapTime = 0,
     bestLap = null,
@@ -24,62 +24,63 @@ export default function HUD({ gameState, onBack }) {
   const activeRpm = Math.floor(rpmRatio * 16);
 
   return (
-    <div className="pointer-events-none fixed inset-0 z-10 flex flex-col justify-between p-4 font-mono">
+    <div className="pointer-events-none fixed inset-0 z-10 flex flex-col justify-between p-4 font-mono text-white">
       <div className="flex items-start justify-between">
-        <div className="border border-border bg-black/75 px-4 py-2 backdrop-blur-sm">
-          <span className="text-[11px] tracking-widest text-muted-foreground">TIEMPO VUELTA</span>
-          <div className="text-xl font-black leading-tight text-accent">{lapTime.toFixed(2)}</div>
-          <div className="mt-0.5 text-[9px] text-muted-foreground/50">
+        <div className="retro-hud-box px-4 py-2">
+          <span className="text-[10px] tracking-[3px] text-[#ffef5a]">LAP TIME</span>
+          <div className="retro-digits text-2xl font-black leading-tight text-[#00f2ff]">{lapTime.toFixed(2)}</div>
+          <div className="mt-0.5 text-[9px] tracking-[2px] text-white/55">
             MEJOR: <span>{bestLap ? bestLap.toFixed(2) : '--'}s</span>
           </div>
         </div>
         <button
           onClick={onBack}
-          className="pointer-events-auto cursor-pointer border border-primary bg-black/90 px-5 py-2 font-mono text-[10px] uppercase tracking-[3px] text-primary transition-all hover:bg-primary hover:text-white backdrop-blur-sm"
+          className="retro-button pointer-events-auto cursor-pointer px-5 py-2 font-mono text-[10px] uppercase tracking-[3px]"
         >
-          Volver al menu
+          MENU
         </button>
       </div>
 
       {lapNotify && (
-        <div className="absolute left-1/2 top-[42%] z-50 -translate-x-1/2 -translate-y-1/2 text-5xl font-black italic text-primary drop-shadow-[0_0_50px_rgba(225,0,0,1)]">
-          Vuelta completada
+        <div className="retro-popup absolute left-1/2 top-[42%] z-50 -translate-x-1/2 -translate-y-1/2 text-5xl font-black italic">
+          LAP CLEAR
         </div>
       )}
 
       {finished && (
         <div className="absolute left-1/2 top-[38%] z-50 -translate-x-1/2 -translate-y-1/2 text-center">
-          <div className="text-5xl font-black italic text-primary drop-shadow-[0_0_50px_rgba(225,0,0,1)]">
-            Carrera terminada
+          <div className="retro-popup text-5xl font-black italic">
+            GAME CLEAR
           </div>
-          <div className="mt-2 text-2xl font-bold text-accent">
+          <div className="retro-digits mt-2 text-2xl font-bold text-[#00f2ff]">
             Mejor vuelta: {bestLap ? bestLap.toFixed(2) : '--'}s
           </div>
         </div>
       )}
 
       {offTrack && (
-        <div className="absolute left-1/2 top-[28%] z-50 -translate-x-1/2 -translate-y-1/2 text-xl font-black italic text-orange-500 drop-shadow-[0_0_20px_rgba(255,136,0,0.8)]">
-          Fuera de pista
+        <div className="retro-warning absolute left-1/2 top-[28%] z-50 -translate-x-1/2 -translate-y-1/2 text-xl font-black italic">
+          OUT RUN
         </div>
       )}
 
       <div className="flex items-end justify-between">
         <div className="flex items-end gap-3">
-          <div className="border border-border bg-black/80 px-4 py-1.5 text-center">
-            <div className="text-4xl font-black leading-none text-primary">
+          <div className="retro-hud-box px-4 py-1.5 text-center">
+            <div className="retro-digits text-5xl font-black leading-none text-[#ff2aa1]">
               {gear === 0 ? 'N' : gear}
             </div>
-            <div className="text-[8px] tracking-[3px] text-muted-foreground/50">MARCHA</div>
+            <div className="text-[8px] tracking-[3px] text-white/55">GEAR</div>
           </div>
           <div className="flex h-[50px] items-end gap-[3px]">
             {Array.from({ length: 16 }).map((_, i) => (
               <div
                 key={i}
-                className="w-2 rounded-t-sm transition-colors duration-50"
+                className="w-2 transition-colors duration-50"
                 style={{
                   height: `${15 + i * 2.2}px`,
-                  backgroundColor: i < activeRpm ? RPM_COLORS[i] : '#1a1a1a',
+                  backgroundColor: i < activeRpm ? RPM_COLORS[i] : '#140926',
+                  boxShadow: i < activeRpm ? `0 0 10px ${RPM_COLORS[i]}` : 'none',
                 }}
               />
             ))}
@@ -87,24 +88,26 @@ export default function HUD({ gameState, onBack }) {
         </div>
 
         <div className="flex gap-2">
-          <div className="border border-border bg-black/75 px-4 py-2 backdrop-blur-sm">
-            <span className="text-[11px] tracking-widest text-primary">VUELTA</span>
-            <div className="text-xl font-black leading-tight text-primary">
+          <div className="retro-hud-box px-4 py-2">
+            <span className="text-[10px] tracking-[3px] text-[#ffef5a]">LAP</span>
+            <div className="retro-digits text-xl font-black leading-tight text-[#ff2aa1]">
               {lap} / {totalLaps}
             </div>
           </div>
-          <div className="border border-border bg-black/75 px-4 py-2 backdrop-blur-sm">
-            <span className="text-[11px] tracking-widest text-muted-foreground">VELOCIDAD</span>
-            <div className="text-xl font-black leading-tight text-accent">
+          <div className="retro-hud-box px-4 py-2">
+            <span className="text-[10px] tracking-[3px] text-[#ffef5a]">SPEED</span>
+            <div className="retro-digits text-xl font-black leading-tight text-[#00f2ff]">
               {Math.floor(speed * 160)} km/h
             </div>
           </div>
         </div>
       </div>
 
-      <div className="absolute bottom-2 left-0 w-full text-center text-[10px] tracking-widest text-muted-foreground/30">
-        [W/FLECHA ARRIBA] ACELERAR - [A/D o IZQ/DER] GIRAR - [S/FLECHA ABAJO] FRENAR - [ESPACIO] FRENO - [Q] BAJAR MARCHA - [E] SUBIR MARCHA
+      <div className="retro-help absolute bottom-2 left-0 w-full text-center text-[10px] tracking-widest">
+        W/UP GAS - A/D STEER - S/DOWN BRAKE - SPACE HARD BRAKE - Q/E GEAR
       </div>
     </div>
   );
 }
+
+export default memo(HUD);

@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ficha de Moto | MotoGP Protocol</title>
+    <style>
+        :root {
+            --red: #e10000;
+            --black: #050505;
+            --line: rgba(255,255,255,0.08);
+            --panel: rgba(255,255,255,0.03);
+            --font-racing: 'Arial Black', sans-serif;
+            --font-data: 'Courier New', monospace;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            min-height: 100vh;
+            color: #fff;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background:
+                radial-gradient(circle at top, rgba(225,0,0,0.16), transparent 28%),
+                linear-gradient(180deg, #040404 0%, #000 100%);
+        }
+
+        header {
+            position: sticky;
+            top: 0;
+            z-index: 15;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 26px 7%;
+            border-bottom: 1px solid var(--line);
+            background: rgba(0,0,0,0.74);
+            backdrop-filter: blur(10px);
+        }
+
+        .logo {
+            font-family: var(--font-racing);
+            font-style: italic;
+            font-size: 28px;
+        }
+
+        .logo span { color: var(--red); }
+
+        .nav-links {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .nav-links a {
+            text-decoration: none;
+            color: #fff;
+            border: 1px solid rgba(225,0,0,0.4);
+            padding: 12px 16px;
+            font-family: var(--font-data);
+            font-size: 11px;
+            letter-spacing: 2px;
+            background: linear-gradient(90deg, rgba(225,0,0,0.14), transparent);
+        }
+
+        main {
+            padding: 70px 7% 100px;
+        }
+
+        .detail-hero {
+            display: grid;
+            grid-template-columns: 1.1fr 0.9fr;
+            gap: 32px;
+            align-items: stretch;
+            margin-bottom: 38px;
+        }
+
+        .detail-copy,
+        .detail-image {
+            border: 1px solid var(--line);
+            background: linear-gradient(180deg, var(--panel), rgba(225,0,0,0.03));
+        }
+
+        .detail-copy {
+            padding: 34px;
+        }
+
+        .kicker {
+            display: inline-block;
+            margin-bottom: 14px;
+            color: rgba(255,255,255,0.6);
+            font-family: var(--font-data);
+            font-size: 11px;
+            letter-spacing: 4px;
+            text-transform: uppercase;
+        }
+
+        h1 {
+            font-family: var(--font-racing);
+            font-size: clamp(42px, 7vw, 88px);
+            line-height: 0.9;
+            font-style: italic;
+            text-transform: uppercase;
+            margin-bottom: 16px;
+        }
+
+        h1 span { color: var(--red); }
+
+        .lead {
+            color: #b4b4b4;
+            line-height: 1.9;
+            font-size: 15px;
+            font-family: var(--font-data);
+        }
+
+        .detail-image {
+            min-height: 520px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .detail-image img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            object-position: center center;
+            display: block;
+        }
+
+        .detail-image::after {
+            content: '';
+            position: absolute;
+            inset: auto 0 0;
+            height: 35%;
+            background: linear-gradient(180deg, transparent, rgba(0,0,0,0.78));
+        }
+
+        .stats-grid,
+        .insight-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 18px;
+            margin-bottom: 34px;
+        }
+
+        .stat-card,
+        .insight-card {
+            border: 1px solid var(--line);
+            background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(225,0,0,0.03));
+            padding: 22px;
+        }
+
+        .label {
+            margin-bottom: 10px;
+            color: #747474;
+            font-family: var(--font-data);
+            font-size: 10px;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+        }
+
+        .value {
+            font-family: var(--font-racing);
+            font-size: 24px;
+            line-height: 1.1;
+        }
+
+        .insight-card p {
+            color: #aaaaaa;
+            line-height: 1.8;
+            font-size: 14px;
+            font-family: var(--font-data);
+        }
+
+        .related {
+            margin-top: 36px;
+        }
+
+        .related h2 {
+            font-family: var(--font-racing);
+            font-size: 40px;
+            font-style: italic;
+            margin-bottom: 20px;
+        }
+
+        .related-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 18px;
+        }
+
+        .related-card {
+            display: block;
+            text-decoration: none;
+            color: #fff;
+            border: 1px solid var(--line);
+            background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(225,0,0,0.03));
+            overflow: hidden;
+        }
+
+        .related-card img {
+            width: 100%;
+            height: 190px;
+            object-fit: cover;
+            display: block;
+        }
+
+        .related-card div {
+            padding: 18px;
+        }
+
+        .related-card strong {
+            display: block;
+            font-family: var(--font-racing);
+            font-size: 24px;
+            font-style: italic;
+            margin-bottom: 8px;
+        }
+
+        .related-card span {
+            color: #b1b1b1;
+            font-size: 13px;
+            line-height: 1.7;
+            font-family: var(--font-data);
+        }
+
+        @media (max-width: 920px) {
+            .detail-hero,
+            .stats-grid,
+            .insight-grid,
+            .related-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .detail-image {
+                min-height: 320px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="logo">MOTO<span>GP</span></div>
+        <div class="nav-links">
+            <a href="motos.html">VOLVER A MOTOS</a>
+            <a href="entrada1.html#teams">VOLVER AL DESFILE</a>
+        </div>
+    </header>
+
+    <main>
+        <section class="detail-hero">
+            <div class="detail-copy">
+                <span class="kicker" id="detail-team-kicker">Equipo</span>
+                <h1 id="detail-title">Moto <span>GP</span></h1>
+                <p class="lead" id="detail-lead">Cargando ficha individual...</p>
+            </div>
+            <div class="detail-image">
+                <img id="detail-image" src="" alt="">
+            </div>
+        </section>
+
+        <section class="stats-grid" id="stats-grid"></section>
+        <section class="insight-grid" id="insight-grid"></section>
+
+        <section class="related">
+            <h2>Mas <span style="color:var(--red);">Motos</span></h2>
+            <div class="related-grid" id="related-grid"></div>
+        </section>
+    </main>
+
+    <script>
+        const motoCatalog = [
+            {
+                id: 'ducati-lenovo-93',
+                teamId: 'ducati-lenovo',
+                image: 'imagenes/motogp3.jpg',
+                alt: 'Ducati Lenovo Team dorsal 93',
+                title: 'Ducati Lenovo 93',
+                team: 'Ducati Lenovo',
+                rider: 'Marc Marquez',
+                engine: 'V4 Desmosedici GP',
+                topSpeed: '356 km/h',
+                character: 'Ataque frontal',
+                strength: 'Frenada y traccion',
+                aero: 'Alta carga',
+                lead: 'La Ducati oficial del dorsal 93 representa una moto pensada para atacar la entrada, frenar muy tarde y convertir la salida en una aceleracion violentamente eficiente.',
+                insights: [
+                    { title: 'Lectura en pista', text: 'Es una moto que visualmente ya transmite mucha carga delantera y estabilidad cuando toca parar muy fuerte.' },
+                    { title: 'Donde destaca', text: 'Suele funcionar muy bien cuando el piloto necesita combinar confianza en la entrada con una salida muy limpia y potente.' },
+                    { title: 'Sensacion general', text: 'Da imagen de bloque compacto, agresivo y muy optimizado para pelear en cabeza desde la primera vuelta.' }
+                ]
+            },
+            {
+                id: 'vr46-49',
+                teamId: 'vr46',
+                image: 'imagenes/motogp7.jpg',
+                alt: 'Ducati VR46 dorsal 49',
+                title: 'VR46 Ducati 49',
+                team: 'Pertamina VR46',
+                rider: 'Fabio Di Giannantonio',
+                engine: 'V4 Desmosedici GP',
+                topSpeed: '354 km/h',
+                character: 'Fluida y limpia',
+                strength: 'Apoyo y balance',
+                aero: 'Carga media-alta',
+                lead: 'La Ducati amarilla del bloque VR46 tiene una identidad visual fortisima y encaja perfecto como moto de ritmo, apoyo sostenido y lectura muy clara de la trazada.',
+                insights: [
+                    { title: 'Lectura en pista', text: 'El conjunto destaca por una estetica muy reconocible y un perfil visual que sugiere estabilidad en cambios de apoyo.' },
+                    { title: 'Donde destaca', text: 'Brilla cuando el piloto enlaza curvas manteniendo velocidad y necesita confianza progresiva en la goma.' },
+                    { title: 'Sensacion general', text: 'Se siente menos brusca visualmente que otras, mas ordenada y muy apta para construir carreras largas.' }
+                ]
+            },
+            {
+                id: 'yamaha-20',
+                teamId: 'monster-yamaha',
+                image: 'imagenes/Monster.jpg',
+                alt: 'Yamaha Monster Energy dorsal 20',
+                title: 'Yamaha Monster 20',
+                team: 'Monster Yamaha',
+                rider: 'Fabio Quartararo',
+                engine: 'Inline-4 YZR-M1',
+                topSpeed: '349 km/h',
+                character: 'Giro fino',
+                strength: 'Paso por curva',
+                aero: 'Carga equilibrada',
+                lead: 'La M1 sigue proyectando esa idea tan propia de Yamaha: mucha limpieza a mitad de curva, tacto fino y una lectura muy delicada del tren delantero.',
+                insights: [
+                    { title: 'Lectura en pista', text: 'Visualmente parece una moto mas estilizada y muy asociada a trayectorias limpias y gran velocidad media.' },
+                    { title: 'Donde destaca', text: 'Funciona mejor en sectores donde importa no romper la linea y mantener mucho tiempo de curva.' },
+                    { title: 'Sensacion general', text: 'La identidad Monster suma presencia sin perder esa imagen tecnica y precisa que define a la M1.' }
+                ]
+            },
+            {
+                id: 'honda-10',
+                teamId: 'honda-hrc',
+                image: 'imagenes/Honda.jpg',
+                alt: 'Honda HRC Castrol dorsal 10',
+                title: 'Honda HRC 10',
+                team: 'Honda HRC',
+                rider: 'Luca Marini',
+                engine: 'V4 RC213V',
+                topSpeed: '351 km/h',
+                character: 'Compacta e intensa',
+                strength: 'Entrada y trabajo tecnico',
+                aero: 'Carga delantera',
+                lead: 'La RC213V de HRC mantiene una presencia muy seria. Es una moto que se asocia a entradas exigentes, ajustes finos y mucho trabajo de evolucion.',
+                insights: [
+                    { title: 'Lectura en pista', text: 'El frontal y la postura general transmiten una moto fisica, reactiva y de decisiones muy concretas en frenada.' },
+                    { title: 'Donde destaca', text: 'Puede marcar diferencia cuando el piloto necesita ser muy preciso en la primera mitad de la curva.' },
+                    { title: 'Sensacion general', text: 'Tiene caracter, exige compromiso y deja claro que es una plataforma en desarrollo constante.' }
+                ]
+            },
+            {
+                id: 'ktm-37',
+                teamId: 'ktm-factory',
+                image: 'imagenes/motogp9.jpg',
+                alt: 'KTM Red Bull dorsal 37',
+                title: 'KTM Red Bull 37',
+                team: 'Red Bull KTM',
+                rider: 'Brad Binder',
+                engine: 'V4 RC16',
+                topSpeed: '353 km/h',
+                character: 'Fisica y vertical',
+                strength: 'Frenada fuerte',
+                aero: 'Alta presion',
+                lead: 'La RC16 del dorsal 37 es puro caracter: agresiva, muy directa y siempre asociada a una moto que pide intensidad para sacar su mejor version.',
+                insights: [
+                    { title: 'Lectura en pista', text: 'A simple vista transmite potencia y una manera muy frontal de atacar tanto la recta como la frenada.' },
+                    { title: 'Donde destaca', text: 'Va muy bien en circuitos donde la moto debe parar fuerte y salir sin demasiada duda.' },
+                    { title: 'Sensacion general', text: 'Es una maquina con identidad muy marcada, de pelea, contacto y mucha energia visual.' }
+                ]
+            },
+            {
+                id: 'ktm-12',
+                teamId: 'ktm-factory',
+                image: 'imagenes/motogp10.jpg',
+                alt: 'KTM Red Bull dorsal 12',
+                title: 'KTM Red Bull 12',
+                team: 'Red Bull KTM',
+                rider: 'Maverick Vinales',
+                engine: 'V4 RC16',
+                topSpeed: '352 km/h',
+                character: 'Explosiva',
+                strength: 'Apoyo y aceleracion',
+                aero: 'Carga alta',
+                lead: 'La segunda RC16 del bloque oficial permite ver otra lectura del mismo concepto: una moto muy compacta, intensa y con mucha presencia aerodinamica.',
+                insights: [
+                    { title: 'Lectura en pista', text: 'Se aprecia una moto muy compacta, con frontal dominante y una postura visual muy agresiva.' },
+                    { title: 'Donde destaca', text: 'Tiene sentido en trazados donde se valora un paso decidido por frenadas y reaperturas de gas.' },
+                    { title: 'Sensacion general', text: 'Comparte ADN con la KTM 37 pero deja su propia personalidad visual dentro del conjunto oficial.' }
+                ]
+            },
+            {
+                id: 'trackhouse-72',
+                teamId: 'trackhouse-aprilia',
+                image: 'imagenes/motogp1 (2).jpg',
+                alt: 'Aprilia Trackhouse dorsal 72',
+                title: 'Aprilia Trackhouse 72',
+                team: 'Trackhouse Aprilia',
+                rider: 'Ai Ogura',
+                engine: 'V4 RS-GP',
+                topSpeed: '350 km/h',
+                character: 'Ligera y agil',
+                strength: 'Cambios de direccion',
+                aero: 'Carga limpia',
+                lead: 'La Trackhouse Aprilia es una de las motos con imagen mas diferenciada del conjunto, y eso ayuda mucho a convertirla en una ficha individual muy reconocible.',
+                insights: [
+                    { title: 'Lectura en pista', text: 'La combinacion de colores y el perfil general hacen que la moto destaque rapido dentro del desfile.' },
+                    { title: 'Donde destaca', text: 'Encaja muy bien en una lectura de moto agil, muy viva y con buena respuesta en sectores enlazados.' },
+                    { title: 'Sensacion general', text: 'Es fresca, distinta y perfecta para ampliar el universo visual del modulo de motos.' }
+                ]
+            },
+            {
+                id: 'aprilia-25',
+                teamId: 'aprilia-racing',
+                image: 'imagenes/motogp11.jpg',
+                alt: 'Aprilia dorsal 25',
+                title: 'Aprilia 25',
+                team: 'Aprilia Racing',
+                rider: 'Jorge Martin',
+                engine: 'V4 RS-GP',
+                topSpeed: '351 km/h',
+                character: 'Ataque y giro',
+                strength: 'Sector enlazado',
+                aero: 'Balance agresivo',
+                lead: 'La RS-GP oficial del dorsal 25 tiene una presencia afilada y competitiva. La lectura general es de una moto que busca cambiar rapido de direccion y sostener ataque.',
+                insights: [
+                    { title: 'Lectura en pista', text: 'El frontal y la silueta general dan una sensacion muy agresiva sin perder limpieza aerodinamica.' },
+                    { title: 'Donde destaca', text: 'Se intuye especialmente fuerte en circuitos con curvas enlazadas y cambios de apoyo veloces.' },
+                    { title: 'Sensacion general', text: 'Es una moto con nervio visual y suficiente identidad como para protagonizar su propia ficha sin problema.' }
+                ]
+            }
+        ];
+
+        const params = new URLSearchParams(window.location.search);
+        const motoId = params.get('id') || 'ducati-lenovo-93';
+        const moto = motoCatalog.find((item) => item.id === motoId) || motoCatalog[0];
+
+        document.title = `${moto.title} | Ficha de Moto`;
+        document.getElementById('detail-team-kicker').textContent = moto.team;
+        document.getElementById('detail-title').innerHTML = `${moto.title} <span>DATA</span>`;
+        document.getElementById('detail-lead').textContent = moto.lead;
+
+        const detailImage = document.getElementById('detail-image');
+        detailImage.src = moto.image;
+        detailImage.alt = moto.alt;
+
+        const statsGrid = document.getElementById('stats-grid');
+        const statItems = [
+            ['PILOTO', moto.rider],
+            ['MOTOR', moto.engine],
+            ['TOP SPEED', moto.topSpeed],
+            ['FOCO', moto.strength]
+        ];
+
+        statItems.forEach(([label, value]) => {
+            const card = document.createElement('article');
+            card.className = 'stat-card';
+            card.innerHTML = `<div class="label">${label}</div><div class="value">${value}</div>`;
+            statsGrid.appendChild(card);
+        });
+
+        const insightGrid = document.getElementById('insight-grid');
+        moto.insights.forEach((item) => {
+            const card = document.createElement('article');
+            card.className = 'insight-card';
+            card.innerHTML = `<div class="label">${item.title}</div><p>${item.text}</p>`;
+            insightGrid.appendChild(card);
+        });
+
+        const relatedGrid = document.getElementById('related-grid');
+        motoCatalog
+            .filter((item) => item.id !== moto.id)
+            .slice(0, 3)
+            .forEach((item) => {
+                const link = document.createElement('a');
+                link.className = 'related-card';
+                link.href = `moto-detalle.html?id=${encodeURIComponent(item.id)}`;
+                link.innerHTML = `
+                    <img src="${item.image}" alt="${item.alt}">
+                    <div>
+                        <strong>${item.title}</strong>
+                        <span>${item.team} // ${item.rider}</span>
+                    </div>
+                `;
+                relatedGrid.appendChild(link);
+            });
+    </script>
+</body>
+</html>

@@ -1,6 +1,6 @@
-import React, { useRef, useEffect, useCallback } from 'react';
+import React, { memo, useRef, useEffect, useCallback } from 'react';
 
-export default function Minimap({ spline, bikePos, bikeHeading, startPos, trackW, bikeColor }) {
+function Minimap({ spline, bikePos, bikeHeading, startPos, trackW, bikeColor }) {
   const canvasRef = useRef(null);
   const mmDataRef = useRef(null);
 
@@ -73,7 +73,7 @@ export default function Minimap({ spline, bikePos, bikeHeading, startPos, trackW
 
   useEffect(() => {
     draw();
-  });
+  }, [draw]);
 
   return (
     <div className="fixed bottom-14 right-5 z-[15] pointer-events-none border border-border bg-black/80">
@@ -81,3 +81,5 @@ export default function Minimap({ spline, bikePos, bikeHeading, startPos, trackW
     </div>
   );
 }
+
+export default memo(Minimap);

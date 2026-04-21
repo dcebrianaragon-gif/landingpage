@@ -1,10 +1,11 @@
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
+const dns = require('dns').promises;
 
-const PORT = 5500;
-const ROOT_DIR = __dirname;
-const DATA_FILE = path.join(ROOT_DIR, '.vscode', 'fichajeregistros.json');
+const PORT = 5501;
+const PROJECT_DIR = path.resolve(__dirname, '..');
+const DATA_FILE = path.join(__dirname, 'fichajeregistros.json');
 
 const MIME_TYPES = {
   '.html': 'text/html; charset=utf-8',
@@ -20,6 +21,83 @@ const MIME_TYPES = {
   '.mp3': 'audio/mpeg',
   '.glb': 'model/gltf-binary'
 };
+
+const DISPOSABLE_EMAIL_DOMAINS = new Set([
+  '10minutemail.com',
+  '10minutemail.net',
+  '20minutemail.com',
+  'dispostable.com',
+  'fakeinbox.com',
+  'fakemail.com',
+  'guerrillamail.com',
+  'maildrop.cc',
+  'mailinator.com',
+  'sharklasers.com',
+  'temp-mail.org',
+  'tempmail.com',
+  'trashmail.com',
+  'yopmail.com'
+]);
+
+function isValidEmailFormat(email) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+}
+
+async function hasResolvableMailDomain(domain) {
+  try {
+    const mx = await dns.resolveMx(domain);
+    if (Array.isArray(mx) && mx.length > 0) {
+      return true;
+    }
+  } catch (error) {
+    // Continue with A/AAAA fallback below.
+  }
+
+  try {
+    const a = await dns.resolve4(domain);
+    if (Array.isArray(a) && a.length > 0) {
+      return true;
+    }
+  } catch (error) {
+    // Try IPv6 next.
+  }
+
+  try {
+    const aaaa = await dns.resolve6(domain);
+    return Array.isArray(aaaa) && aaaa.length > 0;
+  } catch (error) {
+    return false;
+  }
+}
+
+async function validateEmail(email) {
+  const normalizedEmail = String(email || '').trim().toLowerCase();
+
+  if (!isValidEmailFormat(normalizedEmail)) {
+    return { ok: false, error: 'El correo no tiene un formato valido.' };
+  }
+
+  const [, domain = ''] = normalizedEmail.split('@');
+
+  if (!domain) {
+    return { ok: false, error: 'El correo no tiene dominio valido.' };
+  }
+
+  if (DISPOSABLE_EMAIL_DOMAINS.has(domain)) {
+    return { ok: false, error: 'No se permiten correos temporales o desechables.' };
+  }
+
+  if (['example.com', 'test.com', 'fake.com', 'correo.com'].includes(domain)) {
+    return { ok: false, error: 'El dominio del correo parece de prueba o falso.' };
+  }
+
+  const domainExists = await hasResolvableMailDomain(domain);
+  if (!domainExists) {
+    return { ok: false, error: 'El dominio del correo no existe o no acepta correo real.' };
+  }
+
+  return { ok: true, normalizedEmail };
+}
 
 function sendJson(res, statusCode, data) {
   res.writeHead(statusCode, {
@@ -76,10 +154,10 @@ function collectBody(req) {
 function normalizePath(urlPath) {
   const decoded = decodeURIComponent(urlPath.split('?')[0]);
   const sanitized = decoded === '/' ? '/loadervideo.html' : decoded;
-  const joined = path.join(ROOT_DIR, sanitized);
+  const joined = path.join(PROJECT_DIR, sanitized);
   const resolved = path.resolve(joined);
 
-  if (!resolved.startsWith(path.resolve(ROOT_DIR))) {
+  if (!resolved.startsWith(PROJECT_DIR)) {
     return null;
   }
 
@@ -138,12 +216,27 @@ async function handleApi(req, res) {
         return;
       }
 
+      const emailValidation = await validateEmail(email);
+      if (!emailValidation.ok) {
+        sendJson(res, 400, { error: emailValidation.error });
+        return;
+      }
+
       const records = readRecords();
+      const duplicate = records.find(
+        (record) => String(record.email || '').trim().toLowerCase() === emailValidation.normalizedEmail
+      );
+
+      if (duplicate) {
+        sendJson(res, 409, { error: 'Ese correo ya esta registrado.' });
+        return;
+      }
+
       records.push({
         id: Date.now(),
         piloto,
         escuderia,
-        email,
+        email: emailValidation.normalizedEmail,
         fecha_registro: new Date().toLocaleString('es-ES')
       });
       writeRecords(records);
@@ -158,7 +251,7 @@ async function handleApi(req, res) {
     return;
   }
 
-  sendJson(res, 405, { error: 'Método no permitido.' });
+  sendJson(res, 405, { error: 'Metodo no permitido.' });
 }
 
 const server = http.createServer((req, res) => {

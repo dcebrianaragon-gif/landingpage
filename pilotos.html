@@ -1,0 +1,574 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pilotos MotoGP 2026</title>
+    <style>
+        :root {
+            --red: #e10600;
+            --bg: #060606;
+            --panel: rgba(255,255,255,0.04);
+            --panel-strong: rgba(255,255,255,0.06);
+            --line: rgba(255,255,255,0.1);
+            --text: #fff;
+            --muted: #a5a5a5;
+        }
+
+        * { box-sizing: border-box; }
+        html { scroll-behavior: smooth; }
+
+        body {
+            margin: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: var(--text);
+            background:
+                radial-gradient(circle at top, rgba(225, 6, 0, 0.14), transparent 26%),
+                linear-gradient(180deg, #050505 0%, #000 52%, #050505 100%);
+        }
+
+        .hero {
+            min-height: 88vh;
+            position: relative;
+            display: flex;
+            align-items: flex-end;
+            padding: 110px 7% 70px;
+            overflow: hidden;
+        }
+
+        .hero::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background:
+                linear-gradient(90deg, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.52) 48%, rgba(0,0,0,0.2) 100%),
+                url('imagenes/motogp11.jpg') center/cover no-repeat;
+            transform: scale(1.05);
+        }
+
+        .hero::after {
+            content: '';
+            position: absolute;
+            inset: auto 0 0;
+            height: 45%;
+            background: linear-gradient(180deg, transparent, rgba(0,0,0,0.92));
+        }
+
+        .hero-copy {
+            position: relative;
+            z-index: 1;
+            max-width: 820px;
+        }
+
+        .kicker {
+            display: inline-block;
+            margin-bottom: 16px;
+            font-size: 11px;
+            letter-spacing: 4px;
+            text-transform: uppercase;
+            color: rgba(255,255,255,0.62);
+        }
+
+        h1 {
+            margin: 0;
+            font-size: clamp(52px, 9vw, 110px);
+            line-height: 0.9;
+            font-style: italic;
+            text-transform: uppercase;
+        }
+
+        h1 span { color: var(--red); }
+
+        .hero-copy p {
+            max-width: 680px;
+            font-size: 15px;
+            line-height: 1.9;
+            color: var(--muted);
+        }
+
+        .hero-actions {
+            display: flex;
+            gap: 14px;
+            flex-wrap: wrap;
+            margin-top: 24px;
+        }
+
+        .back-link,
+        .jump-link {
+            display: inline-block;
+            padding: 16px 28px;
+            border: 1px solid var(--red);
+            color: var(--text);
+            text-decoration: none;
+            letter-spacing: 2px;
+            font-size: 12px;
+            background: linear-gradient(90deg, rgba(225,0,0,0.16), transparent);
+            transition: 0.25s ease;
+        }
+
+        .back-link:hover,
+        .jump-link:hover {
+            background: var(--red);
+        }
+
+        .section-shell {
+            padding: 40px 7% 90px;
+        }
+
+        .quick-nav {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 14px;
+        }
+
+        .quick-nav a {
+            padding: 16px 18px;
+            text-decoration: none;
+            color: var(--text);
+            border: 1px solid var(--line);
+            background: linear-gradient(180deg, var(--panel), rgba(225,0,0,0.03));
+            font-size: 12px;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+        }
+
+        .quick-nav a:hover {
+            border-color: rgba(225,0,0,0.5);
+            transform: translateY(-2px);
+        }
+
+        .team-section {
+            padding: 0 7% 60px;
+        }
+
+        .team-header {
+            margin-bottom: 22px;
+            padding: 24px;
+            border: 1px solid var(--line);
+            background: linear-gradient(180deg, var(--panel-strong), rgba(225,0,0,0.04));
+        }
+
+        .team-header small {
+            display: inline-block;
+            margin-bottom: 10px;
+            color: rgba(255,255,255,0.58);
+            letter-spacing: 3px;
+            text-transform: uppercase;
+        }
+
+        .team-header h2 {
+            margin: 0 0 8px;
+            font-size: clamp(28px, 5vw, 54px);
+            font-style: italic;
+            text-transform: uppercase;
+        }
+
+        .team-header p {
+            margin: 0;
+            max-width: 880px;
+            color: var(--muted);
+            line-height: 1.8;
+        }
+
+        .pilots-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 22px;
+        }
+
+        .pilots-grid-single {
+            grid-template-columns: minmax(240px, 420px);
+            justify-content: start;
+        }
+
+        .pilot-card {
+            background: linear-gradient(180deg, rgba(255,255,255,0.03), rgba(225,0,0,0.03));
+            border: 1px solid var(--line);
+            overflow: hidden;
+        }
+
+        .pilot-card img {
+            width: 100%;
+            height: 320px;
+            object-fit: cover;
+            object-position: center top;
+            display: block;
+            background: #111;
+        }
+
+        .pilots-grid-single .pilot-card img {
+            height: 420px;
+            object-fit: contain;
+            object-position: center top;
+            background:
+                radial-gradient(circle at top, rgba(225,0,0,0.16), transparent 42%),
+                #111;
+            padding-top: 12px;
+        }
+
+        .pilot-copy {
+            padding: 22px;
+        }
+
+        .pilot-copy small {
+            display: block;
+            color: rgba(255,255,255,0.55);
+            letter-spacing: 2px;
+            font-size: 10px;
+            text-transform: uppercase;
+        }
+
+        .pilot-copy h3 {
+            margin: 10px 0 12px;
+            font-size: 28px;
+            font-style: italic;
+        }
+
+        .pilot-copy p {
+            margin: 0;
+            color: var(--muted);
+            line-height: 1.8;
+            font-size: 14px;
+        }
+
+        @media (max-width: 680px) {
+            .hero {
+                min-height: 72vh;
+                padding: 90px 5% 46px;
+            }
+
+            .section-shell,
+            .team-section {
+                padding-left: 5%;
+                padding-right: 5%;
+            }
+
+            .hero-copy p,
+            .team-header p,
+            .pilot-copy p {
+                font-size: 13px;
+                line-height: 1.75;
+            }
+        }
+    </style>
+</head>
+<body>
+    <section class="hero">
+        <div class="hero-copy">
+            <span class="kicker">Modulo de pilotos</span>
+            <h1>PILOTOS <span>2026</span></h1>
+            <p>Ahora cada imagen queda conectada con su piloto y con su apartado correspondiente. Organice el modulo por equipos y anadi bloques extra para los nombres que ya tenias en la carpeta de imagenes pero todavia no aparecian en la pagina.</p>
+            <div class="hero-actions">
+                <a href="entrada1.html#pilotos-link" class="back-link">VOLVER A LA PORTADA</a>
+                <a href="#indice-equipos" class="jump-link">IR A LOS APARTADOS</a>
+            </div>
+        </div>
+    </section>
+
+    <section class="section-shell" id="indice-equipos">
+        <span class="kicker">Indice rapido</span>
+        <div class="quick-nav">
+            <a href="#ducati-lenovo">Ducati Lenovo</a>
+            <a href="#gresini-ducati">Gresini Ducati</a>
+            <a href="#vr46">Pertamina VR46</a>
+            <a href="#monster-yamaha">Monster Yamaha</a>
+            <a href="#pramac-yamaha">Pramac Yamaha</a>
+            <a href="#ktm-factory">Red Bull KTM</a>
+            <a href="#ktm-tech3">Tech3 KTM</a>
+            <a href="#aprilia-racing">Aprilia Racing</a>
+            <a href="#trackhouse-aprilia">Trackhouse Aprilia</a>
+            <a href="#honda-hrc">Honda HRC</a>
+            <a href="#lcr-honda">LCR Honda</a>
+            <a href="#proyeccion">Proyeccion</a>
+        </div>
+    </section>
+
+    <section class="team-section" id="ducati-lenovo">
+        <div class="team-header">
+            <small>Equipo oficial</small>
+            <h2>Ducati Lenovo</h2>
+            <p>La referencia roja de la parrilla. Aqui quedan agrupados sus dos pilotos principales con imagen y nombre completos.</p>
+        </div>
+        <div class="pilots-grid">
+            <article class="pilot-card">
+                <img src="imagenes/MARC MARQUEZ.webp" alt="Marc Marquez">
+                <div class="pilot-copy">
+                    <small>Ducati Lenovo</small>
+                    <h3>MARC MARQUEZ</h3>
+                    <p>Frenada extrema, instinto ofensivo y una lectura del limite que cambia la carrera en una sola vuelta.</p>
+                </div>
+            </article>
+            <article class="pilot-card">
+                <img src="imagenes/FRANCESCO BAGNAIA.webp" alt="Francesco Bagnaia">
+                <div class="pilot-copy">
+                    <small>Ducati Lenovo</small>
+                    <h3>FRANCESCO BAGNAIA</h3>
+                    <p>Preciso, limpio y muy fuerte en ritmo largo cuando la carrera se decide por consistencia.</p>
+                </div>
+            </article>
+        </div>
+    </section>
+
+    <section class="team-section" id="gresini-ducati">
+        <div class="team-header">
+            <small>Equipo satelite</small>
+            <h2>Gresini Ducati</h2>
+            <p>Seccion creada para los pilotos de Gresini que ya tenian su imagen individual en la carpeta.</p>
+        </div>
+        <div class="pilots-grid">
+            <article class="pilot-card">
+                <img src="imagenes/ALEX MARQUEZ.webp" alt="Alex Marquez">
+                <div class="pilot-copy">
+                    <small>Gresini Ducati</small>
+                    <h3>ALEX MARQUEZ</h3>
+                    <p>Muy fino en apoyo y cada vez mas fuerte cuando necesita hilar vueltas rapidas con poco desgaste.</p>
+                </div>
+            </article>
+            <article class="pilot-card">
+                <img src="imagenes/FERMIN ALDEGUER.webp" alt="Fermin Aldeguer">
+                <div class="pilot-copy">
+                    <small>Gresini Ducati</small>
+                    <h3>FERMIN ALDEGUER</h3>
+                    <p>Potencia natural, juventud y una adaptacion agresiva para crecer rapido en la categoria reina.</p>
+                </div>
+            </article>
+        </div>
+    </section>
+
+    <section class="team-section" id="vr46">
+        <div class="team-header">
+            <small>Academy block</small>
+            <h2>Pertamina VR46</h2>
+            <p>Aqui deje conectado el apartado VR46 con las imagenes nominales disponibles dentro del proyecto.</p>
+        </div>
+        <div class="pilots-grid pilots-grid-single">
+            <article class="pilot-card">
+                <img src="imagenes/FRANCO MORBIDELLO.webp" alt="Franco Morbidelli">
+                <div class="pilot-copy">
+                    <small>Pertamina VR46</small>
+                    <h3>FRANCO MORBIDELLI</h3>
+                    <p>Con experiencia, tacto y una manera muy limpia de construir velocidad cuando encuentra confianza.</p>
+                </div>
+            </article>
+        </div>
+    </section>
+
+    <section class="team-section" id="monster-yamaha">
+        <div class="team-header">
+            <small>Factory blue</small>
+            <h2>Monster Yamaha</h2>
+            <p>Bloque azul con sus dos pilotos ya enlazados a sus fotos individuales.</p>
+        </div>
+        <div class="pilots-grid">
+            <article class="pilot-card">
+                <img src="imagenes/FABIO QUARTARARO.webp" alt="Fabio Quartararo">
+                <div class="pilot-copy">
+                    <small>Monster Yamaha</small>
+                    <h3>FABIO QUARTARARO</h3>
+                    <p>Uno de los pilotos mas finos sobre la rueda delantera y muy fuerte en paso por curva.</p>
+                </div>
+            </article>
+            <article class="pilot-card">
+                <img src="imagenes/ALEX RINS.webp" alt="Alex Rins">
+                <div class="pilot-copy">
+                    <small>Monster Yamaha</small>
+                    <h3>ALEX RINS</h3>
+                    <p>Fluido, tecnico y con capacidad para encontrar velocidad en trazados donde la moto pide precision.</p>
+                </div>
+            </article>
+        </div>
+    </section>
+
+    <section class="team-section" id="pramac-yamaha">
+        <div class="team-header">
+            <small>Satellite blue</small>
+            <h2>Pramac Yamaha</h2>
+            <p>Este apartado se anadio porque habia piloto con imagen propia pero sin bloque dedicado dentro del modulo.</p>
+        </div>
+        <div class="pilots-grid pilots-grid-single">
+            <article class="pilot-card">
+                <img src="imagenes/JACK MILLER.webp" alt="Jack Miller">
+                <div class="pilot-copy">
+                    <small>Pramac Yamaha</small>
+                    <h3>JACK MILLER</h3>
+                    <p>Intenso, directo y siempre listo para sacar partido cuando la carrera se vuelve fisica o caotica.</p>
+                </div>
+            </article>
+        </div>
+    </section>
+
+    <section class="team-section" id="ktm-factory">
+        <div class="team-header">
+            <small>Factory orange</small>
+            <h2>Red Bull KTM</h2>
+            <p>Seccion principal de KTM con sus dos nombres mas representativos dentro de tu carpeta de imagenes.</p>
+        </div>
+        <div class="pilots-grid">
+            <article class="pilot-card">
+                <img src="imagenes/BRAD BINDER.webp" alt="Brad Binder">
+                <div class="pilot-copy">
+                    <small>Red Bull KTM</small>
+                    <h3>BRAD BINDER</h3>
+                    <p>Fuerte en frenada, resistente en pelea y especialista en sacar rendimiento en escenarios complejos.</p>
+                </div>
+            </article>
+            <article class="pilot-card">
+                <img src="imagenes/PEDRO ACOSTA.webp" alt="Pedro Acosta">
+                <div class="pilot-copy">
+                    <small>Red Bull KTM</small>
+                    <h3>PEDRO ACOSTA</h3>
+                    <p>Atrevimiento, cambio de ritmo y una manera muy natural de atacar sin perder claridad.</p>
+                </div>
+            </article>
+        </div>
+    </section>
+
+    <section class="team-section" id="ktm-tech3">
+        <div class="team-header">
+            <small>Satellite orange</small>
+            <h2>Tech3 KTM</h2>
+            <p>Tambien cree este apartado para agrupar a los pilotos naranjas que ya tenian retrato individual.</p>
+        </div>
+        <div class="pilots-grid">
+            <article class="pilot-card">
+                <img src="imagenes/ENEA BASTIANINI.webp" alt="Enea Bastianini">
+                <div class="pilot-copy">
+                    <small>Tech3 KTM</small>
+                    <h3>ENEA BASTIANINI</h3>
+                    <p>Muy peligroso cuando llega el final de carrera y aparece el extra de grip para rematar adelantamientos.</p>
+                </div>
+            </article>
+            <article class="pilot-card">
+                <img src="imagenes/MAVERICK VIÑALES.webp" alt="Maverick Vinales">
+                <div class="pilot-copy">
+                    <small>Tech3 KTM</small>
+                    <h3>MAVERICK VINALES</h3>
+                    <p>Velocidad natural, gran vuelta rapida y talento para destacar cuando encuentra la puesta a punto correcta.</p>
+                </div>
+            </article>
+        </div>
+    </section>
+
+    <section class="team-section" id="aprilia-racing">
+        <div class="team-header">
+            <small>Factory black</small>
+            <h2>Aprilia Racing</h2>
+            <p>Bloque creado para el frente oficial de Aprilia con dos retratos ya presentes en `imagenes/`.</p>
+        </div>
+        <div class="pilots-grid">
+            <article class="pilot-card">
+                <img src="imagenes/JORGE MARTIN.webp" alt="Jorge Martin">
+                <div class="pilot-copy">
+                    <small>Aprilia Racing</small>
+                    <h3>JORGE MARTIN</h3>
+                    <p>Uno de los mas explosivos a una vuelta, con ataque directo y mucha confianza en la entrada.</p>
+                </div>
+            </article>
+            <article class="pilot-card">
+                <img src="imagenes/MARCO BESSECCHI.webp" alt="Marco Bezzecchi">
+                <div class="pilot-copy">
+                    <small>Aprilia Racing</small>
+                    <h3>MARCO BEZZECCHI</h3>
+                    <p>Velocidad agresiva, caracter fuerte y una forma muy valiente de sostener apoyo en mitad de curva.</p>
+                </div>
+            </article>
+        </div>
+    </section>
+
+    <section class="team-section" id="trackhouse-aprilia">
+        <div class="team-header">
+            <small>Satellite black</small>
+            <h2>Trackhouse Aprilia</h2>
+            <p>El modulo ya tenia referencias a este equipo, asi que deje sus pilotos con nombre completo y foto correcta.</p>
+        </div>
+        <div class="pilots-grid">
+            <article class="pilot-card">
+                <img src="imagenes/AI OGURA.webp" alt="Ai Ogura">
+                <div class="pilot-copy">
+                    <small>Trackhouse Aprilia</small>
+                    <h3>AI OGURA</h3>
+                    <p>Muy meticuloso, ordenado y con una adaptacion inteligente para crecer en escenarios nuevos.</p>
+                </div>
+            </article>
+            <article class="pilot-card">
+                <img src="imagenes/RAUL FERNANDEZ.webp" alt="Raul Fernandez">
+                <div class="pilot-copy">
+                    <small>Trackhouse Aprilia</small>
+                    <h3>RAUL FERNANDEZ</h3>
+                    <p>Rapido en sectores enlazados y con margen para brillar cuando la confianza aparece desde el viernes.</p>
+                </div>
+            </article>
+        </div>
+    </section>
+
+    <section class="team-section" id="honda-hrc">
+        <div class="team-header">
+            <small>Factory honda</small>
+            <h2>Honda HRC</h2>
+            <p>Seccion oficial de Honda para que sus pilotos ya no quedaran sueltos o sin apartado propio.</p>
+        </div>
+        <div class="pilots-grid">
+            <article class="pilot-card">
+                <img src="imagenes/JOAN MIR.webp" alt="Joan Mir">
+                <div class="pilot-copy">
+                    <small>Honda HRC</small>
+                    <h3>JOAN MIR</h3>
+                    <p>Campeon con mentalidad de gestion, muy fuerte cuando la carrera pide cabeza y regularidad.</p>
+                </div>
+            </article>
+            <article class="pilot-card">
+                <img src="imagenes/LUCA MARINI.webp" alt="Luca Marini">
+                <div class="pilot-copy">
+                    <small>Honda HRC</small>
+                    <h3>LUCA MARINI</h3>
+                    <p>Analitico, limpio y muy atento al trabajo fino de evolucion durante todo el fin de semana.</p>
+                </div>
+            </article>
+        </div>
+    </section>
+
+    <section class="team-section" id="lcr-honda">
+        <div class="team-header">
+            <small>Satellite honda</small>
+            <h2>LCR Honda</h2>
+            <p>Cree este apartado para que el piloto con imagen suelta tambien quedara integrado en la estructura del modulo.</p>
+        </div>
+        <div class="pilots-grid pilots-grid-single">
+            <article class="pilot-card">
+                <img src="imagenes/JOHANN ZARCO.webp" alt="Johann Zarco">
+                <div class="pilot-copy">
+                    <small>LCR Honda</small>
+                    <h3>JOHANN ZARCO</h3>
+                    <p>Muy tecnico en trazadas largas, con gran experiencia para leer goma, viento y desgaste.</p>
+                </div>
+            </article>
+        </div>
+    </section>
+
+    <section class="team-section" id="proyeccion">
+        <div class="team-header">
+            <small>Invitados y proyeccion</small>
+            <h2>Otros pilotos con imagen</h2>
+            <p>Tambien cree un apartado extra para los nombres presentes en tu carpeta que no estaban conectados a ningun bloque del modulo principal.</p>
+        </div>
+        <div class="pilots-grid">
+            <article class="pilot-card">
+                <img src="imagenes/TOPRAK RAZGATLIOGLU.webp" alt="Toprak Razgatlioglu">
+                <div class="pilot-copy">
+                    <small>Proyeccion internacional</small>
+                    <h3>TOPRAK RAZGATLIOGLU</h3>
+                    <p>Pilotaje espectacular, frenadas imposibles y una presencia fuerte para cualquier expansion futura del modulo.</p>
+                </div>
+            </article>
+            <article class="pilot-card">
+                <img src="imagenes/DIOGO MOREIRA.webp" alt="Diogo Moreira">
+                <div class="pilot-copy">
+                    <small>Talento emergente</small>
+                    <h3>DIOGO MOREIRA</h3>
+                    <p>Bloque creado para no dejar fuera una imagen ya disponible y preparar la pagina para crecer mas adelante.</p>
+                </div>
+            </article>
+        </div>
+    </section>
+</body>
+</html>

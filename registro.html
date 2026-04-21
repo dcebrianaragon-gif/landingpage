@@ -63,6 +63,10 @@
             line-height: 1.5;
         }
 
+        form {
+            margin: 0;
+        }
+
         input {
             width: 100%;
             padding: 12px;
@@ -108,13 +112,13 @@
         .status.ok { color: #a7ffb0; }
         .status.warn { color: #ffd36c; }
         .status.error { color: #ff8b8b; }
-    </style>
-    <style>
+
         .records-container {
             margin-top: 30px;
             padding-top: 20px;
             border-top: 1px solid var(--line);
         }
+
         .records-container h2 {
             margin-bottom: 15px;
             font-size: 16px;
@@ -122,6 +126,7 @@
             letter-spacing: 1px;
             color: var(--muted);
         }
+
         #recordsList {
             list-style: none;
             padding: 0;
@@ -129,6 +134,7 @@
             overflow-y: auto;
             font-family: 'Courier New', monospace;
         }
+
         #recordsList li {
             background: #222;
             padding: 10px 14px;
@@ -138,37 +144,94 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
+            gap: 12px;
         }
+
         #recordsList .record-main { font-weight: bold; }
         #recordsList .record-meta { font-size: 11px; color: #888; text-align: right; }
         #recordsList::-webkit-scrollbar { width: 4px; }
         #recordsList::-webkit-scrollbar-track { background: #111; }
         #recordsList::-webkit-scrollbar-thumb { background: var(--red); }
+        .privacy-note {
+            padding: 14px 16px;
+            background: #151515;
+            border: 1px solid #2a2a2a;
+            border-radius: 6px;
+            color: #bdbdbd;
+            font-size: 13px;
+            line-height: 1.6;
+        }
+
+        @media (max-width: 640px) {
+            body {
+                align-items: flex-start;
+                padding: 16px;
+            }
+
+            .box {
+                width: 100%;
+                padding: 24px 18px;
+                border-radius: 12px;
+            }
+
+            h1 {
+                font-size: 28px;
+            }
+
+            p,
+            .server-box,
+            .status {
+                font-size: 13px;
+            }
+
+            input,
+            button {
+                font-size: 16px;
+            }
+
+            #recordsList {
+                max-height: none;
+            }
+
+            #recordsList li {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            #recordsList .record-meta {
+                text-align: left;
+            }
+        }
     </style>
 </head>
 <body>
     <div class="box">
         <h1>MotoGP Registry</h1>
-        <p>El registro se guarda directamente en tu `fichajeregistros.json` cuando abras esta página desde el servidor local.</p>
+        <p>Introduce un piloto y se guardara en <code>.vscode/fichajeregistros.json</code> a traves del backend local.</p>
 
-        <div class="server-box" id="serverInfo">Comprobando conexión con el servidor local...</div>
+        <div class="server-box" id="serverInfo">Comprobando conexion con el servidor local...</div>
 
-        <input type="text" id="name" placeholder="Nombre del piloto">
-        <input type="text" id="team" placeholder="Escudería">
-        <input type="email" id="email" placeholder="Correo electrónico">
-
-        <button type="button" id="btnSave">Registrar piloto</button>
+        <form id="registroForm">
+            <input type="text" id="name" placeholder="Nombre del piloto" autocomplete="name">
+            <input type="text" id="team" placeholder="Escuderia">
+            <input type="email" id="email" placeholder="Correo electronico" autocomplete="email">
+            <button type="submit" id="btnSave">Registrar piloto</button>
+        </form>
 
         <div id="msg" class="status">Listo para nueva entrada...</div>
 
         <div class="records-container">
-            <h2>Pilotos Fichados</h2>
-            <ul id="recordsList"></ul>
+            <h2>Privacidad del registro</h2>
+            <div class="privacy-note" id="privacyNote">Los pilotos registrados no se muestran en esta pagina. Solo se conserva el total en el backend local para evitar exponer datos personales.</div>
         </div>
     </div>
 
     <script>
-        const API_BASE = window.location.origin;
+        const API_BASE = (() => {
+            const isHttp = window.location.protocol === 'http:' || window.location.protocol === 'https:';
+            const isBackendServer = isHttp && /^(localhost|127\.0\.0\.1)$/i.test(window.location.hostname) && window.location.port === '5501';
+            return isBackendServer ? window.location.origin : 'http://localhost:5501';
+        })();
 
         function setStatus(message, type = '') {
             const msg = document.getElementById('msg');
@@ -194,12 +257,12 @@
             const email = document.getElementById('email').value.trim();
 
             if (!name || !team || !email) {
-                throw new Error('Por favor, rellena nombre, escudería y correo.');
+                throw new Error('Por favor, rellena nombre, escuderia y correo.');
             }
 
             const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
             if (!emailRegex.test(email)) {
-                throw new Error('Por favor, introduce un correo electrónico válido.');
+                throw new Error('Por favor, introduce un correo electronico valido.');
             }
 
             return {
@@ -209,48 +272,35 @@
             };
         }
 
+        async function fetchRecords() {
+            const response = await fetch(`${API_BASE}/api/registros`, { cache: 'no-store' });
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(data.error || `Servidor devolvio ${response.status}`);
+            }
+
+            return data;
+        }
+
         async function checkServer() {
             try {
-                const response = await fetch(`${API_BASE}/api/registros`, { cache: 'no-store' });
-                if (!response.ok) {
-                    throw new Error(`Servidor devolvió ${response.status}`);
-                }
-
-                const data = await response.json();
-                setServerInfo(`Servidor conectado. Archivo activo: .vscode/fichajeregistros.json. Registros actuales: ${data.length}.`);
-                setStatus(`Base de datos conectada. ${data.length} pilotos en el registro.`, 'ok');
-                loadRecords();
+                const data = await fetchRecords();
+                setServerInfo(`Servidor conectado en ${API_BASE}. Archivo activo: .vscode/fichajeregistros.json. Registros actuales: ${data.length}. Los datos personales permanecen ocultos en esta pagina.`);
+                setStatus(`Base de datos conectada. ${data.length} pilotos guardados y lista publica desactivada.`, 'ok');
             } catch (error) {
                 console.error(error);
-                setServerInfo('Servidor local no disponible. Arranca `node server.js` y abre esta página desde http://localhost:5500/registro.html', 'error');
-                setStatus('No hay conexión con el servidor local, así que no puedo guardar en el JSON todavía.', 'error');
+                setServerInfo('Servidor local no disponible. Arranca `node .vscode/server.js` para levantar el backend en http://localhost:5501', 'error');
+                setStatus('No hay conexion con el servidor local, asi que no puedo guardar en el JSON todavia.', 'error');
             }
         }
 
         async function loadRecords() {
             try {
-                const response = await fetch(`${API_BASE}/api/registros`, { cache: 'no-store' });
-                if (!response.ok) return;
-
-                const records = await response.json();
-                const list = document.getElementById('recordsList');
-                list.innerHTML = '';
-
-                if (records.length === 0) {
-                    list.innerHTML = '<li>No hay pilotos fichados todavía.</li>';
-                    return;
-                }
-
-                records.reverse().forEach(record => {
-                    const li = document.createElement('li');
-                    li.innerHTML = `
-                        <div class="record-main">${record.piloto} <span style="color: #888; font-weight: normal;">(${record.escuderia})</span></div>
-                        <div class="record-meta">${record.email}<br><span style="font-size: 10px;">${record.fecha_registro}</span></div>
-                    `;
-                    list.appendChild(li);
-                });
+                return await fetchRecords();
             } catch (error) {
                 console.error('Error cargando registros:', error);
+                return [];
             }
         }
 
@@ -277,8 +327,8 @@
 
                 clearForm();
                 setStatus(`Registro guardado correctamente. Total actual: ${data.total}.`, 'ok');
-                setServerInfo(`Servidor conectado. Registros actuales: ${data.total}.`);
-                loadRecords();
+                setServerInfo(`Servidor conectado en ${API_BASE}. Registros actuales: ${data.total}. Los registrados no se muestran publicamente.`);
+                await loadRecords();
             } catch (error) {
                 console.error(error);
                 setStatus(error.message || 'No se pudo guardar el registro.', 'error');
@@ -287,7 +337,11 @@
             }
         }
 
-        document.getElementById('btnSave').addEventListener('click', saveRecord);
+        document.getElementById('registroForm').addEventListener('submit', async (event) => {
+            event.preventDefault();
+            await saveRecord();
+        });
+
         checkServer();
     </script>
 </body>

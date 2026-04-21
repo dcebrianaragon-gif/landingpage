@@ -9,6 +9,7 @@
             --red: #e10000;
             --black: #030303;
             --line: rgba(255,255,255,0.08);
+            --panel: rgba(255,255,255,0.03);
             --font-racing: 'Arial Black', sans-serif;
             --font-data: 'Courier New', monospace;
         }
@@ -97,7 +98,7 @@
 
         .hero-copy p {
             margin-top: 24px;
-            max-width: 560px;
+            max-width: 620px;
             color: #a1a1a1;
             line-height: 1.9;
             font-size: 15px;
@@ -109,7 +110,7 @@
             border: 1px solid var(--line);
             background:
                 linear-gradient(180deg, rgba(225,0,0,0.08), rgba(0,0,0,0.02)),
-                url('imagenmoto.jpg') center/cover no-repeat;
+                url('imagenes/imagenmoto.jpg') center/cover no-repeat;
             clip-path: polygon(8% 0, 100% 0, 92% 100%, 0 100%);
             box-shadow: 0 40px 80px rgba(0,0,0,0.45);
         }
@@ -148,21 +149,54 @@
         }
 
         .model-card {
+            position: relative;
             border: 1px solid var(--line);
             background: #080808;
             overflow: hidden;
+            text-decoration: none;
+            color: inherit;
+            transform-origin: center center;
+            transition: transform 0.55s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.35s ease, box-shadow 0.35s ease;
+            isolation: isolate;
+        }
+        .model-card-launching {
+            z-index: 80;
+            pointer-events: none;
+            border-color: rgba(225,0,0,0.82);
+            box-shadow: 0 32px 70px rgba(0,0,0,0.55);
         }
 
         .model-card img {
             width: 100%;
-            height: 300px;
+            height: 320px;
             object-fit: cover;
+            object-position: center center;
             display: block;
-            filter: grayscale(0.12) contrast(1.05);
+            filter: grayscale(0.1) contrast(1.06);
+            transition: transform 0.85s cubic-bezier(0.16, 1, 0.3, 1), filter 0.6s ease, clip-path 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .model-card-launching img {
+            filter: grayscale(0) contrast(1.18) saturate(1.18);
+            animation: motoLaunchImage 1.05s cubic-bezier(0.18, 0.9, 0.2, 1) forwards;
         }
 
         .model-copy {
             padding: 24px;
+            position: relative;
+            z-index: 1;
+        }
+        .model-card-launching .model-copy {
+            animation: motoLaunchFade 0.55s ease forwards;
+        }
+
+        .model-kicker {
+            display: inline-block;
+            margin-bottom: 12px;
+            color: rgba(255,255,255,0.52);
+            font-family: var(--font-data);
+            font-size: 10px;
+            letter-spacing: 2px;
+            text-transform: uppercase;
         }
 
         .model-copy h2 {
@@ -179,8 +213,167 @@
             font-family: var(--font-data);
         }
 
+        .model-meta {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin-top: 18px;
+        }
+
+        .model-meta span {
+            border: 1px solid var(--line);
+            background: var(--panel);
+            padding: 10px 12px;
+            font-family: var(--font-data);
+            font-size: 11px;
+            color: rgba(255,255,255,0.78);
+            text-align: center;
+        }
+
+        .model-cta {
+            margin-top: 18px;
+            display: inline-block;
+            padding: 12px 16px;
+            border: 1px solid rgba(225,0,0,0.4);
+            font-family: var(--font-data);
+            font-size: 11px;
+            letter-spacing: 2px;
+            color: #fff;
+            background: linear-gradient(90deg, rgba(225,0,0,0.18), transparent);
+        }
+
+        .model-card::before {
+            content: '';
+            position: absolute;
+            inset: 18px;
+            width: 90px;
+            height: 90px;
+            margin: auto;
+            border-radius: 50%;
+            background:
+                radial-gradient(circle, rgba(255,255,255,0.95) 0%, rgba(225,0,0,0.92) 38%, rgba(225,0,0,0.28) 68%, rgba(225,0,0,0) 100%);
+            box-shadow: 0 0 40px rgba(225,0,0,0.45);
+            transform: scale(0);
+            opacity: 0;
+            z-index: 2;
+            pointer-events: none;
+        }
+
+        .model-card::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background:
+                radial-gradient(circle at center, rgba(225,0,0,0.18), transparent 48%),
+                linear-gradient(180deg, rgba(225,0,0,0.06), rgba(0,0,0,0.04));
+            opacity: 0;
+            transition: opacity 0.45s ease;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .model-card:hover {
+            transform: translateY(-8px);
+            border-color: rgba(225,0,0,0.5);
+            box-shadow: 0 22px 46px rgba(0,0,0,0.4);
+        }
+
+        .model-card:hover::after {
+            opacity: 1;
+        }
+
+        .model-card:hover img {
+            transform: scale(1.04);
+            filter: grayscale(0) contrast(1.08);
+        }
+
+        .model-card.is-animating::before {
+            animation: orbPulse 0.78s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+        }
+
+        .model-card.is-animating img {
+            clip-path: circle(14% at 50% 46%);
+            transform: scale(0.9);
+        }
+
+        @keyframes orbPulse {
+            0% { transform: scale(0); opacity: 0; }
+            26% { transform: scale(1.1); opacity: 0.95; }
+            62% { transform: scale(3.8); opacity: 0.65; }
+            100% { transform: scale(6.4); opacity: 0; }
+        }
+        .moto-launch-overlay {
+            position: fixed; inset: 0; z-index: 999999; pointer-events: none; overflow: hidden;
+            background:
+                radial-gradient(circle at center, rgba(225,0,0,0.16), transparent 30%),
+                rgba(0,0,0,0);
+            opacity: 0;
+            transition: opacity 0.2s ease;
+        }
+        .moto-launch-overlay.active { opacity: 1; }
+        .moto-launch-smoke,
+        .moto-launch-smoke::before,
+        .moto-launch-smoke::after {
+            content: '';
+            position: absolute;
+            left: 50%;
+            bottom: 14%;
+            width: 24vw;
+            height: 24vw;
+            max-width: 360px;
+            max-height: 360px;
+            min-width: 180px;
+            min-height: 180px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(255,255,255,0.24) 0%, rgba(200,200,200,0.16) 28%, rgba(120,120,120,0.08) 48%, rgba(20,20,20,0) 72%);
+            filter: blur(18px);
+            transform: translate(-50%, 0) scale(0.35);
+            opacity: 0;
+        }
+        .moto-launch-overlay.active .moto-launch-smoke { animation: smokeRiseMain 1.05s cubic-bezier(0.18, 0.9, 0.2, 1) forwards; }
+        .moto-launch-overlay.active .moto-launch-smoke::before { animation: smokeRiseLeft 1.1s cubic-bezier(0.18, 0.9, 0.2, 1) 0.06s forwards; }
+        .moto-launch-overlay.active .moto-launch-smoke::after { animation: smokeRiseRight 1.15s cubic-bezier(0.18, 0.9, 0.2, 1) 0.1s forwards; }
+        .moto-launch-flash {
+            position: absolute; inset: 0;
+            background: radial-gradient(circle at center, rgba(255,255,255,0.18), rgba(225,0,0,0.1) 24%, rgba(0,0,0,0) 56%);
+            opacity: 0;
+        }
+        .moto-launch-overlay.active .moto-launch-flash { animation: launchFlash 0.85s ease-out forwards; }
+        @keyframes motoLaunchImage {
+            0% { transform: translate3d(0, 0, 0) scale(1); }
+            12% { transform: translate3d(-4px, 0, 0) scale(1.02); }
+            24% { transform: translate3d(5px, -2px, 0) scale(1.04); }
+            38% { transform: translate3d(-3px, -3px, 0) scale(1.08); }
+            58% { transform: translate3d(0, -12px, 0) scale(1.18); }
+            100% { transform: translate3d(0, -48px, 0) scale(1.7); }
+        }
+        @keyframes motoLaunchFade {
+            from { opacity: 1; transform: translateY(0); }
+            to { opacity: 0; transform: translateY(24px); }
+        }
+        @keyframes smokeRiseMain {
+            0% { opacity: 0; transform: translate(-50%, 24px) scale(0.28); }
+            20% { opacity: 0.9; }
+            100% { opacity: 0; transform: translate(-50%, -180px) scale(1.6); }
+        }
+        @keyframes smokeRiseLeft {
+            0% { opacity: 0; transform: translate(-80%, 22px) scale(0.22); }
+            18% { opacity: 0.75; }
+            100% { opacity: 0; transform: translate(-135%, -200px) scale(1.3); }
+        }
+        @keyframes smokeRiseRight {
+            0% { opacity: 0; transform: translate(-10%, 18px) scale(0.24); }
+            18% { opacity: 0.72; }
+            100% { opacity: 0; transform: translate(24%, -190px) scale(1.35); }
+        }
+        @keyframes launchFlash {
+            0% { opacity: 0; }
+            18% { opacity: 0.95; }
+            100% { opacity: 0; }
+        }
+
         @media (max-width: 900px) {
-            .hero, .models, .spec-grid {
+            .hero, .models, .spec-grid, .model-meta {
                 grid-template-columns: 1fr;
             }
 
@@ -193,96 +386,190 @@
 <body>
     <header>
         <div class="logo">MOTO<span>GP</span></div>
-        <a class="back-link" href="entrada1.html">VOLVER A LA HOME</a>
+        <a class="back-link" href="entrada1.html#teams">VOLVER AL DESFILE</a>
     </header>
 
     <main>
         <section class="hero">
             <div class="hero-copy">
                 <span class="eyebrow">Modulo de motos</span>
-                <h1>Parrilla <span>Visual</span></h1>
-                <p>Esta seccion ahora usa las motos reales que tienes en la carpeta. He sustituido los nombres genericos por equipos, marcas y dorsales para que la galeria quede mucho mas clara al navegar.</p>
+                <h1>Una <span>Moto</span> por ficha</h1>
+                <p>Ahora cada moto del desfile tiene su propio acceso. Desde esta galeria puedes abrir una pagina dedicada para una sola moto con datos tecnicos, identidad del equipo, estilo en pista y lectura visual mas clara.</p>
             </div>
             <div class="hero-visual" aria-hidden="true"></div>
         </section>
 
         <section class="spec-grid">
             <article class="spec-card">
-                <div class="spec-label">GALERIA</div>
-                <div class="spec-value">8 MOTOS</div>
+                <div class="spec-label">FICHAS</div>
+                <div class="spec-value">8</div>
             </article>
             <article class="spec-card">
-                <div class="spec-label">CATEGORIA</div>
-                <div class="spec-value">MOTOGP</div>
+                <div class="spec-label">MODULO</div>
+                <div class="spec-value">INDIVIDUAL</div>
             </article>
             <article class="spec-card">
-                <div class="spec-label">EXTRA</div>
-                <div class="spec-value">1 STREET</div>
+                <div class="spec-label">ENLACE</div>
+                <div class="spec-value">DESFILE</div>
             </article>
             <article class="spec-card">
-                <div class="spec-label">MARCAS</div>
-                <div class="spec-value">5</div>
+                <div class="spec-label">DETALLE</div>
+                <div class="spec-value">FULL DATA</div>
             </article>
         </section>
 
-        <section class="models">
-            <article class="model-card">
-                <img src="motogp3.jpg" alt="Ducati Lenovo Team dorsal 93">
-                <div class="model-copy">
-                    <h2>Ducati Lenovo 93</h2>
-                    <p>Ducati Desmosedici GP con decoracion oficial Lenovo. La imagen corresponde a la moto roja del dorsal 93 del equipo oficial Ducati.</p>
-                </div>
-            </article>
-            <article class="model-card">
-                <img src="motogp7.jpg" alt="Ducati VR46 dorsal 49">
-                <div class="model-copy">
-                    <h2>VR46 Ducati 49</h2>
-                    <p>Ducati Desmosedici GP con librea amarilla de Pertamina VR46. Es una de las imagenes mas reconocibles de la carpeta por el color fluor.</p>
-                </div>
-            </article>
-            <article class="model-card">
-                <img src="Monster.jpg" alt="Yamaha Monster Energy dorsal 20">
-                <div class="model-copy">
-                    <h2>Yamaha Monster 20</h2>
-                    <p>Yamaha YZR-M1 con patrocinio Monster Energy y ENEOS. Decoracion azul y negra del dorsal 20.</p>
-                </div>
-            </article>
-            <article class="model-card">
-                <img src="Honda.jpg" alt="Honda HRC Castrol dorsal 10">
-                <div class="model-copy">
-                    <h2>Honda HRC 10</h2>
-                    <p>Honda RC213V con decoracion HRC Castrol. La moto roja del dorsal 10 encaja muy bien como referencia visual del bloque Honda.</p>
-                </div>
-            </article>
-            <article class="model-card">
-                <img src="motogp9.jpg" alt="KTM Red Bull dorsal 37">
-                <div class="model-copy">
-                    <h2>KTM Red Bull 37</h2>
-                    <p>KTM RC16 oficial con la identidad negra y naranja de Red Bull KTM. El dorsal 37 aparece centrado en la toma frontal.</p>
-                </div>
-            </article>
-            <article class="model-card">
-                <img src="motogp10.jpg" alt="KTM Red Bull dorsal 12">
-                <div class="model-copy">
-                    <h2>KTM Red Bull 12</h2>
-                    <p>Segunda KTM RC16 de la galeria, esta vez con dorsal 12. Mantiene la misma base aerodinamica y el frontal caracteristico del equipo oficial.</p>
-                </div>
-            </article>
-            <article class="model-card">
-                <img src="motogp1 (2).jpg" alt="Aprilia Trackhouse dorsal 72">
-                <div class="model-copy">
-                    <h2>Aprilia Trackhouse 72</h2>
-                    <p>Aprilia RS-GP con los colores de Trackhouse. El dorsal 72 y la decoracion azul clara la distinguen rapidamente del resto.</p>
-                </div>
-            </article>
-            <article class="model-card">
-                <img src="motogp11.jpg" alt="Aprilia dorsal 25">
-                <div class="model-copy">
-                    <h2>Aprilia 25</h2>
-                    <p>Otra Aprilia RS-GP de la carpeta, con esquema azul y detalles fluor. Completa el bloque Aprilia dentro de la galeria.</p>
-                </div>
-            </article>
-        </section>
+        <section class="models" id="models-target"></section>
     </main>
+
+    <script>
+        const motoCatalog = [
+            {
+                id: 'ducati-lenovo-93',
+                teamId: 'ducati-lenovo',
+                image: 'imagenes/motogp3.jpg',
+                alt: 'Ducati Lenovo Team dorsal 93',
+                title: 'Ducati Lenovo 93',
+                team: 'Ducati Lenovo',
+                rider: 'Marc Marquez',
+                engine: 'V4 Desmosedici GP',
+                focus: 'Frenada / traccion',
+                blurb: 'La Ducati oficial del dorsal 93 mezcla agresividad de entrada, enorme apoyo delantero y una salida muy contundente cuando la moto ya esta levantada.'
+            },
+            {
+                id: 'vr46-49',
+                teamId: 'vr46',
+                image: 'imagenes/motogp7.jpg',
+                alt: 'Ducati VR46 dorsal 49',
+                title: 'VR46 Ducati 49',
+                team: 'Pertamina VR46',
+                rider: 'Fabio Di Giannantonio',
+                engine: 'V4 Desmosedici GP',
+                focus: 'Paso por curva / balance',
+                blurb: 'Una moto visualmente muy reconocible por su librea fluor. Suele transmitir una sensacion mas limpia y fluida en los cambios de apoyo.'
+            },
+            {
+                id: 'yamaha-20',
+                teamId: 'monster-yamaha',
+                image: 'imagenes/Monster.jpg',
+                alt: 'Yamaha Monster Energy dorsal 20',
+                title: 'Yamaha Monster 20',
+                team: 'Monster Yamaha',
+                rider: 'Fabio Quartararo',
+                engine: 'Inline-4 YZR-M1',
+                focus: 'Giro / velocidad media',
+                blurb: 'La M1 sigue siendo una referencia visual cuando se habla de paso por curva, estabilidad fina y sensibilidad del tren delantero.'
+            },
+            {
+                id: 'honda-10',
+                teamId: 'honda-hrc',
+                image: 'imagenes/Honda.jpg',
+                alt: 'Honda HRC Castrol dorsal 10',
+                title: 'Honda HRC 10',
+                team: 'Honda HRC',
+                rider: 'Luca Marini',
+                engine: 'V4 RC213V',
+                focus: 'Entrada / evolucion',
+                blurb: 'La RC213V mantiene una identidad muy marcada: compacta, intensa de reacciones y siempre asociada al trabajo de evolucion.'
+            },
+            {
+                id: 'ktm-37',
+                teamId: 'ktm-factory',
+                image: 'imagenes/motogp9.jpg',
+                alt: 'KTM Red Bull dorsal 37',
+                title: 'KTM Red Bull 37',
+                team: 'Red Bull KTM',
+                rider: 'Brad Binder',
+                engine: 'V4 RC16',
+                focus: 'Frenada / fisico',
+                blurb: 'La RC16 oficial combina una imagen muy agresiva con una personalidad de frenada fuerte, apoyo serio y aceleracion muy directa.'
+            },
+            {
+                id: 'ktm-12',
+                teamId: 'ktm-factory',
+                image: 'imagenes/motogp10.jpg',
+                alt: 'KTM Red Bull dorsal 12',
+                title: 'KTM Red Bull 12',
+                team: 'Red Bull KTM',
+                rider: 'Maverick Vinales',
+                engine: 'V4 RC16',
+                focus: 'Recta / apoyo',
+                blurb: 'Segunda KTM del bloque, con una lectura visual muy limpia del frontal y de la filosofia aerodinamica del equipo oficial.'
+            },
+            {
+                id: 'trackhouse-72',
+                teamId: 'trackhouse-aprilia',
+                image: 'imagenes/motogp1 (2).jpg',
+                alt: 'Aprilia Trackhouse dorsal 72',
+                title: 'Aprilia Trackhouse 72',
+                team: 'Trackhouse Aprilia',
+                rider: 'Ai Ogura',
+                engine: 'V4 RS-GP',
+                focus: 'Agilidad / lectura',
+                blurb: 'El esquema Trackhouse destaca mucho dentro del paddock. La moto transmite una imagen mas fresca y muy reconocible al primer vistazo.'
+            },
+            {
+                id: 'aprilia-25',
+                teamId: 'aprilia-racing',
+                image: 'imagenes/motogp11.jpg',
+                alt: 'Aprilia dorsal 25',
+                title: 'Aprilia 25',
+                team: 'Aprilia Racing',
+                rider: 'Jorge Martin',
+                engine: 'V4 RS-GP',
+                focus: 'Cambio de direccion / ataque',
+                blurb: 'La RS-GP oficial mezcla un look afilado con una sensacion muy competitiva en sectores enlazados y zonas de cambio rapido.'
+            }
+        ];
+
+        const modelsTarget = document.getElementById('models-target');
+
+        function ensureMotoLaunchOverlay() {
+            let overlay = document.querySelector('.moto-launch-overlay');
+            if (overlay) return overlay;
+
+            overlay = document.createElement('div');
+            overlay.className = 'moto-launch-overlay';
+            overlay.innerHTML = '<div class="moto-launch-flash"></div><div class="moto-launch-smoke"></div>';
+            document.body.appendChild(overlay);
+            return overlay;
+        }
+
+        const motoLaunchOverlay = ensureMotoLaunchOverlay();
+
+        motoCatalog.forEach((moto) => {
+            const card = document.createElement('a');
+            card.className = 'model-card';
+            card.href = `moto-detalle.html?id=${encodeURIComponent(moto.id)}`;
+            card.innerHTML = `
+                <img src="${moto.image}" alt="${moto.alt}">
+                <div class="model-copy">
+                    <span class="model-kicker">${moto.team}</span>
+                    <h2>${moto.title}</h2>
+                    <p>${moto.blurb}</p>
+                    <div class="model-meta">
+                        <span>${moto.rider}</span>
+                        <span>${moto.engine}</span>
+                        <span>${moto.focus}</span>
+                    </div>
+                    <span class="model-cta">ABRIR FICHA INDIVIDUAL</span>
+                </div>
+            `;
+
+            card.addEventListener('click', (event) => {
+                event.preventDefault();
+                if (card.dataset.launching === 'true') return;
+                card.dataset.launching = 'true';
+                card.classList.add('is-animating', 'model-card-launching');
+                motoLaunchOverlay.classList.remove('active');
+                void motoLaunchOverlay.offsetWidth;
+                motoLaunchOverlay.classList.add('active');
+                window.setTimeout(() => {
+                    window.location.href = card.href;
+                }, 980);
+            });
+
+            modelsTarget.appendChild(card);
+        });
+    </script>
 </body>
 </html>

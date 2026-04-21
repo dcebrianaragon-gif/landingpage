@@ -1,14 +1,44 @@
-import React, { useRef, useEffect, useState, useCallback } from 'react';
+import React, { lazy, startTransition, Suspense, useRef, useEffect, useState, useCallback } from 'react';
 import * as THREE from 'three';
-import { base44 } from '@/api/base44Client';
 import { useQuery } from '@tanstack/react-query';
 import { buildTrack, buildBike } from '@/components/game/GameEngine.jsx';
-import HUD from '@/components/game/HUD';
-import Minimap from '@/components/game/Minimap';
 import GameMenu from '@/components/game/GameMenu';
 import { Link } from 'react-router-dom';
 import { Settings } from 'lucide-react';
 import { localData } from '@/data/localData.js';
+
+const HUD = lazy(() => import('@/components/game/HUD'));
+const Minimap = lazy(() => import('@/components/game/Minimap'));
+
+const UI_UPDATE_INTERVAL_MS = 50;
+const MINIMAP_UPDATE_INTERVAL_MS = 80;
+const TARGET_FRAME_MS = 1000 / 60;
+const ORTHO_VIEW_HEIGHT = 220;
+const CAMERA_ALTITUDE = 220;
+
+function disposeSceneObject(object) {
+  if (!object) return;
+
+  object.traverse((child) => {
+    if (child.geometry) {
+      child.geometry.dispose();
+    }
+
+    const { material } = child;
+    if (!material) return;
+
+    if (Array.isArray(material)) {
+      material.forEach((entry) => {
+        entry?.map?.dispose?.();
+        entry?.dispose?.();
+      });
+      return;
+    }
+
+    material.map?.dispose?.();
+    material.dispose?.();
+  });
+}
 
 export default function Game() {
   const containerRef = useRef(null);
@@ -16,6 +46,9 @@ export default function Game() {
   const sceneRef = useRef(null);
   const cameraRef = useRef(null);
   const bikeRef = useRef(null);
+  const lapNotifyTimeoutRef = useRef(null);
+  const uiFrameRef = useRef({ hud: 0, minimap: 0 });
+  const viewportRef = useRef({ width: window.innerWidth, height: window.innerHeight });
   const stateRef = useRef({
     isPlaying: false,
     speed: 0,
@@ -31,6 +64,9 @@ export default function Game() {
     halfwayDone: false,
     closestT: 0,
     lapCooldown: 0,
+    visualTime: 0,
+    wheelSpin: 0,
+    lastFrameTime: 0,
     spline: null,
     startPos: new THREE.Vector3(),
     startHeading: 0,
@@ -43,52 +79,42 @@ export default function Game() {
   });
   const keysRef = useRef({});
   const animRef = useRef(null);
-  const gearKeyRef = useRef({ q: false, e: false }); // evita repetición de tecla
+  const gearKeyRef = useRef({ q: false, e: false });
 
   const [showMenu, setShowMenu] = useState(true);
   const [selectedCircuit, setSelectedCircuit] = useState(null);
   const [selectedBike, setSelectedBike] = useState(null);
   const [gameState, setGameState] = useState({
-    lapTime: 0, bestLap: null, lap: 1, totalLaps: 5,
-    speed: 0, gear: 0, rpmRatio: 0,
-    lapNotify: false, offTrack: false, finished: false,
+    lapTime: 0,
+    bestLap: null,
+    lap: 1,
+    totalLaps: 5,
+    speed: 0,
+    gear: 0,
+    rpmRatio: 0,
+    lapNotify: false,
+    offTrack: false,
+    finished: false,
   });
   const [minimapData, setMinimapData] = useState({
-    spline: null, bikePos: null, bikeHeading: 0,
-    startPos: null, trackW: 13, bikeColor: 0xe10000,
+    spline: null,
+    bikePos: null,
+    bikeHeading: 0,
+    startPos: null,
+    trackW: 13,
+    bikeColor: 0xe10000,
   });
 
   const { data: circuits = [], isLoading: loadingCircuits } = useQuery({
     queryKey: ['circuits'],
-    queryFn: async () => {
-      try {
-        const remoteCircuits = await base44.entities.Circuit.list();
-        if (Array.isArray(remoteCircuits) && remoteCircuits.length > 0) {
-          return remoteCircuits;
-        }
-      } catch (error) {
-        console.warn('Fallo al cargar circuitos remotos, usando datos locales.', error);
-      }
-      return localData.listCircuits();
-    },
+    queryFn: () => localData.listCircuits(),
   });
 
   const { data: bikes = [], isLoading: loadingBikes } = useQuery({
     queryKey: ['bikes'],
-    queryFn: async () => {
-      try {
-        const remoteBikes = await base44.entities.Bike.list();
-        if (Array.isArray(remoteBikes) && remoteBikes.length > 0) {
-          return remoteBikes;
-        }
-      } catch (error) {
-        console.warn('Fallo al cargar motos remotas, usando datos locales.', error);
-      }
-      return localData.listBikes();
-    },
+    queryFn: () => localData.listBikes(),
   });
 
-  // Set defaults when data loads
   useEffect(() => {
     if (circuits.length > 0 && !selectedCircuit) setSelectedCircuit(circuits[0].id);
   }, [circuits, selectedCircuit]);
@@ -97,77 +123,46 @@ export default function Game() {
     if (bikes.length > 0 && !selectedBike) setSelectedBike(bikes[0].id);
   }, [bikes, selectedBike]);
 
-  // Initialize THREE scene once
   useEffect(() => {
     const scene = new THREE.Scene();
-    // Realistic sky gradient via fog + sky mesh
-    scene.fog = new THREE.Fog(0x87CEEB, 200, 1200);
-    scene.background = new THREE.Color(0x87CEEB);
+    scene.background = new THREE.Color(0x070016);
     sceneRef.current = scene;
 
-    // Sky dome
-    const skyGeo = new THREE.SphereGeometry(1000, 16, 8);
-    const skyMat = new THREE.ShaderMaterial({
-      side: THREE.BackSide,
-      uniforms: {},
-      vertexShader: `
-        varying vec3 vWorldPos;
-        void main() {
-          vWorldPos = position;
-          gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-        }
-      `,
-      fragmentShader: `
-        varying vec3 vWorldPos;
-        void main() {
-          float h = normalize(vWorldPos).y;
-          vec3 skyTop = vec3(0.18, 0.42, 0.80);
-          vec3 skyHorizon = vec3(0.72, 0.88, 1.0);
-          vec3 col = mix(skyHorizon, skyTop, clamp(h * 1.8, 0.0, 1.0));
-          gl_FragColor = vec4(col, 1.0);
-        }
-      `,
-    });
-    scene.add(new THREE.Mesh(skyGeo, skyMat));
-
-    const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 2000);
-    camera.position.set(0, 8, 20);
+    const aspect = window.innerWidth / window.innerHeight;
+    const camera = new THREE.OrthographicCamera(
+      (-ORTHO_VIEW_HEIGHT * aspect) / 2,
+      (ORTHO_VIEW_HEIGHT * aspect) / 2,
+      ORTHO_VIEW_HEIGHT / 2,
+      -ORTHO_VIEW_HEIGHT / 2,
+      0.1,
+      1000
+    );
+    camera.position.set(0, CAMERA_ALTITUDE, 0);
+    camera.up.set(0, 0, -1);
+    camera.lookAt(0, 0, 0);
     cameraRef.current = camera;
 
-    const renderer = new THREE.WebGLRenderer({ antialias: true });
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    const renderer = new THREE.WebGLRenderer({ antialias: false, powerPreference: 'high-performance' });
+    renderer.setPixelRatio(1);
     renderer.setSize(window.innerWidth, window.innerHeight);
-    renderer.shadowMap.enabled = true;
-    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-    renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1.0;
+    renderer.domElement.className = 'retro-game-canvas';
     rendererRef.current = renderer;
 
     if (containerRef.current) {
       containerRef.current.appendChild(renderer.domElement);
     }
 
-    // Lights — warm sun, blue sky fill
-    scene.add(new THREE.AmbientLight(0xfff4e0, 0.4));
-    const sun = new THREE.DirectionalLight(0xfffbe0, 2.2);
-    sun.position.set(300, 400, 150);
-    sun.castShadow = true;
-    sun.shadow.mapSize.set(4096, 4096);
-    sun.shadow.camera.near = 1;
-    sun.shadow.camera.far = 1200;
-    sun.shadow.camera.left = -400;
-    sun.shadow.camera.right = 400;
-    sun.shadow.camera.top = 400;
-    sun.shadow.camera.bottom = -400;
-    sun.shadow.bias = -0.0005;
-    scene.add(sun);
-    scene.add(new THREE.HemisphereLight(0x9ec8ff, 0x3a7a3a, 0.6));
-
     renderer.render(scene, camera);
 
     const handleResize = () => {
+      viewportRef.current = { width: window.innerWidth, height: window.innerHeight };
+      const nextAspect = window.innerWidth / window.innerHeight;
+      renderer.setPixelRatio(1);
       renderer.setSize(window.innerWidth, window.innerHeight);
-      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.left = (-ORTHO_VIEW_HEIGHT * nextAspect) / 2;
+      camera.right = (ORTHO_VIEW_HEIGHT * nextAspect) / 2;
+      camera.top = ORTHO_VIEW_HEIGHT / 2;
+      camera.bottom = -ORTHO_VIEW_HEIGHT / 2;
       camera.updateProjectionMatrix();
     };
     window.addEventListener('resize', handleResize);
@@ -175,6 +170,11 @@ export default function Game() {
     return () => {
       window.removeEventListener('resize', handleResize);
       if (animRef.current) cancelAnimationFrame(animRef.current);
+      if (lapNotifyTimeoutRef.current) clearTimeout(lapNotifyTimeoutRef.current);
+      stateRef.current.trackMeshes.forEach((mesh) => disposeSceneObject(mesh));
+      if (bikeRef.current) {
+        disposeSceneObject(bikeRef.current);
+      }
       renderer.dispose();
       if (containerRef.current && renderer.domElement.parentNode === containerRef.current) {
         containerRef.current.removeChild(renderer.domElement);
@@ -182,15 +182,16 @@ export default function Game() {
     };
   }, []);
 
-  // Keyboard
   useEffect(() => {
     const down = (e) => {
       keysRef.current[e.key] = true;
-      if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', ' '].includes(e.key)) e.preventDefault();
+      if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', ' '].includes(e.key)) {
+        e.preventDefault();
+      }
 
-      // Gear shift — one press at a time
       const s = stateRef.current;
-      if (!s.isPlaying) return;
+      if (!s.isPlaying || !s.bkCfg) return;
+
       if ((e.key === 'q' || e.key === 'Q') && !gearKeyRef.current.q) {
         gearKeyRef.current.q = true;
         if (s.gear > 1) s.gear--;
@@ -200,11 +201,13 @@ export default function Game() {
         if (s.gear < s.bkCfg.topGear) s.gear++;
       }
     };
+
     const up = (e) => {
       keysRef.current[e.key] = false;
       if (e.key === 'q' || e.key === 'Q') gearKeyRef.current.q = false;
       if (e.key === 'e' || e.key === 'E') gearKeyRef.current.e = false;
     };
+
     window.addEventListener('keydown', down);
     window.addEventListener('keyup', up);
     return () => {
@@ -213,42 +216,44 @@ export default function Game() {
     };
   }, []);
 
-  const K = (...k) => k.some(v => keysRef.current[v]);
+  const K = (...k) => k.some((v) => keysRef.current[v]);
 
   const getClosestT = (pos) => {
     const s = stateRef.current;
-    let best = Infinity, bt = s.closestT;
-    const RANGE = 0.3, STEPS = 60;
-    for (let i = 0; i <= STEPS; i++) {
-      const t = ((s.closestT - RANGE / 2 + i / STEPS * RANGE) % 1 + 1) % 1;
+    let best = Infinity;
+    let bt = s.closestT;
+    const range = 0.3;
+    const steps = 60;
+    for (let i = 0; i <= steps; i++) {
+      const t = ((s.closestT - range / 2 + (i / steps) * range) % 1 + 1) % 1;
       const p = s.spline.getPoint(t);
       const d = (p.x - pos.x) ** 2 + (p.z - pos.z) ** 2;
-      if (d < best) { best = d; bt = t; }
+      if (d < best) {
+        best = d;
+        bt = t;
+      }
     }
     s.closestT = bt;
     return bt;
   };
 
-  const gameLoop = useCallback(() => {
+  const gameLoop = useCallback((frameTime = performance.now()) => {
     const s = stateRef.current;
     if (!s.isPlaying) return;
     animRef.current = requestAnimationFrame(gameLoop);
+    if (frameTime - s.lastFrameTime < TARGET_FRAME_MS) return;
+    s.lastFrameTime = frameTime;
 
     const bike = bikeRef.current;
     const camera = cameraRef.current;
-    if (!bike || !camera) return;
+    if (!bike || !camera || !s.bkCfg) return;
 
-    // Gear-based speed limits: each gear unlocks a fraction of maxSpd
-    // Gear 1→topGear, speed ceiling grows linearly
     const gearSpeedCeiling = (s.gear / s.bkCfg.topGear) * s.bkCfg.maxSpd;
-
-    // Acceleration / Braking
     const accelKey = K('w', 'ArrowUp');
     const brakeKey = K('s', 'ArrowDown');
     const frontBrake = K(' ');
 
     if (accelKey) {
-      // Can only accelerate up to this gear's ceiling
       s.speed = Math.min(s.speed + s.bkCfg.accel, gearSpeedCeiling);
     } else if (brakeKey) {
       s.speed = Math.max(s.speed - s.bkCfg.brake, 0);
@@ -258,51 +263,71 @@ export default function Game() {
       s.speed *= 0.985;
     }
 
-    // If player downshifts below current speed ceiling, clamp gradually (engine brake)
     if (s.speed > gearSpeedCeiling) {
       s.speed = Math.max(s.speed - s.bkCfg.brake * 0.3, gearSpeedCeiling);
     }
 
-    if (!s.onTrack) s.speed *= 0.90;
+    if (!s.onTrack) s.speed *= 0.9;
 
-    // Steering
     s.steerInput = 0;
     if (s.speed > 0.03) {
       const velFactor = Math.min(s.speed / s.bkCfg.maxSpd, 1);
       const turnRate = s.bkCfg.turn * (1.1 - velFactor * 0.4);
-      if (K('a', 'ArrowLeft')) { s.heading += turnRate; s.steerInput = 1; }
-      if (K('d', 'ArrowRight')) { s.heading -= turnRate; s.steerInput = -1; }
+      if (K('a', 'ArrowLeft')) {
+        s.heading += turnRate;
+        s.steerInput = 1;
+      }
+      if (K('d', 'ArrowRight')) {
+        s.heading -= turnRate;
+        s.steerInput = -1;
+      }
     }
 
-    // Lean
     const targetLean = s.steerInput * 0.55;
     s.leanAngle += (targetLean - s.leanAngle) * s.bkCfg.lean;
 
-    // Movement — heading 0 = hacia +Z, aumentar heading = girar derecha
     bike.position.x += Math.sin(s.heading) * s.speed;
     bike.position.z += Math.cos(s.heading) * s.speed;
-    bike.position.y = 0;
+    s.visualTime += 1;
 
-    // Rotation — alinear mesh con heading
+    const speedRatio = Math.min(s.speed / s.bkCfg.maxSpd, 1);
+    const enginePulse = Math.sin(s.visualTime * (0.28 + speedRatio * 1.45));
+    const visual = bike.getObjectByName('bikeVisual');
+    const frontWheel = bike.getObjectByName('frontWheel');
+    const rearWheel = bike.getObjectByName('rearWheel');
+    const tailLight = bike.getObjectByName('bikeTailLight');
+    const rider = bike.getObjectByName('bikeRider');
+    const speedTrail = bike.getObjectByName('bikeSpeedTrail');
+
+    bike.position.y = 0.02 + Math.abs(enginePulse) * 0.035 * speedRatio;
+    s.wheelSpin += s.speed * 1.95;
+    if (frontWheel) frontWheel.rotation.z = s.wheelSpin;
+    if (rearWheel) rearWheel.rotation.z = s.wheelSpin * 1.08;
+    if (visual) {
+      visual.position.x = enginePulse * 0.035 * speedRatio;
+      visual.rotation.y = -s.steerInput * 0.08 * speedRatio;
+      visual.scale.setScalar(1 + speedRatio * 0.018);
+    }
+    if (rider) rider.position.x = -s.leanAngle * 0.48;
+    if (tailLight?.material) tailLight.material.opacity = (brakeKey || frontBrake) ? 1 : 0.45 + speedRatio * 0.25;
+    if (speedTrail?.material) {
+      speedTrail.material.opacity = Math.max(0, speedRatio - 0.34) * 0.55;
+      speedTrail.scale.y = 0.72 + speedRatio * 1.4;
+      speedTrail.scale.x = 1 + Math.abs(enginePulse) * 0.18;
+    }
+
     const qHead = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), s.heading);
-    const qLean = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 0, 1), -s.leanAngle);
+    const qLean = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 0, 1), -s.leanAngle * (0.72 + speedRatio * 0.34));
     bike.quaternion.copy(qHead).multiply(qLean);
 
-    // Track detection
     if (s.spline) {
       const ct = getClosestT(bike.position);
       const cp = s.spline.getPoint(ct);
       const dist = Math.sqrt((bike.position.x - cp.x) ** 2 + (bike.position.z - cp.z) ** 2);
       s.onTrack = dist < s.circuit.trackW / 2 + 1.5;
-
-      if (!s.onTrack) {
-        s.offTrackTimer++;
-      } else {
-        s.offTrackTimer = 0;
-      }
+      s.offTrackTimer = s.onTrack ? 0 : s.offTrackTimer + 1;
     }
 
-    // Lap detection
     s.lapCooldown = Math.max(0, s.lapCooldown - 1);
     if (s.spline && !s.finished) {
       const mid = s.spline.getPoint(0.5);
@@ -314,98 +339,104 @@ export default function Game() {
           (bike.position.x - s.startPos.x) ** 2 +
           (bike.position.z - s.startPos.z) ** 2
         );
+
         if (dStart < 9) {
           const t = (performance.now() - s.lapStart) / 1000;
           if (t > 5) {
-            if (!s.bestLap || t < s.bestLap) {
-              s.bestLap = t;
-            }
+            if (!s.bestLap || t < s.bestLap) s.bestLap = t;
             s.lapCount++;
             s.lapStart = performance.now();
             s.halfwayDone = false;
             s.lapCooldown = 120;
 
-            if (s.lapCount > s.circuit.laps) {
-              s.finished = true;
-            }
+            if (s.lapCount > s.circuit.laps) s.finished = true;
 
-            // Flash notify
-            setGameState(prev => ({ ...prev, lapNotify: true }));
-            setTimeout(() => setGameState(prev => ({ ...prev, lapNotify: false })), 1600);
+            setGameState((prev) => ({ ...prev, lapNotify: true }));
+            if (lapNotifyTimeoutRef.current) clearTimeout(lapNotifyTimeoutRef.current);
+            lapNotifyTimeoutRef.current = setTimeout(() => {
+              setGameState((prev) => ({ ...prev, lapNotify: false }));
+            }, 1600);
           }
         }
       }
     }
 
-    // If stopped, go to neutral
     if (s.speed < 0.005) s.gear = 1;
 
-    // RPM within current gear (0→1 going from 0 to ceiling)
     const gearCeil = (s.gear / s.bkCfg.topGear) * s.bkCfg.maxSpd;
     const prevCeil = ((s.gear - 1) / s.bkCfg.topGear) * s.bkCfg.maxSpd;
-    const rpmInGear = gearCeil > prevCeil
-      ? (s.speed - prevCeil) / (gearCeil - prevCeil)
-      : 0;
+    const rpmInGear = gearCeil > prevCeil ? (s.speed - prevCeil) / (gearCeil - prevCeil) : 0;
 
-    // Camera — speed-based zoom + vibration at high speed
-    const speedRatio = s.speed / (s.bkCfg.maxSpd || 2.3);
-    const camDist = 11 + speedRatio * 6;
-    const camH = 3.5 + speedRatio * 2.5;
-    // Vibration at high speed
-    const vib = speedRatio > 0.6 ? (Math.random() - 0.5) * 0.08 * speedRatio : 0;
-    s.camTarget.set(
-      bike.position.x - Math.sin(s.heading) * camDist + vib,
-      bike.position.y + camH + Math.abs(vib) * 0.5,
-      bike.position.z - Math.cos(s.heading) * camDist + vib
-    );
-    camera.position.lerp(s.camTarget, 0.07);
-    s.camLook.set(
-      bike.position.x + Math.sin(s.heading) * 5,
-      bike.position.y + 1.2,
-      bike.position.z + Math.cos(s.heading) * 5
-    );
+    s.camTarget.set(bike.position.x, CAMERA_ALTITUDE, bike.position.z);
+    camera.position.lerp(s.camTarget, 0.12);
+    s.camLook.set(bike.position.x, 0, bike.position.z);
     camera.lookAt(s.camLook);
 
-    // Update HUD state (throttled)
-    const elapsed = (performance.now() - s.lapStart) / 1000;
-    setGameState(prev => ({
-      ...prev,
-      lapTime: elapsed,
-      bestLap: s.bestLap,
-      lap: Math.min(s.lapCount, s.circuit.laps),
-      totalLaps: s.circuit.laps,
-      speed: s.speed,
-      gear: s.gear,
-      rpmRatio: Math.max(0, Math.min(1, rpmInGear)),
-      offTrack: s.offTrackTimer > 10,
-      finished: s.finished,
-    }));
+    const now = performance.now();
+    const elapsed = (now - s.lapStart) / 1000;
 
-    // Minimap
-    setMinimapData(prev => ({
-      ...prev,
-      bikePos: { x: bike.position.x, z: bike.position.z },
-      bikeHeading: s.heading,
-    }));
+    if (now - uiFrameRef.current.hud >= UI_UPDATE_INTERVAL_MS) {
+      uiFrameRef.current.hud = now;
+      startTransition(() => {
+        setGameState((prev) => ({
+          ...prev,
+          lapTime: elapsed,
+          bestLap: s.bestLap,
+          lap: Math.min(s.lapCount, s.circuit.laps),
+          totalLaps: s.circuit.laps,
+          speed: s.speed,
+          gear: s.gear,
+          rpmRatio: Math.max(0, Math.min(1, rpmInGear)),
+          offTrack: s.offTrackTimer > 10,
+          finished: s.finished,
+        }));
+      });
+    }
+
+    if (now - uiFrameRef.current.minimap >= MINIMAP_UPDATE_INTERVAL_MS) {
+      uiFrameRef.current.minimap = now;
+      startTransition(() => {
+        setMinimapData((prev) => ({
+          ...prev,
+          bikePos: { x: bike.position.x, z: bike.position.z },
+          bikeHeading: s.heading,
+        }));
+      });
+    }
 
     rendererRef.current.render(sceneRef.current, camera);
   }, []);
 
   const launch = useCallback(() => {
-    const circuitData = circuits.find(c => c.id === selectedCircuit);
-    const bikeData = bikes.find(b => b.id === selectedBike);
+    const circuitData = circuits.find((c) => c.id === selectedCircuit);
+    const bikeData = bikes.find((b) => b.id === selectedBike);
     if (!circuitData || !bikeData) return;
 
     const scene = sceneRef.current;
     const s = stateRef.current;
+    if (animRef.current) cancelAnimationFrame(animRef.current);
+    if (lapNotifyTimeoutRef.current) clearTimeout(lapNotifyTimeoutRef.current);
 
-    // Convert entity data to engine format
+    s.trackMeshes.forEach((mesh) => {
+      scene.remove(mesh);
+      disposeSceneObject(mesh);
+    });
+    s.trackMeshes.length = 0;
+    if (bikeRef.current) {
+      scene.remove(bikeRef.current);
+      disposeSceneObject(bikeRef.current);
+      bikeRef.current = null;
+    }
+
     const cir = {
       id: circuitData.id,
       name: circuitData.name,
       laps: circuitData.laps || 5,
       trackW: circuitData.track_width || 13,
-      wps: (circuitData.waypoints || []).map(wp => [wp.x, wp.z]),
+      imageUrl: circuitData.image_url || '',
+      imageAspect: circuitData.image_aspect || 1,
+      imageScale: circuitData.image_scale || 1.7,
+      wps: (circuitData.waypoints || []).map((wp) => [wp.x, wp.z]),
     };
 
     const bk = {
@@ -424,12 +455,10 @@ export default function Game() {
     s.startPos = trackResult.startPos;
     s.startHeading = trackResult.startHeading;
 
-    if (bikeRef.current) scene.remove(bikeRef.current);
     const bikeMesh = buildBike(bk);
     scene.add(bikeMesh);
     bikeRef.current = bikeMesh;
 
-    // Reset state
     s.heading = s.startHeading;
     s.speed = 0;
     s.leanAngle = 0;
@@ -445,22 +474,25 @@ export default function Game() {
     s.bkCfg = bk;
     s.circuit = cir;
     s.lapCooldown = 0;
+    s.visualTime = 0;
+    s.wheelSpin = 0;
+    s.lastFrameTime = 0;
     s.finished = false;
+    uiFrameRef.current.hud = 0;
+    uiFrameRef.current.minimap = 0;
 
     const startOffset = new THREE.Vector3(
-      -Math.sin(s.startHeading) * 3, 0, Math.cos(s.startHeading) * 3
+      -Math.sin(s.startHeading) * 3,
+      0,
+      Math.cos(s.startHeading) * 3
     );
     bikeMesh.position.copy(s.startPos).add(startOffset);
     bikeMesh.rotation.set(0, s.startHeading, 0);
 
     const camera = cameraRef.current;
-    s.camTarget.copy(bikeMesh.position);
-    camera.position.set(
-      bikeMesh.position.x + Math.sin(s.startHeading) * 16,
-      bikeMesh.position.y + 6,
-      bikeMesh.position.z - Math.cos(s.startHeading) * 16
-    );
-    camera.lookAt(bikeMesh.position);
+    s.camTarget.set(bikeMesh.position.x, CAMERA_ALTITUDE, bikeMesh.position.z);
+    camera.position.copy(s.camTarget);
+    camera.lookAt(bikeMesh.position.x, 0, bikeMesh.position.z);
 
     setMinimapData({
       spline: s.spline,
@@ -472,6 +504,7 @@ export default function Game() {
     });
 
     setShowMenu(false);
+    setGameState((prev) => ({ ...prev, lapNotify: false, finished: false }));
     s.isPlaying = true;
     gameLoop();
   }, [circuits, bikes, selectedCircuit, selectedBike, gameLoop]);
@@ -480,32 +513,56 @@ export default function Game() {
     const s = stateRef.current;
     s.isPlaying = false;
     if (animRef.current) cancelAnimationFrame(animRef.current);
+    if (lapNotifyTimeoutRef.current) clearTimeout(lapNotifyTimeoutRef.current);
 
-    s.trackMeshes.forEach(m => sceneRef.current.remove(m));
+    s.trackMeshes.forEach((mesh) => {
+      sceneRef.current.remove(mesh);
+      disposeSceneObject(mesh);
+    });
     s.trackMeshes.length = 0;
     if (bikeRef.current) {
       sceneRef.current.remove(bikeRef.current);
+      disposeSceneObject(bikeRef.current);
       bikeRef.current = null;
     }
     s.spline = null;
+    s.visualTime = 0;
+    s.wheelSpin = 0;
+    s.lastFrameTime = 0;
+    uiFrameRef.current.hud = 0;
+    uiFrameRef.current.minimap = 0;
 
     setShowMenu(true);
     setGameState({
-      lapTime: 0, bestLap: null, lap: 1, totalLaps: 5,
-      speed: 0, gear: 0, rpmRatio: 0,
-      lapNotify: false, offTrack: false, finished: false,
+      lapTime: 0,
+      bestLap: null,
+      lap: 1,
+      totalLaps: 5,
+      speed: 0,
+      gear: 0,
+      rpmRatio: 0,
+      lapNotify: false,
+      offTrack: false,
+      finished: false,
     });
     setMinimapData({
-      spline: null, bikePos: null, bikeHeading: 0,
-      startPos: null, trackW: 13, bikeColor: 0xe10000,
+      spline: null,
+      bikePos: null,
+      bikeHeading: 0,
+      startPos: null,
+      trackW: 13,
+      bikeColor: 0xe10000,
     });
 
     rendererRef.current.render(sceneRef.current, cameraRef.current);
   }, []);
 
   return (
-    <div className="relative w-full h-screen overflow-hidden bg-black font-mono">
+    <div className="retro-game relative w-full h-screen overflow-hidden bg-black font-mono">
       <div ref={containerRef} className="fixed inset-0 z-0" />
+      <div className="retro-vignette pointer-events-none fixed inset-0 z-[8]" />
+      <div className="retro-crt pointer-events-none fixed inset-0 z-[70]" />
+      <div className="retro-scan pointer-events-none fixed inset-0 z-[71]" />
 
       {showMenu && (
         <>
@@ -521,9 +578,7 @@ export default function Game() {
           />
           <Link
             to="/ManageData"
-            className="fixed bottom-6 right-6 z-[60] flex items-center gap-2 bg-black/90 border border-border
-                       text-muted-foreground px-4 py-2 text-[10px] tracking-[2px] uppercase
-                       hover:border-primary hover:text-primary transition-all"
+            className="retro-button fixed bottom-6 right-6 z-[60] flex items-center gap-2 px-4 py-2 text-[10px] tracking-[2px] uppercase"
           >
             <Settings className="w-3.5 h-3.5" />
             GESTIONAR DATOS
@@ -532,7 +587,7 @@ export default function Game() {
       )}
 
       {!showMenu && (
-        <>
+        <Suspense fallback={null}>
           <HUD gameState={gameState} onBack={goMenu} />
           <Minimap
             spline={minimapData.spline}
@@ -542,7 +597,7 @@ export default function Game() {
             trackW={minimapData.trackW}
             bikeColor={minimapData.bikeColor}
           />
-        </>
+        </Suspense>
       )}
     </div>
   );

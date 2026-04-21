@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { base44 } from '@/api/base44Client';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -18,75 +17,37 @@ export default function ManageData() {
 
   const { data: circuits = [], isLoading: loadingC } = useQuery({
     queryKey: ['circuits'],
-    queryFn: async () => {
-      try {
-        const remoteCircuits = await base44.entities.Circuit.list();
-        if (Array.isArray(remoteCircuits) && remoteCircuits.length > 0) {
-          return remoteCircuits;
-        }
-      } catch (error) {
-        console.warn('Fallo al cargar circuitos remotos, usando datos locales.', error);
-      }
-      return localData.listCircuits();
-    },
+    queryFn: () => localData.listCircuits(),
   });
 
   const { data: bikes = [], isLoading: loadingB } = useQuery({
     queryKey: ['bikes'],
-    queryFn: async () => {
-      try {
-        const remoteBikes = await base44.entities.Bike.list();
-        if (Array.isArray(remoteBikes) && remoteBikes.length > 0) {
-          return remoteBikes;
-        }
-      } catch (error) {
-        console.warn('Fallo al cargar motos remotas, usando datos locales.', error);
-      }
-      return localData.listBikes();
-    },
+    queryFn: () => localData.listBikes(),
   });
 
   const saveCircuit = async (data) => {
     setSaving(true);
-    try {
-      if (editingCircuit === 'new') await base44.entities.Circuit.create(data);
-      else await base44.entities.Circuit.update(editingCircuit.id, data);
-    } catch (error) {
-      await localData.saveCircuit(data, editingCircuit === 'new' ? null : editingCircuit.id);
-    }
+    await localData.saveCircuit(data, editingCircuit === 'new' ? null : editingCircuit.id);
     queryClient.invalidateQueries({ queryKey: ['circuits'] });
     setEditingCircuit(null);
     setSaving(false);
   };
 
   const deleteCircuit = async (id) => {
-    try {
-      await base44.entities.Circuit.delete(id);
-    } catch (error) {
-      await localData.deleteCircuit(id);
-    }
+    await localData.deleteCircuit(id);
     queryClient.invalidateQueries({ queryKey: ['circuits'] });
   };
 
   const saveBike = async (data) => {
     setSaving(true);
-    try {
-      if (editingBike === 'new') await base44.entities.Bike.create(data);
-      else await base44.entities.Bike.update(editingBike.id, data);
-    } catch (error) {
-      await localData.saveBike(data, editingBike === 'new' ? null : editingBike.id);
-    }
+    await localData.saveBike(data, editingBike === 'new' ? null : editingBike.id);
     queryClient.invalidateQueries({ queryKey: ['bikes'] });
     setEditingBike(null);
     setSaving(false);
   };
 
   const deleteBike = async (id) => {
-    try {
-      await base44.entities.Bike.delete(id);
-    } catch (error) {
-      await localData.deleteBike(id);
-    }
+    await localData.deleteBike(id);
     queryClient.invalidateQueries({ queryKey: ['bikes'] });
   };
 

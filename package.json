@@ -1,0 +1,7 @@
+{
+  "name": "motogp-registro-local",
+  "private": true,
+  "scripts": {
+    "start": "node .vscode/server.js"
+  }
+}

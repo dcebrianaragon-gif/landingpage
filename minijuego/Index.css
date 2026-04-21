@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Press+Start+2P&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -94,4 +94,192 @@
     background-color: hsl(var(--background));
     color: hsl(var(--foreground));
   }
+}
+
+@layer components {
+  .retro-game {
+    --retro-pink: #ff2aa1;
+    --retro-cyan: #00f2ff;
+    --retro-yellow: #ffef5a;
+    --retro-purple: #140926;
+    image-rendering: pixelated;
+    text-shadow: 2px 2px 0 #000;
+  }
+
+  .retro-game-canvas {
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
+    filter: saturate(1.22) contrast(1.16);
+  }
+
+  .retro-vignette {
+    background:
+      radial-gradient(circle at center, transparent 42%, rgba(0, 0, 0, 0.36) 78%, rgba(0, 0, 0, 0.74) 100%),
+      linear-gradient(135deg, rgba(255, 42, 161, 0.07), transparent 38%, rgba(0, 242, 255, 0.07));
+  }
+
+  .retro-crt {
+    background:
+      repeating-linear-gradient(
+        0deg,
+        rgba(255, 255, 255, 0.055) 0,
+        rgba(255, 255, 255, 0.055) 1px,
+        transparent 1px,
+        transparent 4px
+      );
+    mix-blend-mode: screen;
+    opacity: 0.4;
+  }
+
+  .retro-scan::before {
+    content: '';
+    position: absolute;
+    inset: -20% 0 auto;
+    height: 22%;
+    background: linear-gradient(180deg, transparent, rgba(0, 242, 255, 0.08), transparent);
+    animation: retroScan 5.5s linear infinite;
+  }
+
+  .retro-menu {
+    background:
+      radial-gradient(circle at 50% 16%, rgba(255, 42, 161, 0.2), transparent 32%),
+      linear-gradient(180deg, #060011 0%, #120825 58%, #030008 100%);
+  }
+
+  .retro-menu-panel,
+  .retro-hud-box,
+  .retro-button,
+  .retro-select-card,
+  .retro-bike-chip,
+  .retro-start-button {
+    border: 2px solid var(--retro-cyan);
+    background: rgba(5, 0, 16, 0.88);
+    box-shadow:
+      0 0 0 2px #000,
+      0 0 18px rgba(0, 242, 255, 0.24),
+      inset 0 0 18px rgba(255, 42, 161, 0.08);
+  }
+
+  .retro-menu-panel {
+    position: relative;
+  }
+
+  .retro-menu-panel::before {
+    content: '';
+    position: absolute;
+    inset: 8px;
+    pointer-events: none;
+    border: 1px dashed rgba(255, 239, 90, 0.34);
+  }
+
+  .retro-title,
+  .retro-digits,
+  .retro-popup {
+    font-family: 'Press Start 2P', monospace;
+    letter-spacing: 0;
+  }
+
+  .retro-title {
+    color: #fff;
+    text-shadow:
+      3px 3px 0 #000,
+      5px 5px 0 var(--retro-pink),
+      -3px -3px 0 rgba(0, 242, 255, 0.5);
+  }
+
+  .retro-title span {
+    color: var(--retro-yellow);
+  }
+
+  .retro-section-label {
+    color: var(--retro-yellow);
+    border-bottom: 2px solid rgba(0, 242, 255, 0.55);
+  }
+
+  .retro-select-card,
+  .retro-bike-chip,
+  .retro-button,
+  .retro-start-button {
+    color: #fff;
+  }
+
+  .retro-bike-chip {
+    position: relative;
+    overflow: hidden;
+  }
+
+  .retro-select-card::after,
+  .retro-bike-chip::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background: linear-gradient(90deg, transparent, rgba(255, 239, 90, 0.18), transparent);
+    opacity: 0;
+    transform: translateX(-100%);
+  }
+
+  .retro-select-card:hover::after,
+  .retro-bike-chip:hover::after,
+  .retro-select-card.is-selected::after,
+  .retro-bike-chip.is-selected::after {
+    animation: retroSweep 0.65s steps(6) forwards;
+  }
+
+  .retro-select-card.is-selected,
+  .retro-bike-chip.is-selected {
+    border-color: var(--retro-yellow);
+    box-shadow:
+      0 0 0 2px #000,
+      0 0 24px rgba(255, 239, 90, 0.36),
+      inset 0 0 18px rgba(255, 42, 161, 0.16);
+  }
+
+  .retro-start-button,
+  .retro-button {
+    background:
+      linear-gradient(180deg, rgba(255, 42, 161, 0.32), rgba(0, 242, 255, 0.08)),
+      #080014;
+    color: var(--retro-yellow);
+    transition: transform 120ms steps(2), box-shadow 120ms steps(2), color 120ms steps(2);
+  }
+
+  .retro-start-button:hover,
+  .retro-button:hover {
+    transform: translateY(-2px);
+    color: #fff;
+    box-shadow:
+      0 0 0 2px #000,
+      0 0 24px rgba(255, 42, 161, 0.46),
+      inset 0 0 22px rgba(0, 242, 255, 0.2);
+  }
+
+  .retro-popup {
+    color: var(--retro-yellow);
+    text-shadow:
+      4px 4px 0 #000,
+      0 0 18px var(--retro-pink),
+      0 0 34px var(--retro-cyan);
+  }
+
+  .retro-warning {
+    color: var(--retro-yellow);
+    text-shadow: 3px 3px 0 #000, 0 0 20px #ff8800;
+  }
+
+  .retro-help {
+    color: rgba(255, 239, 90, 0.54);
+    text-shadow: 2px 2px 0 #000;
+  }
+}
+
+@keyframes retroScan {
+  from { transform: translateY(-30vh); }
+  to { transform: translateY(130vh); }
+}
+
+@keyframes retroSweep {
+  from { opacity: 0; transform: translateX(-100%); }
+  25% { opacity: 1; }
+  to { opacity: 0; transform: translateX(100%); }
 }
