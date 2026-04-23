@@ -4,44 +4,86 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Ficha de Moto | MotoGP Protocol</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
     <style>
         :root {
             --red: #e10000;
+            --red-soft: rgba(225, 0, 0, 0.22);
             --black: #050505;
             --line: rgba(255,255,255,0.08);
+            --line-strong: rgba(255,255,255,0.16);
             --panel: rgba(255,255,255,0.03);
-            --font-racing: 'Arial Black', sans-serif;
-            --font-data: 'Courier New', monospace;
+            --font-display: 'Barlow Condensed', sans-serif;
+            --font-body: 'Space Grotesk', sans-serif;
+            --ease-smooth: cubic-bezier(0.22, 1, 0.36, 1);
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; }
 
+        html { scroll-behavior: smooth; }
+
         body {
             min-height: 100vh;
             color: #fff;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: var(--font-body);
             background:
                 radial-gradient(circle at top, rgba(225,0,0,0.16), transparent 28%),
                 linear-gradient(180deg, #040404 0%, #000 100%);
+            overflow-x: hidden;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: 0;
+            background:
+                linear-gradient(135deg, rgba(255,255,255,0.02) 25%, transparent 25%, transparent 50%, rgba(255,255,255,0.02) 50%, rgba(255,255,255,0.02) 75%, transparent 75%, transparent),
+                linear-gradient(45deg, rgba(255,255,255,0.015) 25%, transparent 25%, transparent 50%, rgba(255,255,255,0.015) 50%, rgba(255,255,255,0.015) 75%, transparent 75%, transparent);
+            background-size: 18px 18px, 18px 18px;
+            opacity: 0.2;
+        }
+
+        body.page-entering header,
+        body.page-entering main {
+            opacity: 0;
+            transform: translateY(28px) scale(0.985);
+            filter: blur(16px);
+        }
+
+        body.page-ready header,
+        body.page-ready main {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+            filter: blur(0);
+            transition:
+                opacity 0.9s var(--ease-smooth),
+                transform 1.05s var(--ease-smooth),
+                filter 1.05s var(--ease-smooth);
         }
 
         header {
             position: sticky;
             top: 0;
-            z-index: 15;
+            z-index: 20;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 26px 7%;
+            padding: 24px 7%;
             border-bottom: 1px solid var(--line);
             background: rgba(0,0,0,0.74);
-            backdrop-filter: blur(10px);
+            backdrop-filter: blur(14px);
         }
 
         .logo {
-            font-family: var(--font-racing);
-            font-style: italic;
-            font-size: 28px;
+            font-family: var(--font-display);
+            font-size: 30px;
+            font-weight: 800;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
         }
 
         .logo span { color: var(--red); }
@@ -57,82 +99,349 @@
             color: #fff;
             border: 1px solid rgba(225,0,0,0.4);
             padding: 12px 16px;
-            font-family: var(--font-data);
             font-size: 11px;
-            letter-spacing: 2px;
+            letter-spacing: 0.18em;
+            text-transform: uppercase;
             background: linear-gradient(90deg, rgba(225,0,0,0.14), transparent);
         }
 
         main {
-            padding: 70px 7% 100px;
+            position: relative;
+            z-index: 1;
+            padding: 48px 7% 100px;
         }
 
         .detail-hero {
+            position: relative;
             display: grid;
-            grid-template-columns: 1.1fr 0.9fr;
-            gap: 32px;
-            align-items: stretch;
-            margin-bottom: 38px;
+            grid-template-columns: minmax(320px, 1.02fr) minmax(320px, 0.98fr);
+            gap: 34px;
+            align-items: center;
+            min-height: calc(100vh - 150px);
+            padding: 38px;
+            margin-bottom: 42px;
+            border: 1px solid var(--line);
+            overflow: hidden;
+            background:
+                radial-gradient(circle at 74% 20%, rgba(225,0,0,0.22), transparent 24%),
+                linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01));
+            box-shadow: 0 40px 100px rgba(0,0,0,0.38);
+        }
+
+        .detail-hero::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background:
+                linear-gradient(135deg, rgba(255,255,255,0.02) 25%, transparent 25%, transparent 50%, rgba(255,255,255,0.02) 50%, rgba(255,255,255,0.02) 75%, transparent 75%, transparent),
+                linear-gradient(45deg, rgba(255,255,255,0.015) 25%, transparent 25%, transparent 50%, rgba(255,255,255,0.015) 50%, rgba(255,255,255,0.015) 75%, transparent 75%, transparent);
+            background-size: 22px 22px, 22px 22px;
+            opacity: 0.28;
+            pointer-events: none;
         }
 
         .detail-copy,
-        .detail-image {
-            border: 1px solid var(--line);
-            background: linear-gradient(180deg, var(--panel), rgba(225,0,0,0.03));
-        }
-
-        .detail-copy {
-            padding: 34px;
+        .detail-visual {
+            position: relative;
+            z-index: 1;
         }
 
         .kicker {
-            display: inline-block;
-            margin-bottom: 14px;
-            color: rgba(255,255,255,0.6);
-            font-family: var(--font-data);
-            font-size: 11px;
-            letter-spacing: 4px;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 16px;
+            color: rgba(255,255,255,0.62);
+            font-size: 12px;
+            letter-spacing: 0.32em;
             text-transform: uppercase;
         }
 
+        .kicker::before {
+            content: '';
+            width: 54px;
+            height: 1px;
+            background: linear-gradient(90deg, var(--red), transparent);
+        }
+
         h1 {
-            font-family: var(--font-racing);
-            font-size: clamp(42px, 7vw, 88px);
-            line-height: 0.9;
-            font-style: italic;
+            font-family: var(--font-display);
+            font-size: clamp(68px, 10vw, 148px);
+            line-height: 0.86;
             text-transform: uppercase;
+            letter-spacing: 0.02em;
             margin-bottom: 16px;
         }
 
         h1 span { color: var(--red); }
 
         .lead {
+            max-width: 620px;
             color: #b4b4b4;
-            line-height: 1.9;
+            line-height: 1.85;
             font-size: 15px;
-            font-family: var(--font-data);
+        }
+
+        .detail-meta-strip {
+            display: grid;
+            grid-template-columns: 220px 1fr;
+            gap: 18px;
+            margin-top: 28px;
+            margin-bottom: 24px;
+        }
+
+        .speed-card,
+        .rider-data-card {
+            position: relative;
+            overflow: hidden;
+            border: 1px solid var(--line);
+            background: rgba(255,255,255,0.03);
+            padding: 22px;
+        }
+
+        .speed-card::before,
+        .rider-data-card::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(180deg, rgba(225,0,0,0.08), transparent 58%);
+            pointer-events: none;
+        }
+
+        .speed-label,
+        .rider-data-label {
+            position: relative;
+            color: rgba(255,255,255,0.54);
+            font-size: 11px;
+            letter-spacing: 0.24em;
+            text-transform: uppercase;
+        }
+
+        .speed-value-wrap {
+            position: relative;
+            display: flex;
+            align-items: flex-end;
+            gap: 10px;
+            margin-top: 14px;
+        }
+
+        .speed-value {
+            font-family: var(--font-display);
+            font-size: clamp(52px, 7vw, 86px);
+            line-height: 0.82;
+        }
+
+        .speed-unit {
+            padding-bottom: 10px;
+            font-size: 14px;
+            letter-spacing: 0.16em;
+            color: rgba(255,255,255,0.68);
+        }
+
+        .rider-data-card strong {
+            position: relative;
+            display: block;
+            margin-top: 12px;
+            font-family: var(--font-display);
+            font-size: 42px;
+            text-transform: uppercase;
+            line-height: 0.9;
+        }
+
+        .rider-data-card p {
+            position: relative;
+            margin-top: 10px;
+            color: #b2b2b2;
+            font-size: 14px;
+            line-height: 1.7;
+        }
+
+        .hero-actions {
+            display: flex;
+            gap: 14px;
+            flex-wrap: wrap;
+        }
+
+        .cta-button {
+            position: relative;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 220px;
+            padding: 16px 26px;
+            border: 1px solid rgba(225,0,0,0.55);
+            text-decoration: none;
+            color: #fff;
+            text-transform: uppercase;
+            font-family: var(--font-display);
+            font-size: 24px;
+            letter-spacing: 0.08em;
+            background:
+                linear-gradient(90deg, rgba(225,0,0,0.28), rgba(225,0,0,0.08));
+            overflow: hidden;
+            box-shadow:
+                0 0 0 1px rgba(225,0,0,0.2) inset,
+                0 0 20px rgba(225,0,0,0.2);
+        }
+
+        .cta-button::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.28), transparent);
+            transform: translateX(-100%);
+        }
+
+        .cta-button::after {
+            content: '';
+            position: absolute;
+            inset: -2px;
+            background:
+                linear-gradient(90deg,
+                    rgba(225,0,0,0) 0%,
+                    rgba(225,0,0,0.1) 10%,
+                    rgba(255,72,72,0.95) 24%,
+                    rgba(255,210,210,0.92) 36%,
+                    rgba(255,72,72,0.95) 48%,
+                    rgba(225,0,0,0.1) 62%,
+                    rgba(225,0,0,0) 100%);
+            opacity: 0.95;
+            mix-blend-mode: screen;
+            pointer-events: none;
+            animation: shiftLights 1.2s linear infinite;
+        }
+
+        .cta-button span {
+            position: relative;
+            z-index: 1;
+        }
+
+        .cta-ghost {
+            display: inline-flex;
+            align-items: center;
+            padding: 16px 18px;
+            color: rgba(255,255,255,0.74);
+            text-decoration: none;
+            border: 1px solid var(--line);
+            font-size: 12px;
+            letter-spacing: 0.18em;
+            text-transform: uppercase;
+        }
+
+        .detail-visual {
+            display: grid;
+            place-items: center;
+            min-height: 620px;
         }
 
         .detail-image {
-            min-height: 520px;
-            overflow: hidden;
             position: relative;
+            width: min(100%, 560px);
+            aspect-ratio: 0.82;
+            display: grid;
+            place-items: center;
+            isolation: isolate;
         }
 
-        .detail-image img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            object-position: center center;
-            display: block;
-        }
-
+        .detail-image::before,
         .detail-image::after {
             content: '';
             position: absolute;
-            inset: auto 0 0;
-            height: 35%;
-            background: linear-gradient(180deg, transparent, rgba(0,0,0,0.78));
+            border-radius: 50%;
+            pointer-events: none;
+        }
+
+        .detail-image::before {
+            width: 78%;
+            height: 78%;
+            background: radial-gradient(circle, rgba(225,0,0,0.22), rgba(225,0,0,0) 66%);
+            filter: blur(24px);
+        }
+
+        .detail-image::after {
+            inset: 7%;
+            border: 1px solid rgba(255,255,255,0.08);
+            box-shadow: 0 0 0 1px rgba(225,0,0,0.08) inset;
+        }
+
+        .detail-rider {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            object-position: center bottom;
+            filter: drop-shadow(0 50px 80px rgba(0,0,0,0.55));
+            will-change: transform;
+            z-index: 1;
+        }
+
+        .detail-image-bike-glow {
+            position: absolute;
+            inset: auto 6% 4%;
+            height: 32%;
+            border: 1px solid rgba(255,255,255,0.08);
+            background:
+                linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0)),
+                var(--detail-bike-image, none) center/cover no-repeat;
+            opacity: 0.4;
+            filter: saturate(1.15) blur(1px);
+            clip-path: polygon(10% 0, 100% 0, 90% 100%, 0 100%);
+            z-index: 0;
+        }
+
+        .detail-visual-arcs {
+            position: absolute;
+            inset: 12% 10%;
+            border-radius: 46%;
+            border: 1px solid rgba(255,255,255,0.08);
+            pointer-events: none;
+        }
+
+        .detail-visual-arcs::before,
+        .detail-visual-arcs::after {
+            content: '';
+            position: absolute;
+            inset: 12%;
+            border-radius: 50%;
+            border-top: 2px solid rgba(225,0,0,0.45);
+            border-bottom: 2px solid rgba(255,255,255,0.08);
+            transform: rotate(-12deg);
+        }
+
+        .detail-visual-arcs::after {
+            inset: 22%;
+            border-top-color: rgba(255,255,255,0.18);
+            border-bottom-color: rgba(225,0,0,0.3);
+            transform: rotate(9deg);
+        }
+
+        .detail-rider-tag {
+            position: absolute;
+            right: 2%;
+            bottom: 14%;
+            min-width: 200px;
+            padding: 14px 16px;
+            border: 1px solid var(--line-strong);
+            background: rgba(0,0,0,0.52);
+            backdrop-filter: blur(14px);
+            z-index: 2;
+        }
+
+        .detail-rider-tag strong {
+            display: block;
+            font-family: var(--font-display);
+            font-size: 30px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .detail-rider-tag span {
+            display: block;
+            margin-top: 6px;
+            color: rgba(255,255,255,0.58);
+            font-size: 11px;
+            letter-spacing: 0.22em;
+            text-transform: uppercase;
         }
 
         .stats-grid,
@@ -148,28 +457,36 @@
             border: 1px solid var(--line);
             background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(225,0,0,0.03));
             padding: 22px;
+            transition: transform 0.75s var(--ease-smooth), border-color 0.35s ease, box-shadow 0.35s ease;
+        }
+
+        .stat-card:hover,
+        .insight-card:hover,
+        .related-card:hover {
+            transform: translateY(-8px);
+            border-color: rgba(225,0,0,0.38);
+            box-shadow: 0 22px 40px rgba(0,0,0,0.28);
         }
 
         .label {
             margin-bottom: 10px;
             color: #747474;
-            font-family: var(--font-data);
             font-size: 10px;
-            letter-spacing: 3px;
+            letter-spacing: 0.24em;
             text-transform: uppercase;
         }
 
         .value {
-            font-family: var(--font-racing);
-            font-size: 24px;
-            line-height: 1.1;
+            font-family: var(--font-display);
+            font-size: 28px;
+            line-height: 1;
+            text-transform: uppercase;
         }
 
         .insight-card p {
             color: #aaaaaa;
             line-height: 1.8;
             font-size: 14px;
-            font-family: var(--font-data);
         }
 
         .related {
@@ -177,9 +494,9 @@
         }
 
         .related h2 {
-            font-family: var(--font-racing);
-            font-size: 40px;
-            font-style: italic;
+            font-family: var(--font-display);
+            font-size: 48px;
+            text-transform: uppercase;
             margin-bottom: 20px;
         }
 
@@ -196,6 +513,7 @@
             border: 1px solid var(--line);
             background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(225,0,0,0.03));
             overflow: hidden;
+            transition: transform 0.75s var(--ease-smooth), border-color 0.35s ease, box-shadow 0.35s ease;
         }
 
         .related-card img {
@@ -203,6 +521,12 @@
             height: 190px;
             object-fit: cover;
             display: block;
+            transition: transform 1s var(--ease-smooth), filter 1s var(--ease-smooth);
+        }
+
+        .related-card:hover img {
+            transform: scale(1.05);
+            filter: saturate(1.08);
         }
 
         .related-card div {
@@ -211,9 +535,9 @@
 
         .related-card strong {
             display: block;
-            font-family: var(--font-racing);
-            font-size: 24px;
-            font-style: italic;
+            font-family: var(--font-display);
+            font-size: 32px;
+            text-transform: uppercase;
             margin-bottom: 8px;
         }
 
@@ -221,54 +545,365 @@
             color: #b1b1b1;
             font-size: 13px;
             line-height: 1.7;
-            font-family: var(--font-data);
+        }
+
+        [data-reveal] {
+            opacity: 0;
+            transform: translateY(42px);
+            filter: blur(12px);
+        }
+
+        body.page-ready [data-reveal] {
+            opacity: 1;
+            transform: translateY(0);
+            filter: blur(0);
+            transition:
+                opacity 0.82s var(--ease-smooth),
+                transform 0.92s var(--ease-smooth),
+                filter 0.92s var(--ease-smooth);
+            transition-delay: calc(var(--reveal-order, 0) * 120ms);
+        }
+
+        .detail-transition-overlay {
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: 9999;
+            opacity: 0;
+            background:
+                radial-gradient(circle at 50% 18%, rgba(225,0,0,0.16), transparent 34%),
+                linear-gradient(180deg, rgba(0,0,0,0.18), rgba(0,0,0,0.78));
+            backdrop-filter: blur(0px);
+            transition: opacity 0.22s ease, backdrop-filter 1s var(--ease-smooth);
+        }
+
+        .detail-transition-overlay.active {
+            opacity: 1;
+            backdrop-filter: blur(10px);
+        }
+
+        .detail-transition-card {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 220px;
+            height: 320px;
+            overflow: hidden;
+            border-radius: 24px;
+            border: 1px solid rgba(255,255,255,0.14);
+            box-shadow: 0 30px 90px rgba(0,0,0,0.55), 0 0 0 1px rgba(225,0,0,0.16);
+            background: #070707;
+            opacity: 0;
+            will-change: transform, opacity, border-radius;
+            transition:
+                transform 1s var(--ease-smooth),
+                opacity 0.35s ease,
+                border-radius 1s var(--ease-smooth);
+        }
+
+        .detail-transition-card::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background-image: var(--detail-transition-image);
+            background-size: cover;
+            background-position: center;
+            filter: saturate(1.08) contrast(1.04);
+            transform: scale(1.01);
+        }
+
+        .detail-transition-card::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background:
+                linear-gradient(180deg, rgba(255,255,255,0.05), transparent 30%, rgba(0,0,0,0.42)),
+                radial-gradient(circle at 50% 20%, rgba(225,0,0,0.18), transparent 30%);
+        }
+
+        @keyframes shiftLights {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+        }
+
+        @media (max-width: 1080px) {
+            .detail-hero {
+                grid-template-columns: 1fr;
+                min-height: auto;
+            }
+
+            .detail-visual {
+                min-height: 520px;
+            }
+
+            .detail-meta-strip {
+                grid-template-columns: 1fr;
+            }
         }
 
         @media (max-width: 920px) {
-            .detail-hero,
             .stats-grid,
             .insight-grid,
             .related-grid {
                 grid-template-columns: 1fr;
             }
 
-            .detail-image {
-                min-height: 320px;
+            .detail-hero {
+                padding: 24px;
+            }
+
+            .detail-visual {
+                min-height: 420px;
+            }
+
+            .detail-rider-tag {
+                right: 0;
+                bottom: 8%;
             }
         }
     </style>
 </head>
-<body>
+<body class="page-entering">
     <header>
         <div class="logo">MOTO<span>GP</span></div>
         <div class="nav-links">
-            <a href="motos.html">VOLVER A MOTOS</a>
-            <a href="entrada1.html#teams">VOLVER AL DESFILE</a>
+            <a href="motos.html">Volver a Motos</a>
+            <a href="entrada1.html#teams">Volver al Desfile</a>
         </div>
     </header>
 
     <main>
-        <section class="detail-hero">
+        <section class="detail-hero" id="detail-hero" data-reveal style="--reveal-order:0;">
             <div class="detail-copy">
                 <span class="kicker" id="detail-team-kicker">Equipo</span>
                 <h1 id="detail-title">Moto <span>GP</span></h1>
                 <p class="lead" id="detail-lead">Cargando ficha individual...</p>
+
+                <div class="detail-meta-strip">
+                    <article class="speed-card">
+                        <div class="speed-label">Top Speed</div>
+                        <div class="speed-value-wrap">
+                            <div class="speed-value" id="detail-speed-value">0</div>
+                            <div class="speed-unit">km/h</div>
+                        </div>
+                    </article>
+                    <article class="rider-data-card">
+                        <div class="rider-data-label">Piloto central</div>
+                        <strong id="detail-rider-name">Rider</strong>
+                        <p id="detail-rider-copy">Preparando visual y telemetria de la ficha.</p>
+                    </article>
+                </div>
+
+                <div class="hero-actions">
+                    <a class="cta-button" href="#stats-grid"><span>Ver Telemetria</span></a>
+                    <a class="cta-ghost" href="motos.html">Abrir Galeria</a>
+                </div>
             </div>
-            <div class="detail-image">
-                <img id="detail-image" src="" alt="">
+
+            <div class="detail-visual">
+                <div class="detail-image" id="detail-image-stage">
+                    <div class="detail-visual-arcs" aria-hidden="true"></div>
+                    <div class="detail-image-bike-glow" id="detail-bike-glow" aria-hidden="true"></div>
+                    <img class="detail-rider" id="detail-image" src="" alt="">
+                    <div class="detail-rider-tag">
+                        <strong id="detail-bike-code">Factory</strong>
+                        <span id="detail-focus-tag">Race profile</span>
+                    </div>
+                </div>
             </div>
         </section>
 
-        <section class="stats-grid" id="stats-grid"></section>
-        <section class="insight-grid" id="insight-grid"></section>
+        <section class="stats-grid" id="stats-grid" data-reveal style="--reveal-order:1;"></section>
+        <section class="insight-grid" id="insight-grid" data-reveal style="--reveal-order:2;"></section>
 
-        <section class="related">
+        <section class="related" data-reveal style="--reveal-order:3;">
             <h2>Mas <span style="color:var(--red);">Motos</span></h2>
             <div class="related-grid" id="related-grid"></div>
         </section>
     </main>
 
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
     <script>
+        gsap.registerPlugin(ScrollTrigger);
+
+        function safeSessionStorageGet(key) {
+            try {
+                return window.sessionStorage.getItem(key);
+            } catch (error) {
+                return null;
+            }
+        }
+
+        function safeSessionStorageRemove(key) {
+            try {
+                window.sessionStorage.removeItem(key);
+            } catch (error) {
+                return;
+            }
+        }
+
+        function finalizeDetailEntrance() {
+            document.body.classList.add('page-ready');
+            window.setTimeout(() => {
+                document.body.classList.remove('page-entering');
+            }, 1050);
+        }
+
+        function buildRiderImagePath(rider) {
+            const riderMap = {
+                'Marc Marquez': 'imagenes/MARC MARQUEZ.webp',
+                'Fabio Di Giannantonio': 'imagenes/FRANCO MORBIDELLO.webp',
+                'Fabio Quartararo': 'imagenes/FABIO QUARTARARO.webp',
+                'Luca Marini': 'imagenes/LUCA MARINI.webp',
+                'Brad Binder': 'imagenes/BRAD BINDER.webp',
+                'Maverick Vinales': 'imagenes/MAVERICK VIÑALES.webp',
+                'Ai Ogura': 'imagenes/AI OGURA.webp',
+                'Jorge Martin': 'imagenes/JORGE MARTIN.webp'
+            };
+
+            return riderMap[rider] || 'imagenes/MARC MARQUEZ.webp';
+        }
+
+        function runDetailTransition() {
+            const raw = safeSessionStorageGet('motoTransition');
+            if (!raw) {
+                finalizeDetailEntrance();
+                return;
+            }
+
+            const target = document.getElementById('detail-image-stage');
+            const image = document.getElementById('detail-image');
+            if (!target || !image) {
+                safeSessionStorageRemove('motoTransition');
+                finalizeDetailEntrance();
+                return;
+            }
+
+            let transitionData = null;
+            try {
+                transitionData = JSON.parse(raw);
+            } catch (error) {
+                safeSessionStorageRemove('motoTransition');
+                finalizeDetailEntrance();
+                return;
+            }
+
+            const play = () => {
+                const targetRect = target.getBoundingClientRect();
+                const overlay = document.createElement('div');
+                overlay.className = 'detail-transition-overlay';
+                overlay.innerHTML = '<div class="detail-transition-card"></div>';
+                document.body.appendChild(overlay);
+
+                const card = overlay.querySelector('.detail-transition-card');
+                const startX = Number.isFinite(transitionData.x) ? transitionData.x : 0;
+                const startY = Number.isFinite(transitionData.y) ? transitionData.y : 0;
+                const startWidth = Number.isFinite(transitionData.width) ? transitionData.width : targetRect.width;
+                const startHeight = Number.isFinite(transitionData.height) ? transitionData.height : targetRect.height;
+                const startRadius = Number.isFinite(transitionData.radius) ? transitionData.radius : 18;
+
+                card.style.setProperty('--detail-transition-image', `url("${transitionData.image || image.currentSrc || image.src}")`);
+                card.style.left = `${startX}px`;
+                card.style.top = `${startY}px`;
+                card.style.width = `${startWidth}px`;
+                card.style.height = `${startHeight}px`;
+                card.style.borderRadius = `${startRadius}px`;
+                card.style.transform = 'translate3d(0, 0, 0) scale(1, 1)';
+                card.style.opacity = '1';
+
+                requestAnimationFrame(() => {
+                    overlay.classList.add('active');
+
+                    const deltaX = targetRect.left - startX;
+                    const deltaY = targetRect.top - startY;
+                    const scaleX = targetRect.width / startWidth;
+                    const scaleY = targetRect.height / startHeight;
+
+                    card.style.transform = `translate3d(${deltaX}px, ${deltaY}px, 0) scale(${scaleX}, ${scaleY})`;
+                    card.style.borderRadius = '0px';
+                });
+
+                window.setTimeout(() => {
+                    overlay.style.opacity = '0';
+                    finalizeDetailEntrance();
+                }, 760);
+
+                window.setTimeout(() => {
+                    overlay.remove();
+                }, 1380);
+            };
+
+            if (image.complete) {
+                play();
+            } else {
+                image.addEventListener('load', play, { once: true });
+                image.addEventListener('error', () => {
+                    finalizeDetailEntrance();
+                }, { once: true });
+            }
+
+            safeSessionStorageRemove('motoTransition');
+        }
+
+        function initDetailHeroAnimations(targetSpeed) {
+            gsap.from('.detail-copy > *', {
+                y: 34,
+                opacity: 0,
+                duration: 0.9,
+                stagger: 0.1,
+                ease: 'power3.out'
+            });
+
+            gsap.from('.detail-rider-tag, .detail-visual-arcs', {
+                scale: 0.9,
+                opacity: 0,
+                duration: 1,
+                delay: 0.15,
+                ease: 'power3.out'
+            });
+
+            gsap.from('#detail-image', {
+                y: 48,
+                opacity: 0,
+                duration: 1.15,
+                delay: 0.2,
+                ease: 'power3.out'
+            });
+
+            gsap.to({ value: 0 }, {
+                value: targetSpeed,
+                duration: 2.2,
+                ease: 'power3.out',
+                onUpdate: function () {
+                    document.getElementById('detail-speed-value').textContent = Math.round(this.targets()[0].value);
+                }
+            });
+
+            gsap.to('#detail-image', {
+                rotate: 7,
+                yPercent: 5,
+                ease: 'none',
+                scrollTrigger: {
+                    trigger: '#detail-hero',
+                    start: 'top top',
+                    end: 'bottom top',
+                    scrub: 1.1
+                }
+            });
+
+            gsap.to('.detail-visual-arcs', {
+                rotate: 16,
+                ease: 'none',
+                scrollTrigger: {
+                    trigger: '#detail-hero',
+                    start: 'top top',
+                    end: 'bottom top',
+                    scrub: 1.3
+                }
+            });
+        }
+
         const motoCatalog = [
             {
                 id: 'ducati-lenovo-93',
@@ -435,15 +1070,23 @@
         const params = new URLSearchParams(window.location.search);
         const motoId = params.get('id') || 'ducati-lenovo-93';
         const moto = motoCatalog.find((item) => item.id === motoId) || motoCatalog[0];
+        const topSpeedNumber = parseInt(moto.topSpeed, 10) || 350;
+        const riderImage = buildRiderImagePath(moto.rider);
 
         document.title = `${moto.title} | Ficha de Moto`;
         document.getElementById('detail-team-kicker').textContent = moto.team;
-        document.getElementById('detail-title').innerHTML = `${moto.title} <span>DATA</span>`;
+        document.getElementById('detail-title').innerHTML = `${moto.title} <span>RACE</span>`;
         document.getElementById('detail-lead').textContent = moto.lead;
+        document.getElementById('detail-rider-name').textContent = moto.rider;
+        document.getElementById('detail-rider-copy').textContent = `Perfil ${moto.character.toLowerCase()} con foco en ${moto.strength.toLowerCase()} y lectura aerodinamica ${moto.aero.toLowerCase()}.`;
+        document.getElementById('detail-bike-code').textContent = moto.title;
+        document.getElementById('detail-focus-tag').textContent = moto.strength;
 
         const detailImage = document.getElementById('detail-image');
-        detailImage.src = moto.image;
-        detailImage.alt = moto.alt;
+        detailImage.src = riderImage;
+        detailImage.alt = `${moto.rider} hero MotoGP`;
+
+        document.getElementById('detail-bike-glow').style.setProperty('--detail-bike-image', `url("${moto.image}")`);
 
         const statsGrid = document.getElementById('stats-grid');
         const statItems = [
@@ -485,6 +1128,9 @@
                 `;
                 relatedGrid.appendChild(link);
             });
+
+        initDetailHeroAnimations(topSpeedNumber);
+        runDetailTransition();
     </script>
 </body>
 </html>

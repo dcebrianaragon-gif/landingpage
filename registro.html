@@ -229,8 +229,7 @@
     <script>
         const API_BASE = (() => {
             const isHttp = window.location.protocol === 'http:' || window.location.protocol === 'https:';
-            const isBackendServer = isHttp && /^(localhost|127\.0\.0\.1)$/i.test(window.location.hostname) && window.location.port === '5501';
-            return isBackendServer ? window.location.origin : 'http://localhost:5501';
+            return isHttp ? window.location.origin : null;
         })();
 
         function setStatus(message, type = '') {
@@ -273,6 +272,10 @@
         }
 
         async function fetchRecords() {
+            if (!API_BASE) {
+                throw new Error('Abre esta pagina desde el servidor local para conectar el backend.');
+            }
+
             const response = await fetch(`${API_BASE}/api/registros`, { cache: 'no-store' });
             const data = await response.json();
 
@@ -290,7 +293,7 @@
                 setStatus(`Base de datos conectada. ${data.length} pilotos guardados y lista publica desactivada.`, 'ok');
             } catch (error) {
                 console.error(error);
-                setServerInfo('Servidor local no disponible. Arranca `node .vscode/server.js` para levantar el backend en http://localhost:5501', 'error');
+                setServerInfo('Servidor local no disponible. Arranca `npm start` o `node .vscode/server.js` y abre esta pagina desde ese servidor.', 'error');
                 setStatus('No hay conexion con el servidor local, asi que no puedo guardar en el JSON todavia.', 'error');
             }
         }

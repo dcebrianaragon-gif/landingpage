@@ -3,7 +3,10 @@ const fs = require('fs');
 const path = require('path');
 const dns = require('dns').promises;
 
-const PORT = 5501;
+loadEnvFile(path.resolve(__dirname, '..', '.env'));
+
+const PORT = parsePort(process.env.PORT, 5501);
+const HOST = process.env.HOST || '127.0.0.1';
 const PROJECT_DIR = path.resolve(__dirname, '..');
 const DATA_FILE = path.join(__dirname, 'fichajeregistros.json');
 
@@ -38,6 +41,45 @@ const DISPOSABLE_EMAIL_DOMAINS = new Set([
   'trashmail.com',
   'yopmail.com'
 ]);
+
+function loadEnvFile(envPath) {
+  if (!fs.existsSync(envPath)) {
+    return;
+  }
+
+  const lines = fs.readFileSync(envPath, 'utf8').split(/\r?\n/);
+  for (const rawLine of lines) {
+    const line = rawLine.trim();
+    if (!line || line.startsWith('#')) {
+      continue;
+    }
+
+    const separatorIndex = line.indexOf('=');
+    if (separatorIndex === -1) {
+      continue;
+    }
+
+    const key = line.slice(0, separatorIndex).trim();
+    if (!key || process.env[key] !== undefined) {
+      continue;
+    }
+
+    let value = line.slice(separatorIndex + 1).trim();
+    if (
+      (value.startsWith('"') && value.endsWith('"')) ||
+      (value.startsWith("'") && value.endsWith("'"))
+    ) {
+      value = value.slice(1, -1);
+    }
+
+    process.env[key] = value;
+  }
+}
+
+function parsePort(rawValue, fallbackPort) {
+  const parsed = Number.parseInt(String(rawValue || ''), 10);
+  return Number.isInteger(parsed) && parsed > 0 ? parsed : fallbackPort;
+}
 
 function isValidEmailFormat(email) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
@@ -263,8 +305,8 @@ const server = http.createServer((req, res) => {
   serveStatic(req, res);
 });
 
-server.listen(PORT, () => {
+server.listen(PORT, HOST, () => {
   ensureDataFile();
-  console.log(`Servidor listo en http://localhost:${PORT}`);
+  console.log(`Servidor listo en http://${HOST}:${PORT}`);
   console.log(`Guardando registros en ${DATA_FILE}`);
 });
