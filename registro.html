@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>Registro MotoGP</title>
     <style>
         :root {
@@ -16,9 +16,14 @@
 
         * { box-sizing: border-box; }
 
+        html {
+            -webkit-text-size-adjust: 100%;
+        }
+
         body {
             margin: 0;
             min-height: 100vh;
+            min-height: 100dvh;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background: radial-gradient(circle at top, rgba(225, 6, 0, 0.12), transparent 28%), var(--bg);
             color: var(--text);
@@ -229,7 +234,7 @@
     <script>
         const API_BASE = (() => {
             const isHttp = window.location.protocol === 'http:' || window.location.protocol === 'https:';
-            return isHttp ? window.location.origin : null;
+            return isHttp ? window.location.origin : 'http://localhost:5501';
         })();
 
         function setStatus(message, type = '') {
@@ -289,11 +294,11 @@
         async function checkServer() {
             try {
                 const data = await fetchRecords();
-                setServerInfo(`Servidor conectado en ${API_BASE}. Archivo activo: .vscode/fichajeregistros.json. Registros actuales: ${data.length}. Los datos personales permanecen ocultos en esta pagina.`);
+                setServerInfo(`Servidor conectado en ${API_BASE}. Archivo activo: .vscode/fichajeregistros.json. Registros actuales: ${data.length}. Si usas iPhone o tablet, abre esta misma direccion desde ese dispositivo.`);
                 setStatus(`Base de datos conectada. ${data.length} pilotos guardados y lista publica desactivada.`, 'ok');
             } catch (error) {
                 console.error(error);
-                setServerInfo('Servidor local no disponible. Arranca `npm start` o `node .vscode/server.js` y abre esta pagina desde ese servidor.', 'error');
+                setServerInfo('Servidor local no disponible. Abre iniciar-backend.bat y vuelve a probar. Tambien puedes entrar por http://localhost:5501/registro.html.', 'error');
                 setStatus('No hay conexion con el servidor local, asi que no puedo guardar en el JSON todavia.', 'error');
             }
         }

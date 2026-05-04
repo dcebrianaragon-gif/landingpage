@@ -30,6 +30,7 @@
             --font-data: 'Courier New', monospace;
             --transition-slow: all 1.2s cubic-bezier(0.16, 1, 0.3, 1);
             --transition-fast: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            --reveal-distance: 72px;
         }
 
         * { margin: 0; padding: 0; box-sizing: border-box; cursor: none; }
@@ -101,6 +102,38 @@
         nav a:hover::before { width: 100%; }
         nav a.is-active { opacity: 1; color: #fff; }
         nav a.is-active::before { width: 100%; background: #fff; }
+        .nav-highlight {
+            color: var(--red) !important;
+            text-shadow: 0 0 5px var(--red);
+        }
+        .btn-registro-motogp {
+            display: inline-block;
+            background: linear-gradient(135deg, #e10600 0%, #8a0400 100%);
+            color: #fff;
+            padding: 15px 35px;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-size: 18px;
+            font-weight: bold;
+            font-style: italic;
+            text-transform: uppercase;
+            text-decoration: none;
+            border-radius: 6px;
+            border: 2px solid #111;
+            box-shadow: 0 4px 15px rgba(225, 6, 0, 0.4);
+            transition: all 0.3s ease;
+            cursor: pointer;
+            opacity: 1;
+        }
+        .btn-registro-motogp::before { display: none; }
+        .btn-registro-motogp:hover {
+            transform: translateY(-3px) scale(1.05);
+            box-shadow: 0 8px 25px rgba(225, 6, 0, 0.7);
+            background: linear-gradient(135deg, #ff1a1a 0%, #c40500 100%);
+        }
+        .btn-registro-motogp:active {
+            transform: translateY(2px) scale(0.98);
+            box-shadow: 0 2px 10px rgba(225, 6, 0, 0.4);
+        }
         main, footer {
             opacity: 1;
             transform: translateY(0);
@@ -164,13 +197,16 @@
         .hero::before {
             content: ''; position: absolute; inset: 12% 8% auto; height: 1px;
             background: linear-gradient(90deg, transparent, rgba(225,0,0,0.7), transparent);
+            animation: heroLineSweep 4.8s ease-in-out infinite;
         }
-        #hero-spotlight-zone { position: relative; display: inline-block; text-align: center; user-select: none; }
+        #hero-spotlight-zone { position: relative; display: inline-block; text-align: center; user-select: none; filter: drop-shadow(0 32px 60px rgba(0,0,0,0.42)); }
         #hero-base { font-family: var(--font-racing); font-size: 14vw; font-style: italic; line-height: 0.85; text-transform: uppercase; color: #0a0a0a; -webkit-text-stroke: 2px #1c1c1c; display: block; pointer-events: none; opacity: 0; will-change: filter, opacity, transform; }
         #hero-lit { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-family: var(--font-racing); font-size: 14vw; font-style: italic; line-height: 0.85; text-transform: uppercase; text-align: center; color: #ffffff; -webkit-text-stroke: 2px var(--red); text-shadow: 0 0 25px rgba(225, 0, 0, 0.9), 0 0 60px rgba(225, 0, 0, 0.4), 0 0 100px rgba(225, 0, 0, 0.15); clip-path: circle(0px at 60% 60%); pointer-events: none; will-change: clip-path; opacity: 0; }
         .hero-copy {
             position: absolute; left: 10%; bottom: 12%; max-width: 420px;
             padding-left: 20px; border-left: 2px solid rgba(225,0,0,0.75);
+            opacity: 0;
+            transform: translate3d(0, 26px, 0);
         }
         .hero-copy p {
             color: #a9a9a9; line-height: 1.8; font-size: 15px; font-family: var(--font-data);
@@ -178,9 +214,40 @@
 
         @keyframes heroIn { 0% { filter: blur(28px); opacity: 0; transform: scale(1.1); } 100% { filter: blur(0px); opacity: 1; transform: scale(1); } }
         body.ready #hero-base, body.ready #hero-lit { animation: heroIn 1.8s cubic-bezier(0.16, 1, 0.3, 1) 0.3s forwards; }
+        body.ready #hero-spotlight-zone { animation: heroFloat 8s ease-in-out 2.1s infinite; }
+        body.ready .hero-copy { animation: heroCopyIn 1.2s cubic-bezier(0.22, 1, 0.36, 1) 0.95s forwards; }
+        @keyframes heroCopyIn {
+            0% { opacity: 0; transform: translate3d(0, 26px, 0); }
+            100% { opacity: 1; transform: translate3d(0, 0, 0); }
+        }
+        @keyframes heroFloat {
+            0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
+            50% { transform: translate3d(0, -10px, 0) scale(1.01); }
+        }
+        @keyframes heroLineSweep {
+            0%, 100% { opacity: 0.35; transform: scaleX(0.7); }
+            50% { opacity: 1; transform: scaleX(1); }
+        }
 
-        .reveal { opacity: 0; transform: translateY(100px); transition: var(--transition-slow); }
-        .reveal.active { opacity: 1; transform: translateY(0); }
+        .reveal,
+        .reveal-scale {
+            opacity: 0;
+            will-change: transform, opacity, filter;
+        }
+        .reveal {
+            transform: translate3d(0, var(--reveal-distance), 0);
+            filter: blur(14px);
+            transition:
+                opacity 0.95s cubic-bezier(0.16, 1, 0.3, 1),
+                transform 0.95s cubic-bezier(0.16, 1, 0.3, 1),
+                filter 0.95s cubic-bezier(0.16, 1, 0.3, 1);
+            transition-delay: var(--reveal-delay, 0ms);
+        }
+        .reveal.active {
+            opacity: 1;
+            transform: translate3d(0, 0, 0);
+            filter: blur(0);
+        }
 
         .data-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 30px; margin-top: 70px; }
         .data-card { border-left: 1px solid var(--red); padding-left: 34px; transition: var(--transition-fast); background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(225,0,0,0.03)); border-radius: 0 16px 16px 0; padding-top: 28px; padding-bottom: 28px; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
@@ -461,8 +528,20 @@
         .glossary-item:hover .desc { color: #fff; }
 
         #circuit-maps { min-height: 80vh; display: flex; flex-direction: column; justify-content: center; background: radial-gradient(circle at center, #111 0%, #000 70%); }
-        .reveal-scale { opacity: 0; transform: scale(0.8); transition: var(--transition-slow); }
-        .reveal-scale.active { opacity: 1; transform: scale(1); }
+        .reveal-scale {
+            transform: translate3d(0, 24px, 0) scale(0.92);
+            filter: blur(10px);
+            transition:
+                opacity 0.95s cubic-bezier(0.16, 1, 0.3, 1),
+                transform 0.95s cubic-bezier(0.16, 1, 0.3, 1),
+                filter 0.95s cubic-bezier(0.16, 1, 0.3, 1);
+            transition-delay: var(--reveal-delay, 0ms);
+        }
+        .reveal-scale.active {
+            opacity: 1;
+            transform: translate3d(0, 0, 0) scale(1);
+            filter: blur(0);
+        }
 
         .maps-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 24px; margin-top: 60px; width: 100%; }
         .map-card { background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(225,0,0,0.03)); border: 1px solid #222; padding: 40px 20px; text-align: center; transition: var(--transition-fast); position: relative; overflow: hidden; clip-path: polygon(5% 0, 100% 0, 95% 100%, 0% 100%); }
@@ -589,6 +668,14 @@
             .radio-footer { flex-direction: column; gap: 10px; }
             .radio-footer button { margin-left: 0; width: 100%; }
         }
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
+                scroll-behavior: auto !important;
+            }
+        }
     </style>
 </head>
 <body id="body-main">
@@ -606,42 +693,8 @@
                 <li><a href="#crash">Caídas</a></li>
                 <li><a href="#teams">Equipos</a></li>
                 <li><a href="pilotos.html">Pilotos 2026</a></li>
-                <li><a href="minijuego/dist/index.html#/Game" style="color:var(--red);text-shadow:0 0 5px var(--red);">[ Simulador 3D ]</a></li>
-                <li><style>
-    .btn-registro-motogp {
-        display: inline-block; /* Permite ajustar márgenes y relleno como un botón */
-        background: linear-gradient(135deg, #e10600 0%, #8a0400 100%); /* Rojo Racing */
-        color: white;
-        padding: 15px 35px;
-        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        font-size: 18px;
-        font-weight: bold;
-        font-style: italic; /* Letra inclinada para dar velocidad */
-        text-transform: uppercase;
-        text-decoration: none; /* Quita la línea de abajo típica de los enlaces */
-        border-radius: 6px;
-        border: 2px solid #111; /* Borde oscuro */
-        box-shadow: 0 4px 15px rgba(225, 6, 0, 0.4); /* Brillo rojo alrededor */
-        transition: all 0.3s ease; /* Animación suave */
-        cursor: pointer;
-    }
-
-    /* Efecto cuando el ratón pasa por encima */
-    .btn-registro-motogp:hover {
-        transform: translateY(-3px) scale(1.05); /* Se levanta y se hace un poco más grande */
-        box-shadow: 0 8px 25px rgba(225, 6, 0, 0.7); /* El brillo se hace más intenso */
-        background: linear-gradient(135deg, #ff1a1a 0%, #c40500 100%);
-    }
-    
-    /* Efecto cuando haces clic (se hunde) */
-    .btn-registro-motogp:active {
-        transform: translateY(2px) scale(0.98);
-        box-shadow: 0 2px 10px rgba(225, 6, 0, 0.4);
-    }
-</style>
-
-
-                <a href="registro.html" class="btn-registro-motogp">🏁 Fichar Nuevo Piloto</a></li>
+                <li><a href="minijuego/dist/index.html#/Game" class="nav-highlight">[ Simulador 3D ]</a></li>
+                <li><a href="registro.html" class="btn-registro-motogp">🏁 Fichar Nuevo Piloto</a></li>
             </ul>
         </nav>
     </header>
@@ -916,18 +969,37 @@
 
     let lastScroll = 0;
     const heroBase = document.getElementById('hero-base');
+    let revealTargets = [];
+    let ticking = false;
+
+    function syncRevealTargets() {
+        revealTargets = Array.from(document.querySelectorAll('.reveal, .reveal-scale'));
+
+        revealTargets.forEach((el, index) => {
+            if (el.dataset.revealRegistered === 'true') return;
+
+            const stagger = el.classList.contains('glossary-item') ? (index % 5) * 70 : (index % 4) * 55;
+            el.style.setProperty('--reveal-delay', `${stagger}ms`);
+            el.dataset.revealRegistered = 'true';
+        });
+    }
+
+    syncRevealTargets();
 
     function revealElements() {
-        document.querySelectorAll('.reveal, .reveal-scale').forEach(el => {
+        syncRevealTargets();
+
+        revealTargets.forEach(el => {
             if (el.getBoundingClientRect().top < window.innerHeight - 150) el.classList.add('active');
         });
     }
 
-    window.addEventListener('scroll', () => {
+    function updateScrollEffects() {
         const s = window.pageYOffset;
         const header = document.getElementById('main-header');
         if (s > lastScroll && s > 200) header.classList.add('nav-hidden'); else header.classList.remove('nav-hidden');
-        lastScroll = s; revealElements();
+        lastScroll = s;
+        revealElements();
 
         if (window.innerWidth > 768 && heroBase && litDiv) {
             const start = 50;
@@ -941,7 +1013,14 @@
                 litDiv.style.filter = 'blur(0px)'; litDiv.style.opacity = '1'; litDiv.style.transform = 'scale(1) translateY(0px)';
             }
         }
-    });
+        ticking = false;
+    }
+
+    window.addEventListener('scroll', () => {
+        if (ticking) return;
+        ticking = true;
+        requestAnimationFrame(updateScrollEffects);
+    }, { passive: true });
 
     function initTeams() {
         const container = document.getElementById('team-target');
@@ -1115,7 +1194,24 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const trackImageBase = 'imagenes/';
     const trackImageFallback = `${trackImageBase}jerez.png`;
-    const availableTrackImages = new Set(["assen.png", "jerez.png", "mugello.png", "philipisland.png", "sachsenring.png", "valencia.png"]);
+    const availableTrackImages = new Set([
+        "aragon.png",
+        "assen.png",
+        "catalunya.png",
+        "cota.png",
+        "jerez.png",
+        "lemans.png",
+        "misano.png",
+        "mugello.png",
+        "philipisland.png",
+        "portimao.png",
+        "qatar.png",
+        "redbullring.png",
+        "sachsenring.png",
+        "sepang.png",
+        "silverstone.png",
+        "valencia.png"
+    ]);
     const resolveTrackImage = (imageName) => availableTrackImages.has(imageName) ? `${trackImageBase}${imageName}` : trackImageFallback;
 
     const trackData = {
@@ -1136,17 +1232,6 @@ document.addEventListener("DOMContentLoaded", () => {
         "sepang": { name: "SEPANG", length: "5.54 km", curves: "15 (5 Izq, 10 Der)", record: "1'57.491", speed: "335.5 km/h", desc: "Asfalto abrasivo y calor extremo. Dos inmensas rectas paralelas terminan en frenadas criticas.", img: resolveTrackImage("sepang.png") },
         "valencia": { name: "VALENCIA", length: "4.00 km", curves: "14 (9 Izq, 5 Der)", record: "1'28.931", speed: "337.5 km/h", desc: "Trazado estilo estadio, muy estrecho y con multitud de curvas lentas.", img: resolveTrackImage("valencia.png") }
     };
-
-    const revealElems = document.querySelectorAll('.reveal, .reveal-scale');
-    const revealOnScroll = () => {
-        const windowHeight = window.innerHeight;
-        revealElems.forEach(el => {
-            const top = el.getBoundingClientRect().top;
-            if (top < windowHeight - 100) el.classList.add('active');
-        });
-    };
-    window.addEventListener('scroll', revealOnScroll);
-    revealOnScroll();
 
     function populateTrackOverlay(trackId) {
         const data = trackData[trackId];
@@ -1242,6 +1327,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
         mapsTarget.appendChild(card);
     });
+
+    if (typeof revealElements === 'function') {
+        revealElements();
+    }
 
     overlayClose.addEventListener('click', closeTrackOverlay);
     overlay.addEventListener('click', (e) => {

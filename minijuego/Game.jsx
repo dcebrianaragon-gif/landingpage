@@ -7,6 +7,10 @@ import { Link } from 'react-router-dom';
 import { Settings } from 'lucide-react';
 import { localData } from '@/data/localData.js';
 
+const menuAudioUrl = new URL('./assets/audio/menu.ogg', import.meta.url).href;
+const gameAudioUrl = new URL('./assets/audio/game-2d.ogg', import.meta.url).href;
+const buttonAudioUrl = new URL('./assets/audio/button.ogg', import.meta.url).href;
+
 const HUD = lazy(() => import('@/components/game/HUD'));
 const Minimap = lazy(() => import('@/components/game/Minimap'));
 
@@ -80,6 +84,13 @@ export default function Game() {
   const keysRef = useRef({});
   const animRef = useRef(null);
   const gearKeyRef = useRef({ q: false, e: false });
+  const audioRef = useRef({
+    unlocked: false,
+    menu: null,
+    game: null,
+    button: null,
+  });
+  const showMenuRef = useRef(true);
 
   const [showMenu, setShowMenu] = useState(true);
   const [selectedCircuit, setSelectedCircuit] = useState(null);
@@ -104,6 +115,70 @@ export default function Game() {
     trackW: 13,
     bikeColor: 0xe10000,
   });
+
+  useEffect(() => {
+    showMenuRef.current = showMenu;
+  }, [showMenu]);
+
+  useEffect(() => {
+    const audio = audioRef.current;
+    audio.menu = new Audio(menuAudioUrl);
+    audio.game = new Audio(gameAudioUrl);
+    audio.button = new Audio(buttonAudioUrl);
+
+    audio.menu.loop = true;
+    audio.menu.volume = 0.24;
+    audio.game.loop = true;
+    audio.game.volume = 0.18;
+    audio.button.volume = 0.48;
+
+    const play = (sound) => {
+      if (!sound) return;
+      sound.currentTime = 0;
+      sound.play().catch(() => {});
+    };
+
+    const unlock = () => {
+      audio.unlocked = true;
+      if (showMenuRef.current) {
+        audio.game.pause();
+        audio.menu.play().catch(() => {});
+      }
+    };
+
+    const handlePress = (event) => {
+      const target = event.target;
+      if (target?.closest?.('button, a, .retro-select-card, .retro-bike-chip')) {
+        play(audio.button);
+      }
+    };
+
+    window.addEventListener('pointerdown', unlock, { once: true });
+    window.addEventListener('keydown', unlock, { once: true });
+    document.addEventListener('click', handlePress, true);
+
+    return () => {
+      window.removeEventListener('pointerdown', unlock);
+      window.removeEventListener('keydown', unlock);
+      document.removeEventListener('click', handlePress, true);
+      audio.menu?.pause();
+      audio.game?.pause();
+    };
+  }, []);
+
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio.unlocked || !audio.menu || !audio.game) return;
+
+    if (showMenu) {
+      audio.game.pause();
+      audio.menu.play().catch(() => {});
+      return;
+    }
+
+    audio.menu.pause();
+    audio.game.play().catch(() => {});
+  }, [showMenu]);
 
   const { data: circuits = [], isLoading: loadingCircuits } = useQuery({
     queryKey: ['circuits'],

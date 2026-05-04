@@ -2,11 +2,12 @@ const http = require('http');
 const fs = require('fs');
 const path = require('path');
 const dns = require('dns').promises;
+const os = require('os');
 
 loadEnvFile(path.resolve(__dirname, '..', '.env'));
 
 const PORT = parsePort(process.env.PORT, 5501);
-const HOST = process.env.HOST || '127.0.0.1';
+const HOST = process.env.HOST || '0.0.0.0';
 const PROJECT_DIR = path.resolve(__dirname, '..');
 const DATA_FILE = path.join(__dirname, 'fichajeregistros.json');
 
@@ -19,9 +20,12 @@ const MIME_TYPES = {
   '.jpg': 'image/jpeg',
   '.jpeg': 'image/jpeg',
   '.gif': 'image/gif',
+  '.webp': 'image/webp',
   '.svg': 'image/svg+xml',
   '.mp4': 'video/mp4',
   '.mp3': 'audio/mpeg',
+  '.ogg': 'audio/ogg',
+  '.wav': 'audio/wav',
   '.glb': 'model/gltf-binary'
 };
 
@@ -79,6 +83,27 @@ function loadEnvFile(envPath) {
 function parsePort(rawValue, fallbackPort) {
   const parsed = Number.parseInt(String(rawValue || ''), 10);
   return Number.isInteger(parsed) && parsed > 0 ? parsed : fallbackPort;
+}
+
+function getServerUrls(host, port) {
+  const urls = [];
+
+  if (host === '0.0.0.0' || host === '::') {
+    urls.push(`http://localhost:${port}`);
+
+    const interfaces = os.networkInterfaces();
+    for (const addresses of Object.values(interfaces)) {
+      for (const address of addresses || []) {
+        if (address.family === 'IPv4' && !address.internal) {
+          urls.push(`http://${address.address}:${port}`);
+        }
+      }
+    }
+  } else {
+    urls.push(`http://${host}:${port}`);
+  }
+
+  return [...new Set(urls)];
 }
 
 function isValidEmailFormat(email) {
@@ -297,6 +322,15 @@ async function handleApi(req, res) {
 }
 
 const server = http.createServer((req, res) => {
+  if (req.url.startsWith('/api/health')) {
+    sendJson(res, 200, {
+      ok: true,
+      port: PORT,
+      dataFile: DATA_FILE
+    });
+    return;
+  }
+
   if (req.url.startsWith('/api/registros')) {
     handleApi(req, res);
     return;
@@ -307,6 +341,19 @@ const server = http.createServer((req, res) => {
 
 server.listen(PORT, HOST, () => {
   ensureDataFile();
-  console.log(`Servidor listo en http://${HOST}:${PORT}`);
+  const urls = getServerUrls(HOST, PORT);
+  console.log('Servidor listo en:');
+  urls.forEach((url) => console.log(`- ${url}`));
   console.log(`Guardando registros en ${DATA_FILE}`);
+});
+
+server.on('error', (error) => {
+  if (error.code === 'EADDRINUSE') {
+    console.error(`No se pudo iniciar: el puerto ${PORT} ya esta ocupado.`);
+    console.error('Cierra el servidor anterior o cambia PORT en el archivo .env.');
+    process.exit(1);
+  }
+
+  console.error('No se pudo iniciar el backend:', error.message);
+  process.exit(1);
 });

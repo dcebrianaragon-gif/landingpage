@@ -2,15 +2,18 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>Experiencia Awwwards</title>
 <style>
 body {
     overflow: hidden; /* Vital para bloquear tu web mientras carga */
+    -webkit-text-size-adjust: 100%;
 }
 
 #loader {
     position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+    height: 100svh;
+    height: 100dvh;
     z-index: 999999; /* Nivel Dios para que tape toda tu web */
     display: flex; justify-content: center; align-items: center;
     background: #000;
@@ -73,6 +76,7 @@ body.content-visible #main-content {
             color: var(--text-color);
             font-family: 'Helvetica Neue', Arial, sans-serif;
             overflow: hidden; /* Bloqueamos scroll durante carga */
+            touch-action: manipulation;
         }
 
         /* =========================================
@@ -84,6 +88,8 @@ body.content-visible #main-content {
             left: 0;
             width: 100vw;
             height: 100vh;
+            height: 100svh;
+            height: 100dvh;
             z-index: 9999;
             display: flex;
             justify-content: center;
@@ -199,6 +205,8 @@ body.content-visible #main-content {
         #main-content {
             position: relative;
             height: 100vh;
+            height: 100svh;
+            height: 100dvh;
             display: flex;
             flex-direction: column;
             justify-content: center;
@@ -223,6 +231,38 @@ body.content-visible #main-content {
             font-size: 1.5rem;
             color: #888;
             margin-top: 10px;
+        }
+
+        @media (max-width: 768px) {
+            #counter {
+                font-size: 22vw;
+            }
+
+            .percent-symbol {
+                font-size: 9vw;
+                margin-left: 6px;
+            }
+
+            #welcome-message {
+                width: min(90vw, 520px);
+                padding: 0 16px;
+            }
+
+            #welcome-message span {
+                letter-spacing: 0.35rem;
+                margin-bottom: 12px;
+            }
+
+            h1 {
+                font-size: clamp(2.5rem, 12vw, 4.5rem);
+                text-align: center;
+            }
+
+            p {
+                font-size: 1rem;
+                text-align: center;
+                padding: 0 20px;
+            }
         }
     </style>
 </head>

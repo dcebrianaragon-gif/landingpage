@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>Motos 2026 | MotoGP Protocol</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -22,16 +22,18 @@
 
         * { box-sizing: border-box; margin: 0; padding: 0; }
 
-        html { scroll-behavior: smooth; }
+        html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; }
 
         body {
             min-height: 100vh;
+            min-height: 100dvh;
             background:
                 radial-gradient(circle at top center, rgba(225,0,0,0.18), transparent 22%),
                 linear-gradient(180deg, #050505 0%, #000 100%);
             color: #fff;
             font-family: var(--font-body);
             overflow-x: hidden;
+            touch-action: manipulation;
         }
 
         body::before {
@@ -99,6 +101,7 @@
             gap: 34px;
             align-items: center;
             min-height: calc(100vh - 150px);
+            min-height: calc(100dvh - 150px);
             padding: 38px;
             margin-bottom: 72px;
             border: 1px solid var(--line);
@@ -716,6 +719,73 @@
             .hero-tag {
                 right: 0;
                 bottom: 8%;
+            }
+        }
+
+        @media (max-width: 640px) {
+            header {
+                padding: calc(18px + env(safe-area-inset-top, 0px)) 5% 18px;
+                gap: 14px;
+                flex-wrap: wrap;
+            }
+
+            .logo {
+                font-size: 26px;
+            }
+
+            .back-link {
+                width: 100%;
+                text-align: center;
+                padding: 14px 16px;
+            }
+
+            main {
+                padding: 32px 5% 72px;
+            }
+
+            .hero {
+                padding: 20px;
+                min-height: auto;
+                margin-bottom: 48px;
+            }
+
+            .hero-copy p,
+            .hero-note p,
+            .model-body p {
+                font-size: 14px;
+                line-height: 1.7;
+            }
+
+            .hero-visual-panel {
+                min-height: 420px;
+            }
+
+            .hero-actions a {
+                width: 100%;
+                justify-content: center;
+            }
+
+            .hero-tag {
+                right: 10px;
+                bottom: 10px;
+                min-width: 0;
+                width: calc(100% - 20px);
+                max-width: 220px;
+                padding: 12px 14px;
+            }
+
+            .spec-card,
+            .model-card {
+                padding-left: 18px;
+                padding-right: 18px;
+            }
+
+            .model-media {
+                min-height: 260px;
+            }
+
+            .model-card img {
+                height: clamp(240px, 52vw, 320px);
             }
         }
     </style>

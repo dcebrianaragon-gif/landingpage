@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>Pilotos MotoGP 2026</title>
     <style>
         :root {
@@ -16,7 +16,7 @@
         }
 
         * { box-sizing: border-box; }
-        html { scroll-behavior: smooth; }
+        html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; }
 
         body {
             margin: 0;
@@ -25,6 +25,7 @@
             background:
                 radial-gradient(circle at top, rgba(225, 6, 0, 0.14), transparent 26%),
                 linear-gradient(180deg, #050505 0%, #000 52%, #050505 100%);
+            touch-action: manipulation;
         }
 
         .hero {
@@ -234,6 +235,7 @@
         @media (max-width: 680px) {
             .hero {
                 min-height: 72vh;
+                min-height: 72dvh;
                 padding: 90px 5% 46px;
             }
 
@@ -248,6 +250,43 @@
             .pilot-copy p {
                 font-size: 13px;
                 line-height: 1.75;
+            }
+        }
+
+        @media (max-width: 520px) {
+            .hero {
+                min-height: auto;
+                padding-top: calc(84px + env(safe-area-inset-top, 0px));
+            }
+
+            .hero-actions a {
+                width: 100%;
+                text-align: center;
+            }
+
+            .quick-nav {
+                grid-template-columns: 1fr;
+            }
+
+            .team-header {
+                padding: 20px 18px;
+            }
+
+            .pilots-grid,
+            .pilots-grid-single {
+                grid-template-columns: 1fr;
+            }
+
+            .pilot-card img {
+                height: 300px;
+                object-fit: cover;
+                padding: 0;
+            }
+
+            .pilots-grid-single .pilot-card img {
+                height: 280px;
+                object-fit: contain;
+                padding: 12px 12px 0;
             }
         }
     </style>

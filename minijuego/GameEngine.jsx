@@ -59,6 +59,39 @@ function getTrackBounds(points) {
   });
 }
 
+function getPointNormal(points, index) {
+  const previous = points[(index - 1 + points.length) % points.length];
+  const next = points[(index + 1) % points.length];
+  const tangent = new THREE.Vector3().subVectors(next, previous).normalize();
+  return new THREE.Vector3(-tangent.z, 0, tangent.x);
+}
+
+function buildRacingLinePoints(trackPoints, trackWidth) {
+  const raw = trackPoints.map((point, index) => {
+    const previous = trackPoints[(index - 2 + trackPoints.length) % trackPoints.length];
+    const next = trackPoints[(index + 2) % trackPoints.length];
+    const incoming = new THREE.Vector3().subVectors(point, previous).normalize();
+    const outgoing = new THREE.Vector3().subVectors(next, point).normalize();
+    const turn = THREE.MathUtils.clamp(incoming.x * outgoing.z - incoming.z * outgoing.x, -1, 1);
+    const strength = Math.min(Math.abs(turn) * 5.2, 1);
+    const normal = getPointNormal(trackPoints, index);
+
+    return point
+      .clone()
+      .addScaledVector(normal, -Math.sign(turn || 0) * trackWidth * 0.24 * strength)
+      .setY(-0.085);
+  });
+
+  return raw.map((point, index) => {
+    const previous = raw[(index - 1 + raw.length) % raw.length];
+    const next = raw[(index + 1) % raw.length];
+    return point.clone().multiplyScalar(0.5)
+      .addScaledVector(previous, 0.25)
+      .addScaledVector(next, 0.25)
+      .setY(-0.085);
+  });
+}
+
 function addCircuitImagePlane(scene, cir, trackPoints, trackMeshes) {
   if (!cir.imageUrl) return;
 
@@ -138,17 +171,45 @@ export function buildTrack(scene, cir, trackMeshes) {
   scene.add(asphalt);
   trackMeshes.push(asphalt);
 
+  const racingLinePoints = buildRacingLinePoints(trackPoints, trackWidth);
   const racingLine = new THREE.Mesh(
-    createRibbon(trackPoints, Math.max(trackWidth * 0.18, 2.2), -0.1),
+    createRibbon(racingLinePoints, Math.max(trackWidth * 0.12, 1.65), -0.1),
     new THREE.MeshBasicMaterial({
       color: 0x00f2ff,
       side: THREE.DoubleSide,
       transparent: true,
-      opacity: 0.28,
+      opacity: 0.38,
     })
   );
+  racingLine.name = 'racingLine';
   scene.add(racingLine);
   trackMeshes.push(racingLine);
+
+  for (let index = 0; index < TRACK_SEGMENTS; index += 12) {
+    const previous = trackPoints[(index - 4 + trackPoints.length) % trackPoints.length];
+    const point = trackPoints[index];
+    const next = trackPoints[(index + 4) % trackPoints.length];
+    const incoming = new THREE.Vector3().subVectors(point, previous).normalize();
+    const outgoing = new THREE.Vector3().subVectors(next, point).normalize();
+    const turnStrength = Math.abs(incoming.x * outgoing.z - incoming.z * outgoing.x);
+    if (turnStrength < 0.13) continue;
+
+    const tangent = new THREE.Vector3().subVectors(next, previous).normalize();
+    const marker = new THREE.Mesh(
+      new THREE.PlaneGeometry(Math.max(trackWidth * 0.44, 4.8), 1.15),
+      new THREE.MeshBasicMaterial({
+        color: turnStrength > 0.24 ? 0xff1d1d : 0xffef5a,
+        transparent: true,
+        opacity: turnStrength > 0.24 ? 0.78 : 0.58,
+        side: THREE.DoubleSide,
+      })
+    );
+    marker.rotation.x = -Math.PI / 2;
+    marker.rotation.z = Math.atan2(tangent.x, tangent.z);
+    marker.position.copy(racingLinePoints[index]).setY(-0.065);
+    scene.add(marker);
+    trackMeshes.push(marker);
+  }
 
   for (const side of [-1, 1]) {
     const edgePoints = trackPoints.map((point, index) => {

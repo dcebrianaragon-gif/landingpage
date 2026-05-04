@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>TRACK ANALYSIS | PROTOCOL 2026</title>
     <style>
         /* ================================================================
@@ -20,12 +20,17 @@
 
         * { margin: 0; padding: 0; box-sizing: border-box; cursor: none; }
         
+        html {
+            -webkit-text-size-adjust: 100%;
+        }
+
         body {
             background-color: var(--black);
             color: #fff;
             font-family: 'Segoe UI', sans-serif;
             overflow-x: hidden;
             scroll-behavior: smooth;
+            touch-action: manipulation;
         }
 
         /* CURSOR */
@@ -58,7 +63,7 @@
            ================================================================
         */
         .track-container {
-            display: flex; min-height: 100vh; width: 100vw;
+            display: flex; min-height: 100vh; min-height: 100dvh; width: 100vw;
         }
 
         .map-display {
@@ -181,6 +186,39 @@
             .stats-grid { width: 100%; gap: 15px; }
             .stat-box { border-left: none; border-top: 2px solid var(--red); padding-left: 0; padding-top: 10px; }
             .selector-container { padding: 50px 20px; }
+        }
+
+        @media (max-width: 560px) {
+            header {
+                padding-top: calc(14px + env(safe-area-inset-top, 0px));
+            }
+
+            .btn-back {
+                width: 100%;
+                text-align: center;
+            }
+
+            .map-display {
+                min-height: 42svh;
+                padding: 88px 16px 16px;
+            }
+
+            .data-panel {
+                padding: 28px 18px 36px;
+            }
+
+            .track-title {
+                font-size: 30px;
+                margin-bottom: 22px;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .maps-grid {
+                grid-template-columns: 1fr;
+            }
         }
     </style>
 </head>
