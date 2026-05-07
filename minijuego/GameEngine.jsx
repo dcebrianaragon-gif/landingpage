@@ -92,6 +92,30 @@ function buildRacingLinePoints(trackPoints, trackWidth) {
   });
 }
 
+function buildBoostPadIndices(trackPoints) {
+  const indices = [];
+  let lastIndex = -999;
+
+  for (let index = 18; index < trackPoints.length; index += 4) {
+    const previous = trackPoints[(index - 6 + trackPoints.length) % trackPoints.length];
+    const point = trackPoints[index];
+    const next = trackPoints[(index + 6) % trackPoints.length];
+    const incoming = new THREE.Vector3().subVectors(point, previous).normalize();
+    const outgoing = new THREE.Vector3().subVectors(next, point).normalize();
+    const turnStrength = Math.abs(incoming.x * outgoing.z - incoming.z * outgoing.x);
+
+    if (turnStrength > 0.09) continue;
+    if (index - lastIndex < 34) continue;
+
+    indices.push(index);
+    lastIndex = index;
+
+    if (indices.length >= 5) break;
+  }
+
+  return indices;
+}
+
 function addCircuitImagePlane(scene, cir, trackPoints, trackMeshes) {
   if (!cir.imageUrl) return;
 
@@ -185,6 +209,70 @@ export function buildTrack(scene, cir, trackMeshes) {
   scene.add(racingLine);
   trackMeshes.push(racingLine);
 
+  const boostPadIndices = buildBoostPadIndices(trackPoints);
+  const boostPads = boostPadIndices.map((index, padOrder) => {
+    const position = racingLinePoints[index].clone().setY(-0.082);
+    const next = racingLinePoints[(index + 1) % racingLinePoints.length];
+    const previous = racingLinePoints[(index - 1 + racingLinePoints.length) % racingLinePoints.length];
+    const tangent = new THREE.Vector3().subVectors(next, previous).normalize();
+    const rotation = Math.atan2(tangent.x, tangent.z);
+
+    const glow = new THREE.Mesh(
+      new THREE.PlaneGeometry(Math.max(trackWidth * 0.34, 3.9), 5.4),
+      new THREE.MeshBasicMaterial({
+        color: 0x00f2ff,
+        transparent: true,
+        opacity: 0.18,
+        side: THREE.DoubleSide,
+        depthWrite: false,
+      })
+    );
+    glow.rotation.x = -Math.PI / 2;
+    glow.rotation.z = rotation;
+    glow.position.copy(position).setY(-0.095);
+    glow.name = `boostPadGlow_${padOrder}`;
+    scene.add(glow);
+    trackMeshes.push(glow);
+
+    const pad = new THREE.Mesh(
+      new THREE.PlaneGeometry(Math.max(trackWidth * 0.22, 2.7), 4.8),
+      new THREE.MeshBasicMaterial({
+        color: 0xffef5a,
+        transparent: true,
+        opacity: 0.86,
+        side: THREE.DoubleSide,
+      })
+    );
+    pad.rotation.x = -Math.PI / 2;
+    pad.rotation.z = rotation;
+    pad.position.copy(position);
+    pad.name = `boostPad_${padOrder}`;
+    scene.add(pad);
+    trackMeshes.push(pad);
+
+    const stripeGeometry = new THREE.PlaneGeometry(Math.max(trackWidth * 0.18, 2.2), 0.48);
+    for (let stripeIndex = -2; stripeIndex <= 2; stripeIndex += 1) {
+      const stripe = new THREE.Mesh(
+        stripeGeometry,
+        new THREE.MeshBasicMaterial({
+          color: stripeIndex % 2 === 0 ? 0x050505 : 0x00f2ff,
+          side: THREE.DoubleSide,
+        })
+      );
+      stripe.rotation.x = -Math.PI / 2;
+      stripe.rotation.z = rotation;
+      stripe.position.copy(position).addScaledVector(tangent, stripeIndex * 0.9).setY(-0.075);
+      scene.add(stripe);
+      trackMeshes.push(stripe);
+    }
+
+    return {
+      index,
+      position: position.clone(),
+      radius: Math.max(trackWidth * 0.2, 4.2),
+    };
+  });
+
   for (let index = 0; index < TRACK_SEGMENTS; index += 12) {
     const previous = trackPoints[(index - 4 + trackPoints.length) % trackPoints.length];
     const point = trackPoints[index];
@@ -276,7 +364,7 @@ export function buildTrack(scene, cir, trackMeshes) {
     }
   }
 
-  return { spline, splineLength, startPos, startHeading };
+  return { spline, splineLength, startPos, startHeading, racingLinePoints, boostPads };
 }
 
 export function buildBike(bk) {

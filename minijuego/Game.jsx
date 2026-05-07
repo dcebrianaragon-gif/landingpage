@@ -19,6 +19,31 @@ const MINIMAP_UPDATE_INTERVAL_MS = 80;
 const TARGET_FRAME_MS = 1000 / 60;
 const ORTHO_VIEW_HEIGHT = 220;
 const CAMERA_ALTITUDE = 220;
+const COUNTDOWN_DURATION_MS = 3200;
+const BOOST_METER_MAX = 100;
+const BOOST_PAD_COOLDOWN_MS = 2200;
+const BOOST_PAD_METER_GAIN = 24;
+const BOOST_PAD_SPEED_KICK = 0.2;
+const BOOST_DRAIN_PER_FRAME = 0.48;
+const BOOST_RECOVERY_PER_FRAME = 0.18;
+
+function applyCameraFrustum(camera, viewHeight, viewport) {
+  const aspect = viewport.width / viewport.height;
+  camera.left = (-viewHeight * aspect) / 2;
+  camera.right = (viewHeight * aspect) / 2;
+  camera.top = viewHeight / 2;
+  camera.bottom = -viewHeight / 2;
+  camera.updateProjectionMatrix();
+}
+
+function getCountdownLabel(now, countdownEnd) {
+  const remaining = countdownEnd - now;
+  if (remaining <= 0) return null;
+  if (remaining > 2400) return '3';
+  if (remaining > 1600) return '2';
+  if (remaining > 800) return '1';
+  return 'GO';
+}
 
 function disposeSceneObject(object) {
   if (!object) return;
@@ -72,6 +97,9 @@ export default function Game() {
     wheelSpin: 0,
     lastFrameTime: 0,
     spline: null,
+    racingLinePoints: [],
+    boostPads: [],
+    boostPadCooldowns: [],
     startPos: new THREE.Vector3(),
     startHeading: 0,
     trackMeshes: [],
@@ -80,6 +108,19 @@ export default function Game() {
     camTarget: new THREE.Vector3(),
     camLook: new THREE.Vector3(),
     finished: false,
+    finishedAt: 0,
+    raceStarted: false,
+    countdownEnd: 0,
+    countdownLabel: null,
+    boostMeter: BOOST_METER_MAX,
+    boostActive: false,
+    precision: 100,
+    precisionAccum: 0,
+    precisionSamples: 0,
+    precisionAverage: 100,
+    maxSpeed: 0,
+    padHits: 0,
+    cameraViewHeight: ORTHO_VIEW_HEIGHT,
   });
   const keysRef = useRef({});
   const animRef = useRef(null);
@@ -106,6 +147,13 @@ export default function Game() {
     lapNotify: false,
     offTrack: false,
     finished: false,
+    countdown: null,
+    boostMeter: BOOST_METER_MAX,
+    boosting: false,
+    precision: 100,
+    precisionAverage: 100,
+    maxSpeed: 0,
+    padHits: 0,
   });
   const [minimapData, setMinimapData] = useState({
     spline: null,
@@ -114,6 +162,7 @@ export default function Game() {
     startPos: null,
     trackW: 13,
     bikeColor: 0xe10000,
+    boostPads: [],
   });
 
   useEffect(() => {
@@ -231,14 +280,9 @@ export default function Game() {
 
     const handleResize = () => {
       viewportRef.current = { width: window.innerWidth, height: window.innerHeight };
-      const nextAspect = window.innerWidth / window.innerHeight;
       renderer.setPixelRatio(1);
       renderer.setSize(window.innerWidth, window.innerHeight);
-      camera.left = (-ORTHO_VIEW_HEIGHT * nextAspect) / 2;
-      camera.right = (ORTHO_VIEW_HEIGHT * nextAspect) / 2;
-      camera.top = ORTHO_VIEW_HEIGHT / 2;
-      camera.bottom = -ORTHO_VIEW_HEIGHT / 2;
-      camera.updateProjectionMatrix();
+      applyCameraFrustum(camera, stateRef.current.cameraViewHeight || ORTHO_VIEW_HEIGHT, viewportRef.current);
     };
     window.addEventListener('resize', handleResize);
 
@@ -317,37 +361,74 @@ export default function Game() {
     if (!s.isPlaying) return;
     animRef.current = requestAnimationFrame(gameLoop);
     if (frameTime - s.lastFrameTime < TARGET_FRAME_MS) return;
+    const previousFrameTime = s.lastFrameTime || frameTime - TARGET_FRAME_MS;
+    const deltaFactor = THREE.MathUtils.clamp((frameTime - previousFrameTime) / TARGET_FRAME_MS, 0.85, 1.85);
     s.lastFrameTime = frameTime;
 
     const bike = bikeRef.current;
     const camera = cameraRef.current;
-    if (!bike || !camera || !s.bkCfg) return;
+    const renderer = rendererRef.current;
+    if (!bike || !camera || !renderer || !s.bkCfg) return;
 
-    const gearSpeedCeiling = (s.gear / s.bkCfg.topGear) * s.bkCfg.maxSpd;
-    const accelKey = K('w', 'ArrowUp');
-    const brakeKey = K('s', 'ArrowDown');
-    const frontBrake = K(' ');
+    if (!s.raceStarted && frameTime >= s.countdownEnd) {
+      s.raceStarted = true;
+      s.countdownLabel = null;
+      s.lapStart = frameTime;
+    } else if (!s.raceStarted) {
+      s.countdownLabel = getCountdownLabel(frameTime, s.countdownEnd);
+    }
+
+    const canControlBike = s.raceStarted && !s.finished;
+    const accelKey = canControlBike && K('w', 'ArrowUp');
+    const brakeKey = canControlBike && K('s', 'ArrowDown');
+    const frontBrake = canControlBike && K(' ');
+    const boostRequested = canControlBike && K('Shift') && s.boostMeter > 6 && s.speed > 0.08;
+
+    if (boostRequested) {
+      s.boostMeter = Math.max(0, s.boostMeter - BOOST_DRAIN_PER_FRAME * deltaFactor);
+      s.boostActive = s.boostMeter > 0.5;
+    } else if (brakeKey) {
+      s.boostActive = false;
+      s.boostMeter = Math.min(BOOST_METER_MAX, s.boostMeter + BOOST_RECOVERY_PER_FRAME * 0.5 * deltaFactor);
+    } else {
+      s.boostActive = false;
+      const recharge = s.onTrack ? BOOST_RECOVERY_PER_FRAME : BOOST_RECOVERY_PER_FRAME * 0.55;
+      s.boostMeter = Math.min(BOOST_METER_MAX, s.boostMeter + recharge * deltaFactor);
+    }
+
+    const baseGearSpeedCeiling = (s.gear / s.bkCfg.topGear) * s.bkCfg.maxSpd;
+    const boostCeilingBonus = s.boostActive ? s.bkCfg.maxSpd * 0.24 : 0;
+    const gearSpeedCeiling = baseGearSpeedCeiling + boostCeilingBonus;
+    const boostAccelFactor = s.boostActive ? 1.45 : 1;
 
     if (accelKey) {
-      s.speed = Math.min(s.speed + s.bkCfg.accel, gearSpeedCeiling);
+      s.speed = Math.min(s.speed + s.bkCfg.accel * boostAccelFactor * deltaFactor, gearSpeedCeiling);
     } else if (brakeKey) {
-      s.speed = Math.max(s.speed - s.bkCfg.brake, 0);
+      s.speed = Math.max(s.speed - s.bkCfg.brake * deltaFactor, 0);
     } else if (frontBrake) {
-      s.speed = Math.max(s.speed - s.bkCfg.brake * 0.6, 0);
+      s.speed = Math.max(s.speed - s.bkCfg.brake * 1.22 * deltaFactor, 0);
     } else {
-      s.speed *= 0.985;
+      s.speed *= 0.985 ** deltaFactor;
+    }
+
+    if (s.boostActive) {
+      s.speed = Math.min(s.speed + s.bkCfg.accel * 0.62 * deltaFactor, gearSpeedCeiling);
     }
 
     if (s.speed > gearSpeedCeiling) {
-      s.speed = Math.max(s.speed - s.bkCfg.brake * 0.3, gearSpeedCeiling);
+      s.speed = Math.max(s.speed - s.bkCfg.brake * 0.34 * deltaFactor, gearSpeedCeiling);
     }
 
-    if (!s.onTrack) s.speed *= 0.9;
+    if (!s.onTrack) s.speed *= 0.91 ** deltaFactor;
+
+    if (s.finished) {
+      s.speed *= 0.975 ** deltaFactor;
+    }
 
     s.steerInput = 0;
-    if (s.speed > 0.03) {
+    if (canControlBike && s.speed > 0.03) {
       const velFactor = Math.min(s.speed / s.bkCfg.maxSpd, 1);
-      const turnRate = s.bkCfg.turn * (1.1 - velFactor * 0.4);
+      const turnRate = s.bkCfg.turn * (1.1 - velFactor * 0.4) * deltaFactor * (s.boostActive ? 0.94 : 1);
       if (K('a', 'ArrowLeft')) {
         s.heading += turnRate;
         s.steerInput = 1;
@@ -359,13 +440,14 @@ export default function Game() {
     }
 
     const targetLean = s.steerInput * 0.55;
-    s.leanAngle += (targetLean - s.leanAngle) * s.bkCfg.lean;
+    s.leanAngle += (targetLean - s.leanAngle) * s.bkCfg.lean * deltaFactor;
 
-    bike.position.x += Math.sin(s.heading) * s.speed;
-    bike.position.z += Math.cos(s.heading) * s.speed;
-    s.visualTime += 1;
+    bike.position.x += Math.sin(s.heading) * s.speed * deltaFactor;
+    bike.position.z += Math.cos(s.heading) * s.speed * deltaFactor;
+    s.visualTime += deltaFactor;
 
     const speedRatio = Math.min(s.speed / s.bkCfg.maxSpd, 1);
+    const boostFx = s.boostActive ? 1 : 0;
     const enginePulse = Math.sin(s.visualTime * (0.28 + speedRatio * 1.45));
     const visual = bike.getObjectByName('bikeVisual');
     const frontWheel = bike.getObjectByName('frontWheel');
@@ -375,20 +457,21 @@ export default function Game() {
     const speedTrail = bike.getObjectByName('bikeSpeedTrail');
 
     bike.position.y = 0.02 + Math.abs(enginePulse) * 0.035 * speedRatio;
-    s.wheelSpin += s.speed * 1.95;
+    s.wheelSpin += s.speed * 1.95 * deltaFactor;
     if (frontWheel) frontWheel.rotation.z = s.wheelSpin;
     if (rearWheel) rearWheel.rotation.z = s.wheelSpin * 1.08;
     if (visual) {
       visual.position.x = enginePulse * 0.035 * speedRatio;
       visual.rotation.y = -s.steerInput * 0.08 * speedRatio;
-      visual.scale.setScalar(1 + speedRatio * 0.018);
+      visual.scale.setScalar(1 + speedRatio * 0.018 + boostFx * 0.028);
     }
     if (rider) rider.position.x = -s.leanAngle * 0.48;
     if (tailLight?.material) tailLight.material.opacity = (brakeKey || frontBrake) ? 1 : 0.45 + speedRatio * 0.25;
     if (speedTrail?.material) {
-      speedTrail.material.opacity = Math.max(0, speedRatio - 0.34) * 0.55;
-      speedTrail.scale.y = 0.72 + speedRatio * 1.4;
-      speedTrail.scale.x = 1 + Math.abs(enginePulse) * 0.18;
+      speedTrail.material.color.set(s.boostActive ? 0xffef5a : 0x00f2ff);
+      speedTrail.material.opacity = Math.max(0, speedRatio - 0.26) * (s.boostActive ? 0.98 : 0.58);
+      speedTrail.scale.y = 0.72 + speedRatio * 1.4 + boostFx * 0.9;
+      speedTrail.scale.x = 1 + Math.abs(enginePulse) * 0.18 + boostFx * 0.26;
     }
 
     const qHead = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), s.heading);
@@ -400,11 +483,58 @@ export default function Game() {
       const cp = s.spline.getPoint(ct);
       const dist = Math.sqrt((bike.position.x - cp.x) ** 2 + (bike.position.z - cp.z) ** 2);
       s.onTrack = dist < s.circuit.trackW / 2 + 1.5;
-      s.offTrackTimer = s.onTrack ? 0 : s.offTrackTimer + 1;
+      s.offTrackTimer = s.onTrack ? 0 : s.offTrackTimer + deltaFactor;
+
+      if (s.racingLinePoints.length > 0) {
+        const baseIndex = Math.round(ct * (s.racingLinePoints.length - 1));
+        let bestLineDist = Infinity;
+        for (let offset = -3; offset <= 3; offset += 1) {
+          const idx = (baseIndex + offset + s.racingLinePoints.length) % s.racingLinePoints.length;
+          const linePoint = s.racingLinePoints[idx];
+          const lineDist = Math.hypot(bike.position.x - linePoint.x, bike.position.z - linePoint.z);
+          if (lineDist < bestLineDist) bestLineDist = lineDist;
+        }
+
+        const perfectWindow = Math.max(s.circuit.trackW * 0.45, 4.6);
+        const livePrecision = Math.max(0, 100 - (bestLineDist / perfectWindow) * 100);
+        s.precision += (livePrecision - s.precision) * 0.14 * deltaFactor;
+        s.precisionAccum += livePrecision;
+        s.precisionSamples += 1;
+        s.precisionAverage = s.precisionAccum / s.precisionSamples;
+      }
     }
 
-    s.lapCooldown = Math.max(0, s.lapCooldown - 1);
-    if (s.spline && !s.finished) {
+    s.maxSpeed = Math.max(s.maxSpeed, s.speed);
+
+    s.boostPads.forEach((pad, padIndex) => {
+      const cooldownEndsAt = s.boostPadCooldowns[padIndex] || 0;
+      const cooldownLeft = Math.max(0, cooldownEndsAt - frameTime);
+      const ready = cooldownLeft === 0;
+      const padMesh = sceneRef.current?.getObjectByName(`boostPad_${padIndex}`);
+      const glowMesh = sceneRef.current?.getObjectByName(`boostPadGlow_${padIndex}`);
+      const shimmer = 0.78 + Math.sin((s.visualTime + padIndex * 4.5) * 0.18) * 0.14;
+
+      if (padMesh?.material) {
+        padMesh.material.opacity = ready ? shimmer : 0.22 + (1 - cooldownLeft / BOOST_PAD_COOLDOWN_MS) * 0.24;
+      }
+
+      if (glowMesh?.material) {
+        glowMesh.material.opacity = ready ? 0.12 + Math.sin((s.visualTime + padIndex * 5.5) * 0.14) * 0.08 : 0.04;
+      }
+
+      if (!canControlBike || !ready) return;
+
+      const distanceToPad = Math.hypot(bike.position.x - pad.position.x, bike.position.z - pad.position.z);
+      if (distanceToPad > pad.radius) return;
+
+      s.boostPadCooldowns[padIndex] = frameTime + BOOST_PAD_COOLDOWN_MS;
+      s.boostMeter = Math.min(BOOST_METER_MAX, s.boostMeter + BOOST_PAD_METER_GAIN);
+      s.speed = Math.min(s.speed + BOOST_PAD_SPEED_KICK, s.bkCfg.maxSpd * 1.22);
+      s.padHits += 1;
+    });
+
+    s.lapCooldown = Math.max(0, s.lapCooldown - deltaFactor);
+    if (s.spline && canControlBike) {
       const mid = s.spline.getPoint(0.5);
       const dMid = Math.sqrt((bike.position.x - mid.x) ** 2 + (bike.position.z - mid.z) ** 2);
       if (dMid < 9) s.halfwayDone = true;
@@ -424,13 +554,20 @@ export default function Game() {
             s.halfwayDone = false;
             s.lapCooldown = 120;
 
-            if (s.lapCount > s.circuit.laps) s.finished = true;
+            if (s.lapCount > s.circuit.laps) {
+              s.finished = true;
+              s.finishedAt = performance.now();
+              s.raceStarted = false;
+              s.countdownLabel = null;
+            }
 
-            setGameState((prev) => ({ ...prev, lapNotify: true }));
-            if (lapNotifyTimeoutRef.current) clearTimeout(lapNotifyTimeoutRef.current);
-            lapNotifyTimeoutRef.current = setTimeout(() => {
-              setGameState((prev) => ({ ...prev, lapNotify: false }));
-            }, 1600);
+            setGameState((prev) => ({ ...prev, lapNotify: !s.finished }));
+            if (!s.finished) {
+              if (lapNotifyTimeoutRef.current) clearTimeout(lapNotifyTimeoutRef.current);
+              lapNotifyTimeoutRef.current = setTimeout(() => {
+                setGameState((prev) => ({ ...prev, lapNotify: false }));
+              }, 1600);
+            }
           }
         }
       }
@@ -442,13 +579,17 @@ export default function Game() {
     const prevCeil = ((s.gear - 1) / s.bkCfg.topGear) * s.bkCfg.maxSpd;
     const rpmInGear = gearCeil > prevCeil ? (s.speed - prevCeil) / (gearCeil - prevCeil) : 0;
 
+    const desiredViewHeight = ORTHO_VIEW_HEIGHT + speedRatio * 42 + boostFx * 26;
+    s.cameraViewHeight += (desiredViewHeight - s.cameraViewHeight) * 0.08 * deltaFactor;
+    applyCameraFrustum(camera, s.cameraViewHeight, viewportRef.current);
     s.camTarget.set(bike.position.x, CAMERA_ALTITUDE, bike.position.z);
     camera.position.lerp(s.camTarget, 0.12);
     s.camLook.set(bike.position.x, 0, bike.position.z);
     camera.lookAt(s.camLook);
 
     const now = performance.now();
-    const elapsed = (now - s.lapStart) / 1000;
+    const lapTimerAnchor = s.finishedAt || now;
+    const elapsed = s.raceStarted || s.finished ? (lapTimerAnchor - s.lapStart) / 1000 : 0;
 
     if (now - uiFrameRef.current.hud >= UI_UPDATE_INTERVAL_MS) {
       uiFrameRef.current.hud = now;
@@ -464,6 +605,13 @@ export default function Game() {
           rpmRatio: Math.max(0, Math.min(1, rpmInGear)),
           offTrack: s.offTrackTimer > 10,
           finished: s.finished,
+          countdown: s.countdownLabel,
+          boostMeter: s.boostMeter,
+          boosting: s.boostActive,
+          precision: s.precision,
+          precisionAverage: s.precisionAverage,
+          maxSpeed: s.maxSpeed,
+          padHits: s.padHits,
         }));
       });
     }
@@ -479,7 +627,7 @@ export default function Game() {
       });
     }
 
-    rendererRef.current.render(sceneRef.current, camera);
+    renderer.render(sceneRef.current, camera);
   }, []);
 
   const launch = useCallback(() => {
@@ -527,6 +675,9 @@ export default function Game() {
 
     const trackResult = buildTrack(scene, cir, s.trackMeshes);
     s.spline = trackResult.spline;
+    s.racingLinePoints = trackResult.racingLinePoints || [];
+    s.boostPads = trackResult.boostPads || [];
+    s.boostPadCooldowns = s.boostPads.map(() => 0);
     s.startPos = trackResult.startPos;
     s.startHeading = trackResult.startHeading;
 
@@ -544,7 +695,7 @@ export default function Game() {
     s.closestT = 0;
     s.halfwayDone = false;
     s.lapCount = 1;
-    s.lapStart = performance.now();
+    s.lapStart = 0;
     s.bestLap = null;
     s.bkCfg = bk;
     s.circuit = cir;
@@ -553,6 +704,19 @@ export default function Game() {
     s.wheelSpin = 0;
     s.lastFrameTime = 0;
     s.finished = false;
+    s.finishedAt = 0;
+    s.raceStarted = false;
+    s.countdownEnd = performance.now() + COUNTDOWN_DURATION_MS;
+    s.countdownLabel = '3';
+    s.boostMeter = BOOST_METER_MAX;
+    s.boostActive = false;
+    s.precision = 100;
+    s.precisionAccum = 0;
+    s.precisionSamples = 0;
+    s.precisionAverage = 100;
+    s.maxSpeed = 0;
+    s.padHits = 0;
+    s.cameraViewHeight = ORTHO_VIEW_HEIGHT;
     uiFrameRef.current.hud = 0;
     uiFrameRef.current.minimap = 0;
 
@@ -565,6 +729,7 @@ export default function Game() {
     bikeMesh.rotation.set(0, s.startHeading, 0);
 
     const camera = cameraRef.current;
+    applyCameraFrustum(camera, ORTHO_VIEW_HEIGHT, viewportRef.current);
     s.camTarget.set(bikeMesh.position.x, CAMERA_ALTITUDE, bikeMesh.position.z);
     camera.position.copy(s.camTarget);
     camera.lookAt(bikeMesh.position.x, 0, bikeMesh.position.z);
@@ -576,10 +741,29 @@ export default function Game() {
       startPos: s.startPos,
       trackW: cir.trackW,
       bikeColor: bk.color,
+      boostPads: s.boostPads,
     });
 
     setShowMenu(false);
-    setGameState((prev) => ({ ...prev, lapNotify: false, finished: false }));
+    setGameState({
+      lapTime: 0,
+      bestLap: null,
+      lap: 1,
+      totalLaps: cir.laps,
+      speed: 0,
+      gear: 1,
+      rpmRatio: 0,
+      lapNotify: false,
+      offTrack: false,
+      finished: false,
+      countdown: '3',
+      boostMeter: BOOST_METER_MAX,
+      boosting: false,
+      precision: 100,
+      precisionAverage: 100,
+      maxSpeed: 0,
+      padHits: 0,
+    });
     s.isPlaying = true;
     gameLoop();
   }, [circuits, bikes, selectedCircuit, selectedBike, gameLoop]);
@@ -601,9 +785,26 @@ export default function Game() {
       bikeRef.current = null;
     }
     s.spline = null;
+    s.racingLinePoints = [];
+    s.boostPads = [];
+    s.boostPadCooldowns = [];
     s.visualTime = 0;
     s.wheelSpin = 0;
     s.lastFrameTime = 0;
+    s.finished = false;
+    s.finishedAt = 0;
+    s.raceStarted = false;
+    s.countdownEnd = 0;
+    s.countdownLabel = null;
+    s.boostMeter = BOOST_METER_MAX;
+    s.boostActive = false;
+    s.precision = 100;
+    s.precisionAccum = 0;
+    s.precisionSamples = 0;
+    s.precisionAverage = 100;
+    s.maxSpeed = 0;
+    s.padHits = 0;
+    s.cameraViewHeight = ORTHO_VIEW_HEIGHT;
     uiFrameRef.current.hud = 0;
     uiFrameRef.current.minimap = 0;
 
@@ -619,6 +820,13 @@ export default function Game() {
       lapNotify: false,
       offTrack: false,
       finished: false,
+      countdown: null,
+      boostMeter: BOOST_METER_MAX,
+      boosting: false,
+      precision: 100,
+      precisionAverage: 100,
+      maxSpeed: 0,
+      padHits: 0,
     });
     setMinimapData({
       spline: null,
@@ -627,6 +835,7 @@ export default function Game() {
       startPos: null,
       trackW: 13,
       bikeColor: 0xe10000,
+      boostPads: [],
     });
 
     rendererRef.current.render(sceneRef.current, cameraRef.current);
@@ -671,6 +880,7 @@ export default function Game() {
             startPos={minimapData.startPos}
             trackW={minimapData.trackW}
             bikeColor={minimapData.bikeColor}
+            boostPads={minimapData.boostPads}
           />
         </Suspense>
       )}

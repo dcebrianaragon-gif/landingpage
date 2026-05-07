@@ -316,11 +316,19 @@
         }
 
         .hero-visual-frame {
+            --hero-tilt-x: 0deg;
+            --hero-tilt-y: 0deg;
+            --hero-shift-x: 0px;
+            --hero-shift-y: 0px;
             position: relative;
             width: min(100%, 560px);
             aspect-ratio: 0.82;
             display: grid;
             place-items: center;
+            transform: perspective(2000px) rotateX(var(--hero-tilt-x)) rotateY(var(--hero-tilt-y));
+            transform-style: preserve-3d;
+            transition: transform 0.35s ease-out;
+            will-change: transform;
         }
 
         .hero-visual-frame::before,
@@ -352,6 +360,8 @@
             object-position: center bottom;
             filter: drop-shadow(0 50px 80px rgba(0,0,0,0.55));
             will-change: transform;
+            transform: translate3d(var(--hero-shift-x), var(--hero-shift-y), 0);
+            transition: transform 0.35s ease-out, filter 0.35s ease;
         }
 
         .hero-speed-arcs {
@@ -360,6 +370,7 @@
             border-radius: 46%;
             border: 1px solid rgba(255,255,255,0.08);
             pointer-events: none;
+            animation: arcBreath 4.8s ease-in-out infinite;
         }
 
         .hero-speed-arcs::before,
@@ -389,6 +400,8 @@
             border: 1px solid var(--line-strong);
             background: rgba(0,0,0,0.52);
             backdrop-filter: blur(14px);
+            transform: translate3d(calc(var(--hero-shift-x) * -0.4), calc(var(--hero-shift-y) * -0.4), 36px);
+            transition: transform 0.35s ease-out, border-color 0.35s ease, box-shadow 0.35s ease;
         }
 
         .hero-tag strong {
@@ -441,6 +454,12 @@
         }
 
         .model-card {
+            --tilt-x: 0deg;
+            --tilt-y: 0deg;
+            --hover-lift: 0px;
+            --hover-scale: 1;
+            --glow-x: 50%;
+            --glow-y: 36%;
             position: relative;
             border: 1px solid var(--line);
             background: #080808;
@@ -448,8 +467,17 @@
             text-decoration: none;
             color: inherit;
             transform-origin: center center;
-            transition: transform 0.55s var(--ease-out), border-color 0.35s ease, box-shadow 0.35s ease;
             isolation: isolate;
+            opacity: 0;
+            transform-style: preserve-3d;
+            will-change: transform, opacity, box-shadow;
+            transform: perspective(1800px) rotateX(6deg) rotateY(0deg) translate3d(0, 42px, 0) scale(0.985);
+            transition: opacity 0.65s ease, transform 0.65s var(--ease-out), border-color 0.35s ease, box-shadow 0.35s ease;
+        }
+
+        .model-card.is-visible {
+            opacity: 1;
+            transform: perspective(1800px) rotateX(var(--tilt-x)) rotateY(var(--tilt-y)) translate3d(0, var(--hover-lift), 0) scale(var(--hover-scale));
         }
 
         .model-card-launching {
@@ -466,6 +494,8 @@
             object-position: center center;
             display: block;
             filter: grayscale(0.1) contrast(1.06);
+            transform: translate3d(0, 0, 0) scale(1);
+            will-change: transform, filter, clip-path;
             transition: transform 0.85s var(--ease-out), filter 0.6s ease, clip-path 0.7s var(--ease-out);
         }
 
@@ -478,6 +508,8 @@
             padding: 24px;
             position: relative;
             z-index: 1;
+            transform: translate3d(0, 0, 26px);
+            transition: transform 0.45s ease, opacity 0.45s ease;
         }
 
         .model-card-launching .model-copy {
@@ -521,6 +553,7 @@
             font-size: 11px;
             color: rgba(255,255,255,0.78);
             text-align: center;
+            transition: transform 0.35s ease, border-color 0.35s ease, background 0.35s ease;
         }
 
         .model-cta {
@@ -556,6 +589,7 @@
             position: absolute;
             inset: 0;
             background:
+                radial-gradient(circle at var(--glow-x) var(--glow-y), rgba(225,0,0,0.26), transparent 32%),
                 radial-gradient(circle at center, rgba(225,0,0,0.18), transparent 48%),
                 linear-gradient(180deg, rgba(225,0,0,0.06), rgba(0,0,0,0.04));
             opacity: 0;
@@ -565,7 +599,8 @@
         }
 
         .model-card:hover {
-            transform: translateY(-8px);
+            --hover-lift: -10px;
+            --hover-scale: 1.015;
             border-color: rgba(225,0,0,0.5);
             box-shadow: 0 22px 46px rgba(0,0,0,0.4);
         }
@@ -575,8 +610,18 @@
         }
 
         .model-card:hover img {
-            transform: scale(1.04);
+            transform: scale(1.05) translate3d(1.5%, -1%, 0);
             filter: grayscale(0) contrast(1.08);
+        }
+
+        .model-card:hover .model-copy {
+            transform: translate3d(0, -4px, 34px);
+        }
+
+        .model-card:hover .model-meta span {
+            transform: translateY(-4px);
+            border-color: rgba(225,0,0,0.4);
+            background: rgba(255,255,255,0.06);
         }
 
         .model-card.is-animating::before {
@@ -602,6 +647,21 @@
         }
 
         .moto-launch-overlay.active { opacity: 1; }
+
+        .moto-launch-streaks {
+            position: absolute;
+            inset: -16% -10%;
+            opacity: 0;
+            background:
+                repeating-linear-gradient(115deg, transparent 0 7%, rgba(255,255,255,0.08) 7.25% 7.6%, transparent 7.9% 14%),
+                linear-gradient(90deg, transparent 0%, rgba(225,0,0,0.18) 34%, rgba(255,255,255,0.14) 50%, rgba(225,0,0,0.18) 66%, transparent 100%);
+            mix-blend-mode: screen;
+            transform: translateX(-8%) scale(1.02);
+        }
+
+        .moto-launch-overlay.active .moto-launch-streaks {
+            animation: launchStreaks 0.9s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+        }
 
         .moto-launch-smoke,
         .moto-launch-smoke::before,
@@ -648,6 +708,11 @@
             100% { transform: scale(6.4); opacity: 0; }
         }
 
+        @keyframes arcBreath {
+            0%, 100% { opacity: 0.68; filter: drop-shadow(0 0 0 rgba(225,0,0,0)); }
+            50% { opacity: 1; filter: drop-shadow(0 0 18px rgba(225,0,0,0.22)); }
+        }
+
         @keyframes motoLaunchImage {
             0% { transform: translate3d(0, 0, 0) scale(1); }
             12% { transform: translate3d(-4px, 0, 0) scale(1.02); }
@@ -684,6 +749,12 @@
             0% { opacity: 0; }
             18% { opacity: 0.95; }
             100% { opacity: 0; }
+        }
+
+        @keyframes launchStreaks {
+            0% { opacity: 0; transform: translateX(-8%) scale(1.02); }
+            20% { opacity: 0.58; }
+            100% { opacity: 0; transform: translateX(12%) scale(1.14); }
         }
 
         @media (max-width: 1080px) {
@@ -971,6 +1042,7 @@
 
         const modelsTarget = document.getElementById('models-target');
         const heroSpeedValue = document.getElementById('hero-speed-value');
+        const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
         function ensureMotoLaunchOverlay() {
             let overlay = document.querySelector('.moto-launch-overlay');
@@ -978,7 +1050,7 @@
 
             overlay = document.createElement('div');
             overlay.className = 'moto-launch-overlay';
-            overlay.innerHTML = '<div class="moto-launch-flash"></div><div class="moto-launch-smoke"></div>';
+            overlay.innerHTML = '<div class="moto-launch-flash"></div><div class="moto-launch-streaks"></div><div class="moto-launch-smoke"></div>';
             document.body.appendChild(overlay);
             return overlay;
         }
@@ -986,6 +1058,11 @@
         const motoLaunchOverlay = ensureMotoLaunchOverlay();
 
         function initHeroAnimations() {
+            if (prefersReducedMotion) {
+                heroSpeedValue.textContent = '350';
+                return;
+            }
+
             gsap.from('.hero-copy > *', {
                 y: 36,
                 opacity: 0,
@@ -1041,12 +1118,114 @@
                     scrub: 1.3
                 }
             });
+
+            gsap.from('.spec-card', {
+                y: 34,
+                opacity: 0,
+                duration: 0.8,
+                stagger: 0.08,
+                ease: 'power3.out',
+                scrollTrigger: {
+                    trigger: '.spec-grid',
+                    start: 'top 82%'
+                }
+            });
         }
 
-        motoCatalog.forEach((moto) => {
+        function resetHeroPointerMotion() {
+            const frame = document.querySelector('.hero-visual-frame');
+            if (!frame) return;
+
+            frame.style.setProperty('--hero-tilt-x', '0deg');
+            frame.style.setProperty('--hero-tilt-y', '0deg');
+            frame.style.setProperty('--hero-shift-x', '0px');
+            frame.style.setProperty('--hero-shift-y', '0px');
+        }
+
+        function initHeroPointerMotion() {
+            if (prefersReducedMotion) return;
+
+            const frame = document.querySelector('.hero-visual-frame');
+            if (!frame) return;
+
+            frame.addEventListener('pointermove', (event) => {
+                const rect = frame.getBoundingClientRect();
+                const px = (event.clientX - rect.left) / rect.width;
+                const py = (event.clientY - rect.top) / rect.height;
+                const tiltY = (px - 0.5) * 12;
+                const tiltX = (0.5 - py) * 12;
+                const shiftX = (px - 0.5) * 18;
+                const shiftY = (py - 0.5) * 14;
+
+                frame.style.setProperty('--hero-tilt-x', `${tiltX.toFixed(2)}deg`);
+                frame.style.setProperty('--hero-tilt-y', `${tiltY.toFixed(2)}deg`);
+                frame.style.setProperty('--hero-shift-x', `${shiftX.toFixed(2)}px`);
+                frame.style.setProperty('--hero-shift-y', `${shiftY.toFixed(2)}px`);
+            });
+
+            frame.addEventListener('pointerleave', resetHeroPointerMotion);
+        }
+
+        function resetModelCardMotion(card) {
+            card.style.setProperty('--tilt-x', '0deg');
+            card.style.setProperty('--tilt-y', '0deg');
+            card.style.setProperty('--glow-x', '50%');
+            card.style.setProperty('--glow-y', '36%');
+        }
+
+        function initModelCardMotion(cards) {
+            if (prefersReducedMotion) return;
+
+            cards.forEach((card) => {
+                card.addEventListener('pointermove', (event) => {
+                    if (card.dataset.launching === 'true') return;
+
+                    const rect = card.getBoundingClientRect();
+                    const px = (event.clientX - rect.left) / rect.width;
+                    const py = (event.clientY - rect.top) / rect.height;
+                    const tiltY = (px - 0.5) * 10;
+                    const tiltX = (0.5 - py) * 10;
+
+                    card.style.setProperty('--tilt-x', `${tiltX.toFixed(2)}deg`);
+                    card.style.setProperty('--tilt-y', `${tiltY.toFixed(2)}deg`);
+                    card.style.setProperty('--glow-x', `${(px * 100).toFixed(2)}%`);
+                    card.style.setProperty('--glow-y', `${(py * 100).toFixed(2)}%`);
+                });
+
+                card.addEventListener('pointerleave', () => {
+                    resetModelCardMotion(card);
+                });
+            });
+        }
+
+        function initModelReveal(cards) {
+            if (prefersReducedMotion) {
+                cards.forEach((card) => card.classList.add('is-visible'));
+                return;
+            }
+
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach((entry) => {
+                    if (!entry.isIntersecting) return;
+
+                    const delay = Number(entry.target.dataset.index || 0) * 70;
+                    window.setTimeout(() => {
+                        entry.target.classList.add('is-visible');
+                    }, delay);
+                    observer.unobserve(entry.target);
+                });
+            }, { threshold: 0.2, rootMargin: '0px 0px -8% 0px' });
+
+            cards.forEach((card) => observer.observe(card));
+        }
+
+        const modelCards = [];
+
+        motoCatalog.forEach((moto, index) => {
             const card = document.createElement('a');
             card.className = 'model-card';
             card.href = `moto-detalle.html?id=${encodeURIComponent(moto.id)}`;
+            card.dataset.index = String(index);
             card.innerHTML = `
                 <img src="${moto.image}" alt="${moto.alt}">
                 <div class="model-copy">
@@ -1076,9 +1255,13 @@
             });
 
             modelsTarget.appendChild(card);
+            modelCards.push(card);
         });
 
         initHeroAnimations();
+        initHeroPointerMotion();
+        initModelCardMotion(modelCards);
+        initModelReveal(modelCards);
     </script>
 </body>
 </html>
