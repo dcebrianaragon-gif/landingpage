@@ -106,6 +106,37 @@ function getServerUrls(host, port) {
   return [...new Set(urls)];
 }
 
+function checkExistingBackend(port) {
+  return new Promise((resolve) => {
+    const request = http.get({
+      host: '127.0.0.1',
+      port,
+      path: '/api/health',
+      timeout: 800
+    }, (res) => {
+      let body = '';
+      res.setEncoding('utf8');
+      res.on('data', (chunk) => {
+        body += chunk;
+      });
+      res.on('end', () => {
+        try {
+          const payload = JSON.parse(body || '{}');
+          resolve(Boolean(payload.ok));
+        } catch (error) {
+          resolve(false);
+        }
+      });
+    });
+
+    request.on('timeout', () => {
+      request.destroy();
+      resolve(false);
+    });
+    request.on('error', () => resolve(false));
+  });
+}
+
 function isValidEmailFormat(email) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 }
@@ -201,6 +232,40 @@ function writeRecords(records) {
   fs.writeFileSync(DATA_FILE, JSON.stringify(records, null, 2), 'utf8');
 }
 
+function buildRecordsSummary(records) {
+  const safeRecords = Array.isArray(records) ? records : [];
+  const teamCounts = new Map();
+
+  for (const record of safeRecords) {
+    const team = String(record.escuderia || '').trim() || 'Sin escuderia';
+    teamCounts.set(team, (teamCounts.get(team) || 0) + 1);
+  }
+
+  const sortedByNewest = [...safeRecords].sort(
+    (a, b) => Number(b.id || 0) - Number(a.id || 0)
+  );
+
+  const topTeams = [...teamCounts.entries()]
+    .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0], 'es'))
+    .slice(0, 5)
+    .map(([name, count]) => ({ name, count }));
+
+  const recentActivity = sortedByNewest.slice(0, 4).map((record) => ({
+    escuderia: String(record.escuderia || '').trim() || 'Sin escuderia',
+    fecha_registro: record.fecha_registro || null
+  }));
+
+  return {
+    total: safeRecords.length,
+    teamsCount: teamCounts.size,
+    lastRegisteredAt: sortedByNewest[0]?.fecha_registro || null,
+    topTeams,
+    recentActivity,
+    privacyMode: 'summary-only',
+    storageFile: path.basename(DATA_FILE)
+  };
+}
+
 function collectBody(req) {
   return new Promise((resolve, reject) => {
     let body = '';
@@ -254,7 +319,15 @@ function serveStatic(req, res) {
   });
 }
 
+function getRequestUrl(req) {
+  const host = req.headers.host || `localhost:${PORT}`;
+  return new URL(req.url, `http://${host}`);
+}
+
 async function handleApi(req, res) {
+  const requestUrl = getRequestUrl(req);
+  const wantsRaw = requestUrl.searchParams.get('view') === 'raw';
+
   if (req.method === 'OPTIONS') {
     sendJson(res, 200, { ok: true });
     return;
@@ -263,7 +336,12 @@ async function handleApi(req, res) {
   if (req.method === 'GET') {
     try {
       const records = readRecords();
-      sendJson(res, 200, records);
+      if (wantsRaw) {
+        sendJson(res, 200, records);
+        return;
+      }
+
+      sendJson(res, 200, buildRecordsSummary(records));
     } catch (error) {
       sendJson(res, 500, { error: 'No se pudo leer el archivo JSON.' });
     }
@@ -308,9 +386,12 @@ async function handleApi(req, res) {
       });
       writeRecords(records);
 
+      const summary = buildRecordsSummary(records);
+
       sendJson(res, 201, {
         ok: true,
-        total: records.length
+        total: records.length,
+        summary
       });
     } catch (error) {
       sendJson(res, 500, { error: 'No se pudo guardar el registro en el JSON.' });
@@ -326,7 +407,8 @@ const server = http.createServer((req, res) => {
     sendJson(res, 200, {
       ok: true,
       port: PORT,
-      dataFile: DATA_FILE
+      dataFile: DATA_FILE,
+      urls: getServerUrls(HOST, PORT)
     });
     return;
   }
@@ -339,21 +421,31 @@ const server = http.createServer((req, res) => {
   serveStatic(req, res);
 });
 
-server.listen(PORT, HOST, () => {
-  ensureDataFile();
-  const urls = getServerUrls(HOST, PORT);
-  console.log('Servidor listo en:');
-  urls.forEach((url) => console.log(`- ${url}`));
-  console.log(`Guardando registros en ${DATA_FILE}`);
-});
-
-server.on('error', (error) => {
-  if (error.code === 'EADDRINUSE') {
-    console.error(`No se pudo iniciar: el puerto ${PORT} ya esta ocupado.`);
-    console.error('Cierra el servidor anterior o cambia PORT en el archivo .env.');
-    process.exit(1);
+async function startServer() {
+  if (await checkExistingBackend(PORT)) {
+    console.log(`El backend ya esta funcionando en http://localhost:${PORT}`);
+    console.log(`Abre http://localhost:${PORT}/registro.html`);
+    return;
   }
 
-  console.error('No se pudo iniciar el backend:', error.message);
-  process.exit(1);
-});
+  server.listen(PORT, HOST, () => {
+    ensureDataFile();
+    const urls = getServerUrls(HOST, PORT);
+    console.log('Servidor listo en:');
+    urls.forEach((url) => console.log(`- ${url}`));
+    console.log(`Guardando registros en ${DATA_FILE}`);
+  });
+
+  server.on('error', (error) => {
+    if (error.code === 'EADDRINUSE') {
+      console.error(`No se pudo iniciar: el puerto ${PORT} ya esta ocupado por otro programa.`);
+      console.error('Cierra ese programa o cambia PORT en el archivo .env.');
+      process.exit(1);
+    }
+
+    console.error('No se pudo iniciar el backend:', error.message);
+    process.exit(1);
+  });
+}
+
+startServer();

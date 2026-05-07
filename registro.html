@@ -233,8 +233,14 @@
 
     <script>
         const API_BASE = (() => {
-            const isHttp = window.location.protocol === 'http:' || window.location.protocol === 'https:';
-            return isHttp ? window.location.origin : 'http://localhost:5501';
+            const { protocol, hostname } = window.location;
+
+            if (protocol === 'file:') {
+                return 'http://localhost:5501';
+            }
+
+            const resolvedHost = hostname || 'localhost';
+            return `${protocol}//${resolvedHost}:5501`;
         })();
 
         function setStatus(message, type = '') {

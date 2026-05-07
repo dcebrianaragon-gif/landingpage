@@ -11,7 +11,7 @@
       "options": {
         "cwd": "${workspaceFolder}"
       },
-      "isBackground": true,
+      "isBackground": false,
       "presentation": {
         "reveal": "always",
         "panel": "dedicated",
