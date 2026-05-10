@@ -4,7 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import { buildTrack, buildBike } from '@/components/game/GameEngine.jsx';
 import GameMenu from '@/components/game/GameMenu';
 import { Link } from 'react-router-dom';
-import { Settings } from 'lucide-react';
+import { ChevronLeft, Settings } from 'lucide-react';
 import { localData } from '@/data/localData.js';
 
 const menuAudioUrl = new URL('./assets/audio/menu.ogg', import.meta.url).href;
@@ -43,6 +43,12 @@ function getCountdownLabel(now, countdownEnd) {
   if (remaining > 1600) return '2';
   if (remaining > 800) return '1';
   return 'GO';
+}
+
+function getLandingUrl() {
+  const currentUrl = new URL(window.location.href);
+  const relativePath = currentUrl.pathname.includes('/dist/') ? '../../entrada1.html' : '../entrada1.html';
+  return new URL(relativePath, currentUrl.href).href;
 }
 
 function disposeSceneObject(object) {
@@ -164,6 +170,24 @@ export default function Game() {
     bikeColor: 0xe10000,
     boostPads: [],
   });
+
+  const goBackToSite = useCallback(() => {
+    const fallbackUrl = getLandingUrl();
+
+    if (window.history.length > 1 && document.referrer) {
+      try {
+        const previousUrl = new URL(document.referrer);
+        if (previousUrl.origin === window.location.origin) {
+          window.history.back();
+          return;
+        }
+      } catch (error) {
+        // Use the fallback URL below if referrer parsing fails.
+      }
+    }
+
+    window.location.href = fallbackUrl;
+  }, []);
 
   useEffect(() => {
     showMenuRef.current = showMenu;
@@ -847,6 +871,14 @@ export default function Game() {
       <div className="retro-vignette pointer-events-none fixed inset-0 z-[8]" />
       <div className="retro-crt pointer-events-none fixed inset-0 z-[70]" />
       <div className="retro-scan pointer-events-none fixed inset-0 z-[71]" />
+      <button
+        type="button"
+        onClick={goBackToSite}
+        className="retro-button fixed left-4 top-4 z-[72] flex cursor-pointer items-center gap-2 px-4 py-2 text-[10px] uppercase tracking-[3px]"
+      >
+        <ChevronLeft className="h-3.5 w-3.5" />
+        VOLVER
+      </button>
 
       {showMenu && (
         <>

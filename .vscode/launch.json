@@ -2,12 +2,17 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "Iniciar backend registros",
+      "name": "Iniciar proyecto MotoGP",
       "type": "node",
       "request": "launch",
       "program": "${workspaceFolder}\\.vscode\\server.js",
       "cwd": "${workspaceFolder}",
-      "console": "integratedTerminal"
+      "console": "integratedTerminal",
+      "serverReadyAction": {
+        "pattern": "http://localhost:([0-9]+)",
+        "uriFormat": "http://localhost:%s/entrada1.html",
+        "action": "openExternally"
+      }
     }
   ]
 }
