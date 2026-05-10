@@ -92,7 +92,6 @@ El script modifica el `clip-path` de `#hero-lit` para que solo se vea una zona c
 ### 3.3 Codigo relevante
 
 Archivo principal: `entrada1.html`
-
 ```html
 body.ready #hero-base,
 body.ready #hero-lit {
