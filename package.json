@@ -1,6 +1,9 @@
 {
   "name": "motogp-registro-local",
   "private": true,
+  "dependencies": {
+    "pg": "^8.13.1"
+  },
   "scripts": {
     "start": "node .vscode/server.js"
   }

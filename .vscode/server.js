@@ -3,6 +3,13 @@ const fs = require('fs');
 const path = require('path');
 const dns = require('dns').promises;
 const os = require('os');
+let PgClient = null;
+
+try {
+  ({ Client: PgClient } = require('pg'));
+} catch (error) {
+  PgClient = null;
+}
 
 loadEnvFile(path.resolve(__dirname, '..', '.env'));
 
@@ -10,6 +17,9 @@ const PORT = parsePort(process.env.PORT, 5501);
 const HOST = process.env.HOST || '0.0.0.0';
 const PROJECT_DIR = path.resolve(__dirname, '..');
 const DATA_FILE = resolveDataFile(process.env.DATA_FILE);
+const DATABASE_URL = String(process.env.DATABASE_URL || '').trim();
+const DB_TABLE = 'motogp_registros';
+let dbClientPromise = null;
 
 const MIME_TYPES = {
   '.html': 'text/html; charset=utf-8',
@@ -96,6 +106,89 @@ function resolveDataFile(rawValue) {
   return path.isAbsolute(candidate)
     ? candidate
     : path.resolve(PROJECT_DIR, candidate);
+}
+
+function isDatabaseEnabled() {
+  return Boolean(DATABASE_URL && PgClient);
+}
+
+function buildPgSslConfig() {
+  if (!DATABASE_URL) {
+    return false;
+  }
+
+  if (
+    DATABASE_URL.includes('localhost') ||
+    DATABASE_URL.includes('127.0.0.1') ||
+    String(process.env.PGSSLMODE || '').toLowerCase() === 'disable'
+  ) {
+    return false;
+  }
+
+  return { rejectUnauthorized: false };
+}
+
+async function getDbClient() {
+  if (!isDatabaseEnabled()) {
+    return null;
+  }
+
+  if (!dbClientPromise) {
+    dbClientPromise = (async () => {
+      const client = new PgClient({
+        connectionString: DATABASE_URL,
+        ssl: buildPgSslConfig()
+      });
+
+      await client.connect();
+      await client.query(`
+        CREATE TABLE IF NOT EXISTS ${DB_TABLE} (
+          id BIGINT PRIMARY KEY,
+          piloto TEXT NOT NULL,
+          escuderia TEXT NOT NULL,
+          email TEXT NOT NULL UNIQUE,
+          fecha_registro TEXT NOT NULL
+        )
+      `);
+
+      return client;
+    })().catch((error) => {
+      dbClientPromise = null;
+      throw error;
+    });
+  }
+
+  return dbClientPromise;
+}
+
+async function ensureStorageReady() {
+  if (isDatabaseEnabled()) {
+    await getDbClient();
+    return;
+  }
+
+  ensureDataFile();
+}
+
+function normalizeDatabaseRecord(row) {
+  return {
+    id: Number(row.id),
+    piloto: row.piloto,
+    escuderia: row.escuderia,
+    email: row.email,
+    fecha_registro: row.fecha_registro
+  };
+}
+
+async function readDatabaseRecords() {
+  const client = await getDbClient();
+  const result = await client.query(`
+    SELECT id, piloto, escuderia, email, fecha_registro
+    FROM ${DB_TABLE}
+    ORDER BY id ASC
+  `);
+
+  return result.rows.map(normalizeDatabaseRecord);
 }
 
 function getServerUrls(host, port) {
@@ -231,7 +324,7 @@ function ensureDataFile() {
   }
 }
 
-function readRecords() {
+function readFileRecords() {
   ensureDataFile();
   const raw = fs.readFileSync(DATA_FILE, 'utf8').trim();
   if (!raw) return [];
@@ -240,9 +333,76 @@ function readRecords() {
   return Array.isArray(parsed) ? parsed : [];
 }
 
-function writeRecords(records) {
+function writeFileRecords(records) {
   ensureDataFile();
   fs.writeFileSync(DATA_FILE, JSON.stringify(records, null, 2), 'utf8');
+}
+
+async function readRecords() {
+  if (isDatabaseEnabled()) {
+    return readDatabaseRecords();
+  }
+
+  return readFileRecords();
+}
+
+async function createRecord({ piloto, escuderia, email }) {
+  if (isDatabaseEnabled()) {
+    const client = await getDbClient();
+    const id = Date.now();
+    const fecha_registro = new Date().toLocaleString('es-ES');
+
+    try {
+      await client.query(
+        `
+          INSERT INTO ${DB_TABLE} (id, piloto, escuderia, email, fecha_registro)
+          VALUES ($1, $2, $3, $4, $5)
+        `,
+        [id, piloto, escuderia, email, fecha_registro]
+      );
+    } catch (error) {
+      if (error && error.code === '23505') {
+        const duplicateError = new Error('Ese correo ya esta registrado.');
+        duplicateError.code = 'DUPLICATE_EMAIL';
+        throw duplicateError;
+      }
+
+      throw error;
+    }
+
+    const records = await readDatabaseRecords();
+    return {
+      records,
+      summary: buildRecordsSummary(records),
+      total: records.length
+    };
+  }
+
+  const records = readFileRecords();
+  const duplicate = records.find(
+    (record) => String(record.email || '').trim().toLowerCase() === email
+  );
+
+  if (duplicate) {
+    const duplicateError = new Error('Ese correo ya esta registrado.');
+    duplicateError.code = 'DUPLICATE_EMAIL';
+    throw duplicateError;
+  }
+
+  records.push({
+    id: Date.now(),
+    piloto,
+    escuderia,
+    email,
+    fecha_registro: new Date().toLocaleString('es-ES')
+  });
+  writeFileRecords(records);
+
+  return {
+    records,
+    summary: buildRecordsSummary(records),
+    total: records.length
+  };
 }
 
 function buildRecordsSummary(records) {
@@ -348,7 +508,7 @@ async function handleApi(req, res) {
 
   if (req.method === 'GET') {
     try {
-      const records = readRecords();
+      const records = await readRecords();
       if (wantsRaw) {
         sendJson(res, 200, records);
         return;
@@ -379,35 +539,24 @@ async function handleApi(req, res) {
         sendJson(res, 400, { error: emailValidation.error });
         return;
       }
-
-      const records = readRecords();
-      const duplicate = records.find(
-        (record) => String(record.email || '').trim().toLowerCase() === emailValidation.normalizedEmail
-      );
-
-      if (duplicate) {
-        sendJson(res, 409, { error: 'Ese correo ya esta registrado.' });
-        return;
-      }
-
-      records.push({
-        id: Date.now(),
+      const { summary, total } = await createRecord({
         piloto,
         escuderia,
-        email: emailValidation.normalizedEmail,
-        fecha_registro: new Date().toLocaleString('es-ES')
+        email: emailValidation.normalizedEmail
       });
-      writeRecords(records);
-
-      const summary = buildRecordsSummary(records);
 
       sendJson(res, 201, {
         ok: true,
-        total: records.length,
+        total,
         summary
       });
     } catch (error) {
-      sendJson(res, 500, { error: 'No se pudo guardar el registro en el JSON.' });
+      if (error && error.code === 'DUPLICATE_EMAIL') {
+        sendJson(res, 409, { error: error.message });
+        return;
+      }
+
+      sendJson(res, 500, { error: 'No se pudo guardar el registro en el almacenamiento configurado.' });
     }
     return;
   }
@@ -441,12 +590,17 @@ async function startServer() {
     return;
   }
 
+  await ensureStorageReady();
+
   server.listen(PORT, HOST, () => {
-    ensureDataFile();
     const urls = getServerUrls(HOST, PORT);
     console.log('Servidor listo en:');
     urls.forEach((url) => console.log(`- ${url}`));
-    console.log(`Guardando registros en ${DATA_FILE}`);
+    if (isDatabaseEnabled()) {
+      console.log('Guardando registros en Render Postgres mediante DATABASE_URL');
+    } else {
+      console.log(`Guardando registros en ${DATA_FILE}`);
+    }
   });
 
   server.on('error', (error) => {
@@ -461,4 +615,7 @@ async function startServer() {
   });
 }
 
-startServer();
+startServer().catch((error) => {
+  console.error('No se pudo preparar el almacenamiento del backend:', error.message);
+  process.exit(1);
+});

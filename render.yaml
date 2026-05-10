@@ -9,6 +9,8 @@ services:
     envVars:
       - key: PORT
         value: 10000
+      - key: DATABASE_URL
+        sync: false
       - key: DATA_FILE
         value: /var/data/fichajeregistros.json
     disk:
