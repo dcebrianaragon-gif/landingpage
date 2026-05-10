@@ -1,18 +1,18 @@
 # Documentacion tecnica del proyecto MotoGP
 
-Este documento explica el proyecto completo siguiendo el indice pedido en el PDF. La idea no es solo decir "que hace", sino dejar claro como esta construido, que archivos participan y por que cada parte aporta valor dentro de la web.
+Este documento explica el proyecto siguiendo la estructura pedida en el PDF. En esta version, las funcionalidades principales se entienden como las animaciones e interacciones visuales que se han ido construyendo por toda la web, ya que esa ha sido una parte clave del trabajo.
 
 ## 1. Instrucciones de inicio/ejecucion de vuestra web (Obligatorio)
 
-Este proyecto mezcla frontend estatico, backend local y un minijuego hecho en React. La forma mas clara de arrancarlo es la siguiente:
+Este proyecto mezcla frontend estatico, backend local y un minijuego hecho en React. La forma mas clara de arrancarlo es esta:
 
 1. Abrir una terminal en la carpeta del proyecto: `C:\Users\DAVID\Desktop\Imagenes mto gp pagina`.
-2. Iniciar el backend con uno de estos dos metodos:
+2. Iniciar el backend con uno de estos comandos:
    - `npm start`
    - `node .vscode/server.js`
 3. El backend queda escuchando en `http://localhost:5501`.
 4. Abrir el frontend con un servidor estatico. En desarrollo se ha usado `Live Server`, dejando la web en `http://localhost:5502`.
-5. Entrar en la pagina principal `entrada1.html` o en `registro.html` desde ese servidor estatico.
+5. Entrar en `entrada1.html`, `registro.html` o cualquier otra pagina desde ese servidor estatico.
 
 Tambien existe el archivo `iniciar-backend.bat`, que lanza el backend y abre la pagina de registro.
 
@@ -25,7 +25,8 @@ Tambien existe el archivo `iniciar-backend.bat`, que lanza el backend y abre la 
 ### Rutas importantes
 
 - Pagina principal: `entrada1.html`
-- Catalogo de motos: `motos.html`
+- Pagina de motos: `motos.html`
+- Ficha de moto: `moto-detalle.html`
 - Registro: `registro.html`
 - Circuitos: `pistas.html`
 - Pilotos: `pilotos.html`
@@ -50,141 +51,161 @@ Fragmento relevante:
 }
 ```
 
-La conclusion practica es sencilla: para que todo funcione de verdad, la web debe abrirse desde un servidor estatico y el backend debe estar levantado en el puerto `5501`.
+La idea practica es sencilla: la parte visual se abre desde el puerto `5502`, mientras que el backend funcional trabaja en `5501`.
 
 ## 2. Enumeracion de al menos las 5 funcionalidades mas importantes implementadas (Obligatorio)
 
-1. Registro de pilotos con validacion y guardado real en JSON.
-2. Desfile interactivo de equipos con animacion y acceso a fichas.
-3. Explorador de circuitos con overlay, datos tecnicos y efecto visual 3D.
-4. Catalogo de motos y ficha individual dinamica segun la moto elegida.
-5. Minijuego de carreras con circuito, vueltas, turbo, HUD y minimapa.
+En esta memoria, las cinco funcionalidades principales se plantean como animaciones e interacciones visuales distribuidas por la web:
+
+1. Hero cinematografico interactivo con spotlight, cursor personalizado y entrada animada.
+2. Sistema global de aparicion progresiva al hacer scroll con las clases `reveal` y `reveal-scale`.
+3. Desfile horizontal de equipos con tilt 3D, desplazamiento lateral y transicion cinematica hacia la ficha.
+4. Tarjetas de circuitos con expansion visual, overlay tecnico y efecto 3D sobre el mapa.
+5. Bloques audiovisuales como `Danger Zone` y la seccion de pilotos, con marquesina animada, video de fondo y entrada escalonada de tarjetas.
 
 Funcionalidad adicional destacable:
 
-6. Team Radio local, que responde dentro de la pagina sin depender de una API externa.
+6. Animaciones del modulo de motos y de la ficha individual para mantener continuidad visual fuera de la landing principal.
 
 ## 3. Funcionalidad 1 (Obligatorio)
 
 ### 3.1 Descripcion por escrito del comportamiento (Que hace)
 
-La funcionalidad de registro permite que un usuario rellene un formulario con nombre, escuderia y correo electronico, y que esos datos se guarden de verdad en un archivo JSON local. No es un formulario decorativo: valida, muestra errores, comprueba el estado del servidor y confirma cuando el registro se ha guardado correctamente.
+La primera funcionalidad importante es el hero principal de la landing. Nada mas abrir la pagina, el usuario se encuentra con una entrada animada del texto, un efecto de flotacion, un cursor personalizado y un spotlight que revela la tipografia principal siguiendo el movimiento del raton.
 
-Desde el punto de vista de usuario, esta parte cumple una funcion importante en la web porque convierte la pagina en algo interactivo y no solo visual. El visitante puede participar y dejar un registro persistente.
+Esta parte es importante porque fija el tono de toda la web. La pagina no arranca como una web comun, sino como una presentacion visual de MotoGP con mucha presencia y sensacion de velocidad.
 
 ### 3.2 Explicacion del funcionamiento (Como lo hace)
 
-En el frontend, `registro.html` calcula primero la direccion del backend. Si la pagina se abre desde `localhost:5502`, el script usa ese mismo host y cambia solo el puerto a `5501`. Despues prepara varias funciones:
+La animacion mezcla CSS y JavaScript:
 
-- `buildRecord()`: recoge los valores del formulario, limpia espacios y valida que no falte nada.
-- `fetchRecords()`: llama a la API para consultar el estado del backend.
-- `checkServer()`: comprueba si el servidor responde y actualiza el mensaje de estado de la pagina.
-- `saveRecord()`: envia los datos por `POST` al endpoint `/api/registros`.
+- CSS se encarga de la entrada principal del titulo, el blur inicial, el escalado y la flotacion.
+- JavaScript controla el spotlight y el cursor personalizado, porque ambos dependen del movimiento real del usuario.
 
-Cuando el usuario pulsa el boton, el evento `submit` cancela el comportamiento normal del formulario y ejecuta `saveRecord()`. Si todo sale bien, el formulario se limpia y el usuario ve un mensaje de confirmacion.
+El texto principal esta duplicado en dos capas:
 
-En el backend, el servidor recibe el `POST`, valida el correo, evita duplicados por email y guarda el nuevo registro en `.vscode/fichajeregistros.json`.
+- `#hero-base`, que actua como base visual.
+- `#hero-lit`, que representa la capa iluminada.
+
+El script modifica el `clip-path` de `#hero-lit` para que solo se vea una zona circular, como si un foco se desplazara por encima del titulo. Para que el movimiento sea fluido, se usa `requestAnimationFrame` a traves de una funcion `rafThrottle()`.
 
 ### 3.3 Codigo relevante
 
-Archivo principal del frontend: `registro.html`  
-Archivo relacionado del backend: `.vscode/server.js`
+Archivo principal: `entrada1.html`
 
 ```html
-const API_BASE = (() => {
-    const { protocol, hostname } = window.location;
-
-    if (protocol === 'file:') {
-        return 'http://localhost:5501';
-    }
-
-    const resolvedHost = hostname || 'localhost';
-    return `${protocol}//${resolvedHost}:5501`;
-})();
-
-function buildRecord() {
-    const name = document.getElementById('name').value.trim();
-    const team = document.getElementById('team').value.trim();
-    const email = document.getElementById('email').value.trim();
-
-    if (!name || !team || !email) {
-        throw new Error('Por favor, rellena nombre, escuderia y correo.');
-    }
-
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-        throw new Error('Por favor, introduce un correo electronico valido.');
-    }
-
-    return {
-        piloto: name,
-        escuderia: team,
-        email
-    };
+body.ready #hero-base,
+body.ready #hero-lit {
+    animation: heroIn 1.8s cubic-bezier(0.16, 1, 0.3, 1) 0.3s forwards;
 }
 
-async function saveRecord() {
-    const btn = document.getElementById('btnSave');
-
-    try {
-        const payload = buildRecord();
-        btn.disabled = true;
-
-        const response = await fetch(`${API_BASE}/api/registros`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(payload)
-        });
-
-        const data = await response.json();
-
-        if (!response.ok) {
-            throw new Error(data.error || 'No se pudo guardar el registro.');
-        }
-
-        clearForm();
-        setStatus(`Registro guardado correctamente. Total actual: ${data.total}.`, 'ok');
-    } finally {
-        btn.disabled = false;
-    }
+body.ready #hero-spotlight-zone {
+    animation: heroFloat 8s ease-in-out 2.1s infinite;
 }
+
+body.ready .hero-copy {
+    animation: heroCopyIn 1.2s cubic-bezier(0.22, 1, 0.36, 1) 0.95s forwards;
+}
+
+const zone = document.getElementById('hero-spotlight-zone');
+const litDiv = document.getElementById('hero-lit');
+
+const updateSpotlight = rafThrottle((clientX, clientY) => {
+    const rect = zone.getBoundingClientRect();
+    const x = clientX - rect.left;
+    const y = clientY - rect.top;
+    litDiv.style.clipPath = `circle(150px at ${x}px ${y}px)`;
+});
+
+zone.addEventListener('pointermove', (event) => {
+    updateSpotlight(event.clientX, event.clientY);
+});
 ```
 
-Este codigo es importante porque enseña tres cosas a la vez: conexion real con el backend, validacion antes de guardar y feedback visible al usuario. No es solo "mandar un formulario", sino controlar toda la experiencia de uso.
+Este bloque demuestra bien la idea del proyecto: se combinan animaciones declarativas en CSS con control dinamico por JavaScript cuando la experiencia lo necesita.
 
 ## 4. Funcionalidad 2 (Obligatorio)
 
 ### 4.1 Descripcion por escrito del comportamiento (Que hace)
 
-La portada incluye un desfile horizontal de equipos y motos. El usuario puede recorrerlo con botones, con el raton y con scroll lateral. Cada tarjeta muestra informacion resumida del equipo y permite abrir una ficha detallada con una transicion visual.
+La segunda funcionalidad importante es el sistema general de aparicion progresiva al hacer scroll. Casi todos los bloques de la landing se van activando con entradas suaves en vez de aparecer todos a la vez.
 
-Esta funcionalidad hace que la landing no sea una simple lista estatica. La informacion entra en escena con mas personalidad y da una sensacion de producto mas trabajado.
+Esto da a la pagina un ritmo visual mucho mejor. El contenido no cae de golpe sobre el usuario, sino que se va presentando poco a poco mientras avanza.
 
 ### 4.2 Explicacion del funcionamiento (Como lo hace)
 
-La funcion `initTeams()` define un array de equipos con su nombre, codigo, pilotos, imagen y enlace a la ficha. A partir de ese array, el script crea las tarjetas dinamicamente en el DOM.
+El sistema usa dos clases principales:
 
-Despues se activan tres comportamientos:
+- `.reveal`, para elementos que deben aparecer con desplazamiento y blur.
+- `.reveal-scale`, para bloques que deben aparecer con un pequeno escalado.
 
-1. Navegacion horizontal con botones `Anterior` y `Siguiente`.
-2. Movimiento 3D suave sobre cada tarjeta cuando el usuario mueve el puntero.
-3. Transicion de salida hacia la ficha individual con `launchMotoTransition()`.
-
-Ademas, si el navegador detecta `prefers-reduced-motion`, la web evita forzar animaciones largas y abre directamente la ficha. Eso mejora accesibilidad y robustez.
+Al cargar la pagina, el script recoge todos los elementos con esas clases, les asigna un pequeno retraso y, en cada scroll, comprueba si ya han entrado en la zona visible. Cuando un bloque entra en pantalla, recibe la clase `active`, que dispara la transicion.
 
 ### 4.3 Codigo relevante
 
 Archivo principal: `entrada1.html`
 
 ```html
+.reveal {
+    transform: translate3d(0, var(--reveal-distance), 0);
+    filter: blur(14px);
+    transition:
+        opacity 0.95s cubic-bezier(0.16, 1, 0.3, 1),
+        transform 0.95s cubic-bezier(0.16, 1, 0.3, 1),
+        filter 0.95s cubic-bezier(0.16, 1, 0.3, 1);
+    transition-delay: var(--reveal-delay, 0ms);
+}
+
+.reveal.active {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+    filter: blur(0);
+}
+
+revealTargets = Array.from(document.querySelectorAll('.reveal, .reveal-scale'));
+
+revealTargets.forEach((el, index) => {
+    const stagger = Math.min(index * 35, 220);
+    el.style.setProperty('--reveal-delay', `${stagger}ms`);
+});
+
+function revealElements() {
+    revealTargets.forEach((el) => {
+        const rect = el.getBoundingClientRect();
+        if (rect.top < window.innerHeight * 0.9) {
+            el.classList.add('active');
+        }
+    });
+}
+```
+
+Lo valioso aqui es que no es una animacion aislada, sino un sistema reutilizable que se aplica a titulos, tarjetas, bloques de texto y secciones completas.
+
+## 5. Funcionalidad 3 (Obligatorio)
+
+### 5.1 Descripcion por escrito del comportamiento (Que hace)
+
+La tercera funcionalidad importante es el desfile horizontal de equipos. En esta zona el usuario puede desplazarse lateralmente, ver las tarjetas con profundidad y luz dinamica, y lanzar una transicion visual al entrar en una ficha.
+
+No es un carrusel normal. La intencion es que parezca un desfile de motos dentro de un tunel visual, no una simple lista de tarjetas.
+
+### 5.2 Explicacion del funcionamiento (Como lo hace)
+
+La funcion `initTeams()` construye las tarjetas a partir de un array de datos. Despues se activan tres capas de comportamiento:
+
+1. Scroll horizontal con rueda y con botones.
+2. Movimiento 3D de cada tarjeta con `initTeamCardMotion()`.
+3. Transicion de salida con `launchMotoTransition()`.
+
+`initTeamCardMotion()` actualiza variables CSS como `--tilt-x`, `--tilt-y`, `--glow-x` y `--glow-y`. Luego la propia tarjeta usa esas variables para inclinarse y desplazar el reflejo. Cuando el usuario hace click, `launchMotoTransition()` genera un overlay de velocidad antes de cambiar de pagina.
+
+### 5.3 Codigo relevante
+
+Archivo principal: `entrada1.html`
+
+```html
 function initTeams() {
     const container = document.getElementById('team-target');
-    const prevBtn = document.getElementById('team-scroll-prev');
-    const nextBtn = document.getElementById('team-scroll-next');
-    if (container.children.length > 0) return;
-
     const teams = [
         { name: "Ducati Lenovo", code: "DUC-01", riders: "Bagnaia // Marquez", img: "motogp3.jpg", detail: "moto-detalle.html?id=ducati-lenovo-93" },
         { name: "Pertamina VR46", code: "VR4-02", riders: "Di Giannantonio // Morbidelli", img: "motogp7.jpg", detail: "moto-detalle.html?id=vr46-49" }
@@ -194,13 +215,7 @@ function initTeams() {
         const card = document.createElement('a');
         card.className = 'team-card team-card-link reveal';
         card.href = team.detail;
-        card.innerHTML = `
-            <div class="team-meta">
-                <span>${team.code}</span>
-                <span>${team.riders}</span>
-            </div>
-            <img src="imagenes/${team.img}" alt="${team.name}" loading="lazy" decoding="async">
-        `;
+        card.style.setProperty('--reveal-delay', `${i * 85}ms`);
         container.appendChild(card);
     });
 
@@ -209,12 +224,21 @@ function initTeams() {
     initTeamCardMotion(teamCards);
 }
 
-function launchMotoTransition(element, overlay) {
-    if (prefersReducedMotion) {
-        window.location.href = element.href;
-        return;
-    }
+function initTeamCardMotion(elements) {
+    elements.forEach((element) => {
+        const updateCardMotion = rafThrottle((px, py) => {
+            const tiltY = (px - 0.5) * 10;
+            const tiltX = (0.5 - py) * 10;
 
+            element.style.setProperty('--tilt-x', `${tiltX.toFixed(2)}deg`);
+            element.style.setProperty('--tilt-y', `${tiltY.toFixed(2)}deg`);
+            element.style.setProperty('--glow-x', `${(px * 100).toFixed(2)}%`);
+            element.style.setProperty('--glow-y', `${(py * 100).toFixed(2)}%`);
+        });
+    });
+}
+
+function launchMotoTransition(element, overlay) {
     const rect = element.getBoundingClientRect();
     const transitionData = {
         x: Math.round(rect.left),
@@ -230,49 +254,46 @@ function launchMotoTransition(element, overlay) {
 }
 ```
 
-Lo interesante aqui no es solo que las tarjetas se vean bien, sino que la informacion del equipo esta modelada como datos y luego se renderiza de forma dinamica. Eso hace que el modulo sea escalable: para anadir otro equipo, basta con ampliar el array.
+Esta funcionalidad resume muy bien el tipo de trabajo hecho en la web: datos, animacion, interaccion y continuidad visual entre paginas.
 
-## 5. Funcionalidad 3 (Obligatorio)
+## 6. Funcionalidad 4 (Obligatorio)
 
-### 5.1 Descripcion por escrito del comportamiento (Que hace)
+### 6.1 Descripcion por escrito del comportamiento (Que hace)
 
-La web incluye un explorador de circuitos donde cada pista puede abrirse como una ficha ampliada con nombre, longitud, numero de curvas, record, velocidad punta y una descripcion breve. El resultado se parece a una pequena pantalla de telemetria dentro de la propia landing.
+La cuarta funcionalidad importante esta en el bloque de circuitos. Aqui cada pista puede abrirse como una pequena experiencia visual: la tarjeta se expande, el overlay entra como si fuera una pantalla de telemetria y la imagen del circuito reacciona al movimiento del raton.
 
-Esta funcionalidad aporta contenido tecnico y hace que la pagina no dependa solo de imagenes o animaciones. El usuario puede aprender datos del campeonato sin salir del flujo principal.
+De cara al usuario, esta parte hace que el contenido tecnico no resulte seco, porque se presenta de una forma mucho mas viva.
 
-### 5.2 Explicacion del funcionamiento (Como lo hace)
+### 6.2 Explicacion del funcionamiento (Como lo hace)
 
-Todo parte de un objeto llamado `trackData`, donde cada clave representa un circuito y guarda sus datos. Cuando el usuario pulsa una tarjeta:
+El modulo parte de un objeto `trackData` con la informacion de cada pista, pero la funcionalidad importante no es solo el dato, sino la forma de mostrarlo.
 
-- Se llama a `openTrackOverlay(trackId)`.
-- Esa funcion recupera los datos con `populateTrackOverlay(trackId)`.
-- El overlay se activa visualmente y bloquea el scroll del fondo.
+Cuando el usuario pulsa una tarjeta:
 
-La imagen del circuito tambien reacciona al raton con un efecto 3D calculado a partir de la posicion del puntero dentro del contenedor. Cuando el usuario sale, la imagen vuelve a su estado normal.
+1. Se crea un clon visual de esa misma tarjeta.
+2. El clon recibe clases como `is-expanding` y `clicked-pulse`.
+3. La tarjeta parece salir hacia delante durante un instante.
+4. Despues se abre el overlay real con la informacion del circuito.
 
-### 5.3 Codigo relevante
+Dentro del overlay, el mapa del circuito aplica rotacion 3D calculando la posicion del puntero dentro de su contenedor.
+
+### 6.3 Codigo relevante
 
 Archivo principal: `entrada1.html`
 
 ```html
-const trackData = {
-    "qatar": {
-        name: "LUSAIL",
-        length: "5.38 km",
-        curves: "16 (6 Izq, 10 Der)",
-        record: "1'50.789",
-        speed: "350.0 km/h",
-        desc: "Carrera nocturna bajo los focos del desierto."
-    },
-    "mugello": {
-        name: "MUGELLO",
-        length: "5.25 km",
-        curves: "15 (6 Izq, 9 Der)",
-        record: "1'44.855",
-        speed: "366.1 km/h",
-        desc: "Una de las rectas mas rapidas del campeonato."
-    }
-};
+card.addEventListener('click', function () {
+    if (document.querySelector('.is-expanding')) return;
+
+    const rect = this.getBoundingClientRect();
+    const clone = this.cloneNode(true);
+    clone.classList.add('is-expanding', 'clicked-pulse');
+    clone.style.position = 'fixed';
+    clone.style.top = rect.top + 'px';
+    clone.style.left = rect.left + 'px';
+    clone.style.width = rect.width + 'px';
+    clone.style.height = rect.height + 'px';
+});
 
 function openTrackOverlay(trackId) {
     lastOverlayFocus = document.activeElement;
@@ -280,191 +301,121 @@ function openTrackOverlay(trackId) {
     overlay.classList.add('active');
     overlay.setAttribute('aria-hidden', 'false');
     body.style.overflow = 'hidden';
-    overlayClose.focus();
 }
 
-function closeTrackOverlay() {
-    overlay.classList.remove('active');
-    overlay.setAttribute('aria-hidden', 'true');
-    body.style.overflow = '';
-    lastOverlayFocus?.focus?.();
-}
-```
-
-Este bloque demuestra una idea importante del proyecto: la informacion no esta "pegada" manualmente tarjeta por tarjeta, sino centralizada en un objeto de datos. Eso permite reutilizar el mismo overlay para todos los circuitos.
-
-## 6. Funcionalidad 4 (Obligatorio)
-
-### 6.1 Descripcion por escrito del comportamiento (Que hace)
-
-El modulo de motos permite pasar de un catalogo general a una ficha individual de cada moto. El usuario puede entrar en una tarjeta concreta y ver una pagina con identidad propia, centrada en un piloto y una montura determinados.
-
-La gracia de esta funcionalidad es que la ficha no esta hecha a mano para cada caso. Se rellena automaticamente segun el parametro `id` recibido en la URL.
-
-### 6.2 Explicacion del funcionamiento (Como lo hace)
-
-En `motos.html` existe un catalogo con las motos disponibles. Cada tarjeta apunta a `moto-detalle.html?id=...`.
-
-En `moto-detalle.html`, el script:
-
-1. Lee el parametro con `URLSearchParams`.
-2. Busca la moto correspondiente dentro de `motoCatalog`.
-3. Rellena el DOM con titulo, piloto, motor, velocidad punta y bloques de descripcion.
-4. Genera tambien tarjetas relacionadas para seguir navegando.
-
-Esto permite reutilizar una sola plantilla de detalle para muchas motos diferentes, manteniendo coherencia visual y reduciendo codigo duplicado.
-
-### 6.3 Codigo relevante
-
-Archivo principal del detalle: `moto-detalle.html`  
-Archivo relacionado de origen: `motos.html`
-
-```html
-const motoCatalog = [
-    {
-        id: 'ducati-lenovo-93',
-        title: 'Ducati Lenovo 93',
-        team: 'Ducati Lenovo',
-        rider: 'Marc Marquez',
-        engine: 'V4 Desmosedici GP',
-        topSpeed: '356 km/h',
-        strength: 'Frenada y traccion'
-    }
-];
-
-const params = new URLSearchParams(window.location.search);
-const motoId = params.get('id') || 'ducati-lenovo-93';
-const moto = motoCatalog.find((item) => item.id === motoId) || motoCatalog[0];
-
-document.title = `${moto.title} | Ficha de Moto`;
-document.getElementById('detail-team-kicker').textContent = moto.team;
-document.getElementById('detail-title').innerHTML = `${moto.title} <span>RACE</span>`;
-document.getElementById('detail-rider-name').textContent = moto.rider;
-
-const statsGrid = document.getElementById('stats-grid');
-const statItems = [
-    ['PILOTO', moto.rider],
-    ['MOTOR', moto.engine],
-    ['TOP SPEED', moto.topSpeed],
-    ['FOCO', moto.strength]
-];
-
-statItems.forEach(([label, value]) => {
-    const card = document.createElement('article');
-    card.className = 'stat-card';
-    card.innerHTML = `<div class="label">${label}</div><div class="value">${value}</div>`;
-    statsGrid.appendChild(card);
+container3D.addEventListener('mousemove', (e) => {
+    const rect = container3D.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    const rotateX = ((y - (rect.height / 2)) / (rect.height / 2)) * -20;
+    const rotateY = ((x - (rect.width / 2)) / (rect.width / 2)) * 20;
+    img3D.style.transform = `rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale3d(1.05, 1.05, 1.05)`;
 });
 ```
 
-Esta funcionalidad esta bien resuelta porque combina navegacion, datos y renderizado dinamico. A nivel tecnico demuestra uso de parametros en URL, arrays de objetos y generacion programatica del contenido.
+Esta funcionalidad esta bien resuelta porque mezcla animacion de click, modal y respuesta al puntero dentro de una misma seccion.
 
 ## 7. Funcionalidad 5 (Obligatorio)
 
 ### 7.1 Descripcion por escrito del comportamiento (Que hace)
 
-El proyecto incluye un minijuego de carreras donde el usuario puede entrar en un circuito, pilotar una moto, completar vueltas y usar turbo. Durante la partida ve informacion en pantalla como velocidad, marcha, tiempo de vuelta, mejor vuelta, precision en trazada, numero de vueltas y minimapa.
+La quinta funcionalidad principal reune dos bloques audiovisuales de la landing: `Danger Zone` y la seccion de pilotos. En ambos casos la idea ha sido convertir la pagina en algo mas vivo usando video, movimiento continuo y apariciones escalonadas.
 
-Esta es probablemente la parte mas compleja del trabajo, porque ya no se limita a mostrar informacion: crea una experiencia interactiva en tiempo real.
+En `Danger Zone` hay una marquesina de alerta en movimiento y una parrilla de videos incrustados. En la seccion de pilotos hay un video de fondo con tratamiento cinematografico y tarjetas que entran una detras de otra.
 
 ### 7.2 Explicacion del funcionamiento (Como lo hace)
 
-El minijuego esta construido con React y Three.js. El archivo principal es `minijuego/Game.jsx`. Desde ahi se prepara la escena, la camara, la moto, el circuito y el bucle de actualizacion.
+`Danger Zone` se apoya sobre todo en CSS:
 
-La logica principal hace varias cosas:
+- La marquesina usa una animacion infinita con `scrollMarquee`.
+- Las tarjetas de video aprovechan el mismo sistema `reveal` del resto de la landing.
 
-- Calcula aceleracion, frenada y giro en cada frame.
-- Gestiona un sistema de turbo con carga, consumo y recuperacion.
-- Detecta cuando el jugador completa una vuelta.
-- Actualiza el HUD y el minimapa a intervalos controlados.
-- Recoloca el render si cambia el tamano de la ventana.
+La seccion de pilotos mezcla varias capas:
 
-El juego tambien parte de una fase de salida: seleccion de circuito, seleccion de moto y cuenta atras antes de empezar a correr.
+- Un `video` de fondo colocado con `position: absolute`.
+- Un overlay oscuro y rojo para que el texto siga siendo legible.
+- Aparicion escalonada de las tarjetas mediante distintos `transition-delay`.
 
 ### 7.3 Codigo relevante
 
-Archivo principal: `minijuego/Game.jsx`  
-Archivos relacionados: `minijuego/HUD.jsx`, `minijuego/MiniMap.jsx`
+Archivo principal: `entrada1.html`
 
-```jsx
-const BOOST_METER_MAX = 100;
-const BOOST_PAD_COOLDOWN_MS = 2200;
-const BOOST_PAD_METER_GAIN = 24;
-const BOOST_PAD_SPEED_KICK = 0.2;
-const BOOST_DRAIN_PER_FRAME = 0.48;
-const BOOST_RECOVERY_PER_FRAME = 0.18;
-
-if (boostRequested) {
-  s.boostMeter = Math.max(0, s.boostMeter - BOOST_DRAIN_PER_FRAME * deltaFactor);
-  s.boostActive = s.boostMeter > 0.5;
-} else if (brakeKey) {
-  s.boostActive = false;
-  s.boostMeter = Math.min(BOOST_METER_MAX, s.boostMeter + BOOST_RECOVERY_PER_FRAME * 0.5 * deltaFactor);
-} else {
-  s.boostActive = false;
-  const recharge = s.onTrack ? BOOST_RECOVERY_PER_FRAME : BOOST_RECOVERY_PER_FRAME * 0.55;
-  s.boostMeter = Math.min(BOOST_METER_MAX, s.boostMeter + recharge * deltaFactor);
+```html
+.marquee-inner {
+    display: inline-block;
+    animation: scrollMarquee 30s linear infinite;
 }
 
-if (dStart < 9) {
-  const t = (performance.now() - s.lapStart) / 1000;
-  if (t > 5) {
-    if (!s.bestLap || t < s.bestLap) s.bestLap = t;
-    s.lapCount++;
-    s.lapStart = performance.now();
-  }
+@keyframes scrollMarquee {
+    from { transform: translateX(0); }
+    to { transform: translateX(-50%); }
 }
 
-window.addEventListener('resize', handleResize);
+.pilotos-stage.reveal.active .pilotos-video {
+    opacity: 0.34;
+    transform: scale(1.06);
+}
+
+.pilotos-stage.reveal.active .piloto-card:nth-child(2) { transition-delay: 0.08s; }
+.pilotos-stage.reveal.active .piloto-card:nth-child(3) { transition-delay: 0.16s; }
+.pilotos-stage.reveal.active .piloto-card:nth-child(4) { transition-delay: 0.24s; }
+
+<video class="pilotos-video" autoplay muted loop playsinline preload="auto" aria-hidden="true">
+    <source src="imagenes/Video_de_MotoGP_Celebracion_y_Carrera.mp4" type="video/mp4">
+</video>
 ```
 
-Este codigo representa muy bien el nivel del minijuego: no solo hay movimiento, sino reglas de partida, recursos limitados, control del tiempo y reaccion ante cambios de pantalla.
+Aunque aqui hay menos logica de JavaScript que en otras secciones, visualmente es una de las zonas mas importantes porque da mucho ambiente a la pagina.
 
 ## 8. Funcionalidades adicionales (Opcional)
 
 ### 8.1 Que hace
 
-Una funcionalidad extra especialmente interesante es el modulo `Team Radio` de la pagina principal. Es un pequeno asistente conversacional local que responde preguntas del usuario sobre pilotaje, estrategia, neumaticos, reglajes, circuitos o reglamento de MotoGP.
-
-Su valor esta en que funciona sin API externa. Es decir, no depende de una clave, de internet ni de un modelo remoto para responder dentro de la demo.
+Como funcionalidad adicional quiero destacar las animaciones del modulo de motos y de la ficha individual. La idea ha sido mantener el mismo nivel de intensidad visual tambien fuera de la landing principal, para que el proyecto no parezca hecho por partes desconectadas.
 
 ### 8.2 Como lo hace
 
-En `entrada1.html`, la funcion `generarRespuestaLocal(mensaje)` normaliza el texto introducido por el usuario y busca patrones mediante expresiones regulares. Segun detecte palabras clave como `frenada`, `traccion`, `lluvia`, `setup` o `reglamento`, construye una respuesta diferente.
+En `motos.html` hay un hero con profundidad 3D, arcos de velocidad, entrada escalonada de texto y respuesta al movimiento del puntero. En `moto-detalle.html` se reutiliza una logica parecida para que el cambio a la ficha no se sienta brusco.
 
-Despues `responderIA()` anade un pequeno retardo para simular la lectura de telemetria y muestra la respuesta en el panel de chat.
+La pagina de motos usa GSAP para algunas entradas y usa variables CSS para inclinar el hero y las tarjetas. La ficha de detalle se apoya en `data-reveal` y en un orden de aparicion para texto, estadisticas y bloques relacionados.
 
 ### 8.3 Codigo relevante
 
-Archivo principal: `entrada1.html`
+Archivos principales: `motos.html`, `moto-detalle.html`
 
 ```html
-function generarRespuestaLocal(mensaje) {
-    const textoOriginal = mensaje.trim();
-    const texto = normalizarTexto(textoOriginal);
+gsapApi.from('.hero-copy > *', {
+    y: 30,
+    opacity: 0,
+    duration: 0.9,
+    stagger: 0.08
+});
 
-    if (/estrategia|carrera|sprint|vueltas|atacar|conservar|gestion|plan/.test(texto)) {
-        return construirRespuesta([
-            'La estrategia correcta depende de deposito, desgaste y trafico.',
-            'En sprint conviene ser agresivo pronto pero sin quemar la trasera.'
-        ]);
-    }
+const updateHeroPointer = rafThrottle((px, py) => {
+    const tiltX = (0.5 - py) * 8;
+    const tiltY = (px - 0.5) * 10;
+    const shiftX = (px - 0.5) * 18;
+    const shiftY = (py - 0.5) * 14;
 
-    if (/freno|frenada|bloquea|bloqueo|me voy largo|no paro/.test(texto)) {
-        return construirRespuesta([
-            'El problema esta en como cargas la rueda delantera al entrar.',
-            'Prueba una entrada un poco mas recta y suelta freno con mas progresividad.'
-        ]);
-    }
+    frame.style.setProperty('--hero-tilt-x', `${tiltX.toFixed(2)}deg`);
+    frame.style.setProperty('--hero-tilt-y', `${tiltY.toFixed(2)}deg`);
+    frame.style.setProperty('--hero-shift-x', `${shiftX.toFixed(2)}px`);
+    frame.style.setProperty('--hero-shift-y', `${shiftY.toFixed(2)}px`);
+});
 
-    return construirRespuesta([
-        'Puedo ayudarte aunque la pregunta sea amplia.',
-        'Dime si el problema es frenada, giro, traccion, neumaticos o estrategia.'
-    ]);
+[data-reveal] {
+    opacity: 0;
+    transform: translateY(28px);
+}
+
+body.page-ready [data-reveal] {
+    opacity: 1;
+    transform: translateY(0);
+    transition-delay: calc(var(--reveal-order, 0) * 120ms);
 }
 ```
 
-Aunque esta funcionalidad es opcional, suma bastante personalidad al proyecto y demuestra creatividad tecnica dentro de una web orientada a MotoGP.
+Esta funcionalidad adicional sirve para demostrar que el trabajo visual no se concentra solo en una pagina, sino que se mantiene en el resto del proyecto.
 
 ## 9. Funcionalidad Backend (Obligatorio solo si no lo habeis explicado antes)
 
@@ -476,7 +427,7 @@ El backend se encarga de tres tareas fundamentales:
 2. Validar y guardar los registros.
 3. Devolver informacion sobre el estado del sistema.
 
-Gracias a esto, el formulario no guarda datos "de mentira", sino que escribe en un archivo JSON real.
+Gracias a esto, el formulario no guarda datos de mentira, sino que escribe en un archivo JSON real.
 
 ### 9.2 Como lo hace
 
@@ -493,7 +444,7 @@ Antes de guardar, el backend valida el email de varias formas:
 - Comprueba que el dominio tenga resolucion real de correo o DNS.
 - Evita correos duplicados.
 
-Despues guarda el nuevo registro en `.vscode/fichajeregistros.json`. Ademas, construye un resumen con numero total de registros, equipos mas repetidos y actividad reciente, evitando exponer mas informacion de la necesaria.
+Despues guarda el nuevo registro en `.vscode/fichajeregistros.json`. Ademas, construye un resumen con numero total de registros, equipos mas repetidos y actividad reciente.
 
 ### 9.3 Codigo relevante
 
@@ -529,50 +480,24 @@ function readRecords() {
   const parsed = JSON.parse(raw);
   return Array.isArray(parsed) ? parsed : [];
 }
-
-if (req.method === 'POST') {
-  const body = await collectBody(req);
-  const payload = JSON.parse(body || '{}');
-  const piloto = String(payload.piloto || '').trim();
-  const escuderia = String(payload.escuderia || '').trim();
-  const email = String(payload.email || '').trim();
-
-  const emailValidation = await validateEmail(email);
-  if (!emailValidation.ok) {
-    sendJson(res, 400, { error: emailValidation.error });
-    return;
-  }
-
-  const records = readRecords();
-  records.push({
-    id: Date.now(),
-    piloto,
-    escuderia,
-    email: emailValidation.normalizedEmail,
-    fecha_registro: new Date().toLocaleString('es-ES')
-  });
-  writeRecords(records);
-}
 ```
 
-Esta parte es importante de defender en clase porque demuestra trabajo funcional de verdad: recepcion de datos, validacion, persistencia y control de errores.
+Este apartado es importante porque demuestra que el proyecto no se queda solo en la parte visual. Tambien hay una capa funcional real y persistente.
 
 ## 10. Responsividad (Obligatorio)
 
 ### 10.1 Que hace
 
-La web se adapta a diferentes tamanos de pantalla y tambien tiene en cuenta preferencias del usuario relacionadas con el movimiento. En la practica, esto significa que la pagina sigue siendo usable tanto en escritorio como en movil, y que ciertas animaciones se suavizan o se reducen si el sistema asi lo pide.
+La web se adapta a distintos tamanos de pantalla y tambien tiene en cuenta preferencias del usuario relacionadas con el movimiento. Eso significa que la pagina sigue siendo usable tanto en escritorio como en movil, y que las animaciones no fuerzan una experiencia incomoda.
 
 ### 10.2 Como lo hace
 
 La responsividad se resuelve de dos maneras:
 
-1. Con CSS, usando `@media` para reorganizar bloques, tamanos y espaciados.
-2. Con JavaScript, recalculando medidas del render en el minijuego cuando cambia el tamano de la ventana.
+1. Con CSS, usando `@media` para reorganizar el layout y reducir ciertos bloques.
+2. Con JavaScript, recalculando el render del minijuego cuando cambia el tamano de la ventana.
 
-En la landing, por ejemplo, hay reglas especificas para anchos maximos de `768px` y `560px`. Ademas existe una media query para `prefers-reduced-motion`, lo que ayuda a no saturar la experiencia en equipos o usuarios sensibles a movimientos intensos.
-
-En el minijuego, el metodo `handleResize()` vuelve a calcular el viewport, actualiza el renderer y reaplica el encuadre de la camara.
+Ademas, existe una media query para `prefers-reduced-motion`, lo que ayuda a reducir movimientos largos cuando el sistema del usuario asi lo pide.
 
 ### 10.3 Codigo relevante
 
@@ -580,15 +505,22 @@ Archivos principales: `entrada1.html`, `minijuego/Game.jsx`
 
 ```css
 @media (max-width: 768px) {
-    /* Ajustes de layout para tablet y movil */
+    section { padding: 80px 5%; min-height: auto; }
+    .team-card { flex: 0 0 85vw; height: 450px; }
+    .pilotos-stage { grid-template-columns: 1fr; min-height: auto; }
 }
 
 @media (max-width: 560px) {
-    /* Ajustes extra para pantallas muy pequenas */
+    .maps-grid { grid-template-columns: 1fr; }
 }
 
 @media (prefers-reduced-motion: reduce) {
-    /* Se reducen o eliminan animaciones largas */
+    *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
 }
 ```
 
@@ -603,10 +535,10 @@ const handleResize = () => {
 window.addEventListener('resize', handleResize);
 ```
 
-La responsividad no es un detalle secundario en este proyecto. Es parte de que la experiencia se mantenga coherente en distintos dispositivos, algo especialmente importante en una web con tantas capas visuales y una parte jugable.
+La responsividad es especialmente importante aqui porque el proyecto tiene muchos elementos visuales grandes, videos, overlays, tarjetas y animaciones. Si eso no se adapta bien, la experiencia se rompe muy rapido.
 
 ## Cierre
 
-En conjunto, este proyecto no se limita a ser una landing bonita sobre MotoGP. Tiene varias capas funcionales reales: navegacion dinamica, formularios con backend, modulos informativos, animaciones, generacion de contenido a partir de datos y un minijuego propio. Precisamente por eso la parte tecnica no depende de una sola pagina, sino de la coordinacion entre HTML, CSS, JavaScript, Node.js, React y Three.js.
+En conjunto, el proyecto no se limita a ser una pagina informativa sobre MotoGP. La parte mas fuerte del trabajo esta en como se ha construido una experiencia visual con movimiento, ritmo, profundidad y continuidad entre secciones.
 
-Si tuviera que resumir su valor en una frase, seria esta: la web no solo presenta contenido, sino que construye una experiencia completa alrededor del universo MotoGP.
+Por eso, en esta memoria las funcionalidades principales se han explicado como animaciones e interacciones visuales repartidas por la web: porque son una parte central del valor del proyecto y de la sensacion final que transmite al usuario.
