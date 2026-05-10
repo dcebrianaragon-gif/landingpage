@@ -9,7 +9,7 @@ loadEnvFile(path.resolve(__dirname, '..', '.env'));
 const PORT = parsePort(process.env.PORT, 5501);
 const HOST = process.env.HOST || '0.0.0.0';
 const PROJECT_DIR = path.resolve(__dirname, '..');
-const DATA_FILE = path.join(__dirname, 'fichajeregistros.json');
+const DATA_FILE = resolveDataFile(process.env.DATA_FILE);
 
 const MIME_TYPES = {
   '.html': 'text/html; charset=utf-8',
@@ -83,6 +83,19 @@ function loadEnvFile(envPath) {
 function parsePort(rawValue, fallbackPort) {
   const parsed = Number.parseInt(String(rawValue || ''), 10);
   return Number.isInteger(parsed) && parsed > 0 ? parsed : fallbackPort;
+}
+
+function resolveDataFile(rawValue) {
+  const fallback = path.join(__dirname, 'fichajeregistros.json');
+  const candidate = String(rawValue || '').trim();
+
+  if (!candidate) {
+    return fallback;
+  }
+
+  return path.isAbsolute(candidate)
+    ? candidate
+    : path.resolve(PROJECT_DIR, candidate);
 }
 
 function getServerUrls(host, port) {
