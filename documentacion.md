@@ -30,7 +30,7 @@ Tambien existe el archivo `iniciar-backend.bat`, que lanza el backend y abre la 
 - Registro: `registro.html`
 - Circuitos: `pistas.html`
 - Pilotos: `pilotos.html`
-- Minijuego: `minijuego3d.html` o `minijuego/dist/index.html#/Game`
+- Minijuego: `minijuego3d.html` o `minijuego-web/index.html#/Game`
 
 ### Archivos de arranque relacionados
 
