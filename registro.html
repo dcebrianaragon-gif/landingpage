@@ -261,6 +261,18 @@
             document.getElementById('email').value = '';
         }
 
+        function extractTotalRecords(data) {
+            if (data && typeof data.total === 'number') {
+                return data.total;
+            }
+
+            if (Array.isArray(data)) {
+                return data.length;
+            }
+
+            return 0;
+        }
+
         function buildRecord() {
             const name = document.getElementById('name').value.trim();
             const team = document.getElementById('team').value.trim();
@@ -300,8 +312,9 @@
         async function checkServer() {
             try {
                 const data = await fetchRecords();
-                setServerInfo(`Servidor conectado en ${API_BASE}. Archivo activo: .vscode/fichajeregistros.json. Registros actuales: ${data.length}. Si usas iPhone o tablet, abre esta misma direccion desde ese dispositivo.`);
-                setStatus(`Base de datos conectada. ${data.length} pilotos guardados y lista publica desactivada.`, 'ok');
+                const totalRecords = extractTotalRecords(data);
+                setServerInfo(`Servidor conectado en ${API_BASE}. Archivo activo: .vscode/fichajeregistros.json. Registros actuales: ${totalRecords}. Si usas iPhone o tablet, abre esta misma direccion desde ese dispositivo.`);
+                setStatus(`Base de datos conectada. ${totalRecords} pilotos guardados y lista publica desactivada.`, 'ok');
             } catch (error) {
                 console.error(error);
                 setServerInfo('Servidor local no disponible. Abre iniciar-backend.bat y vuelve a probar. Tambien puedes entrar por http://localhost:5501/registro.html.', 'error');

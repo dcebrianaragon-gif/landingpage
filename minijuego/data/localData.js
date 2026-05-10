@@ -22,7 +22,165 @@ const circuitImages = {
 
 const clone = (value) => JSON.parse(JSON.stringify(value));
 
-const defaultCircuits = [
+const DEFAULT_CIRCUIT_TUNING = {
+  default: {
+    scale: 1.24,
+    widthBoost: 1,
+    straightStretch: 28,
+    straightCount: 2,
+    cornerRelax: 0.12,
+    minStraightLength: 92,
+  },
+  qatar: { scaleX: 1.36, scaleZ: 1.24, widthBoost: 2, straightStretch: 54, straightCount: 3, cornerRelax: 0.1, minStraightLength: 108 },
+  portimao: { scale: 1.28, widthBoost: 2, straightStretch: 34, straightCount: 2, cornerRelax: 0.15 },
+  cota: { scaleX: 1.26, scaleZ: 1.3, widthBoost: 2, straightStretch: 38, straightCount: 3, cornerRelax: 0.15 },
+  jerez: { scale: 1.3, widthBoost: 2, straightStretch: 34, straightCount: 2, cornerRelax: 0.18, minStraightLength: 82 },
+  lemans: { scale: 1.31, widthBoost: 2, straightStretch: 36, straightCount: 2, cornerRelax: 0.2, minStraightLength: 84 },
+  mugello: { scaleX: 1.34, scaleZ: 1.26, widthBoost: 2, straightStretch: 54, straightCount: 3, cornerRelax: 0.11, minStraightLength: 110 },
+  catalunya: { scaleX: 1.32, scaleZ: 1.22, widthBoost: 2, straightStretch: 44, straightCount: 3, cornerRelax: 0.14, minStraightLength: 104 },
+  assen: { scale: 1.32, widthBoost: 2, straightStretch: 30, straightCount: 2, cornerRelax: 0.2, minStraightLength: 74 },
+  silverstone: { scale: 1.28, widthBoost: 2, straightStretch: 42, straightCount: 3, cornerRelax: 0.12, minStraightLength: 108 },
+  redbullring: { scaleX: 1.34, scaleZ: 1.24, widthBoost: 2, straightStretch: 48, straightCount: 3, cornerRelax: 0.13, minStraightLength: 102 },
+  misano: { scale: 1.3, widthBoost: 2, straightStretch: 34, straightCount: 2, cornerRelax: 0.18, minStraightLength: 84 },
+  aragon: { scale: 1.28, widthBoost: 2, straightStretch: 38, straightCount: 3, cornerRelax: 0.14, minStraightLength: 98 },
+  valencia: { scale: 1.34, widthBoost: 2, straightStretch: 34, straightCount: 2, cornerRelax: 0.22, minStraightLength: 76 },
+  sepang: { scale: 1.29, widthBoost: 2, straightStretch: 44, straightCount: 3, cornerRelax: 0.13, minStraightLength: 104 },
+  sachsen: { scale: 1.42, widthBoost: 3, straightStretch: 32, straightCount: 2, cornerRelax: 0.28, minStraightLength: 66 },
+  phillip: { scale: 1.26, widthBoost: 2, straightStretch: 36, straightCount: 2, cornerRelax: 0.12, minStraightLength: 92 },
+};
+
+function cloneWaypoints(waypoints) {
+  return waypoints.map(({ x, z }) => ({ x, z }));
+}
+
+function getSegmentLength(a, b) {
+  return Math.hypot(b.x - a.x, b.z - a.z);
+}
+
+function normalize2D(vector) {
+  const length = Math.hypot(vector.x, vector.z) || 1;
+  return { x: vector.x / length, z: vector.z / length };
+}
+
+function scaleWaypoints(waypoints, tuning) {
+  const center = waypoints.reduce((acc, point) => ({
+    x: acc.x + point.x,
+    z: acc.z + point.z,
+  }), { x: 0, z: 0 });
+
+  center.x /= waypoints.length || 1;
+  center.z /= waypoints.length || 1;
+
+  const scaleX = tuning.scaleX || tuning.scale || 1;
+  const scaleZ = tuning.scaleZ || tuning.scale || 1;
+
+  return waypoints.map((point) => ({
+    x: center.x + (point.x - center.x) * scaleX,
+    z: center.z + (point.z - center.z) * scaleZ,
+  }));
+}
+
+function relaxTightCorners(waypoints, tuning) {
+  const relaxAmount = tuning.cornerRelax || 0;
+  if (relaxAmount <= 0) return cloneWaypoints(waypoints);
+
+  return waypoints.map((point, index) => {
+    const previous = waypoints[(index - 1 + waypoints.length) % waypoints.length];
+    const next = waypoints[(index + 1) % waypoints.length];
+    const incoming = normalize2D({ x: point.x - previous.x, z: point.z - previous.z });
+    const outgoing = normalize2D({ x: next.x - point.x, z: next.z - point.z });
+    const turnStrength = Math.abs(incoming.x * outgoing.z - incoming.z * outgoing.x);
+
+    if (turnStrength < 0.16) {
+      return { ...point };
+    }
+
+    const midpoint = {
+      x: (previous.x + next.x) / 2,
+      z: (previous.z + next.z) / 2,
+    };
+    const blend = Math.min(relaxAmount * turnStrength, 0.24);
+
+    return {
+      x: point.x * (1 - blend) + midpoint.x * blend,
+      z: point.z * (1 - blend) + midpoint.z * blend,
+    };
+  });
+}
+
+function isSegmentTooClose(a, b, total) {
+  const diff = Math.abs(a - b);
+  return Math.min(diff, total - diff) <= 2;
+}
+
+function stretchLongestStraights(waypoints, tuning) {
+  const straightStretch = tuning.straightStretch || 0;
+  const straightCount = tuning.straightCount || 0;
+  if (straightStretch <= 0 || straightCount <= 0) return cloneWaypoints(waypoints);
+
+  const candidates = waypoints
+    .map((point, index) => {
+      const next = waypoints[(index + 1) % waypoints.length];
+      return {
+        index,
+        length: getSegmentLength(point, next),
+      };
+    })
+    .sort((a, b) => b.length - a.length);
+
+  const chosen = [];
+  const minStraightLength = tuning.minStraightLength || 0;
+
+  for (const candidate of candidates) {
+    if (candidate.length < minStraightLength) continue;
+    if (chosen.some((selected) => isSegmentTooClose(selected, candidate.index, waypoints.length))) continue;
+    chosen.push(candidate.index);
+    if (chosen.length >= straightCount) break;
+  }
+
+  if (chosen.length === 0) return cloneWaypoints(waypoints);
+
+  const nextWaypoints = cloneWaypoints(waypoints);
+
+  chosen.forEach((index) => {
+    const nextIndex = (index + 1) % nextWaypoints.length;
+    const start = nextWaypoints[index];
+    const end = nextWaypoints[nextIndex];
+    const direction = normalize2D({ x: end.x - start.x, z: end.z - start.z });
+    const currentLength = getSegmentLength(start, end);
+    const amount = Math.min(straightStretch, currentLength * 0.26);
+
+    nextWaypoints[index] = {
+      x: start.x - direction.x * (amount / 2),
+      z: start.z - direction.z * (amount / 2),
+    };
+    nextWaypoints[nextIndex] = {
+      x: end.x + direction.x * (amount / 2),
+      z: end.z + direction.z * (amount / 2),
+    };
+  });
+
+  return nextWaypoints;
+}
+
+function tuneCircuitLayout(circuit) {
+  const tuning = {
+    ...DEFAULT_CIRCUIT_TUNING.default,
+    ...(DEFAULT_CIRCUIT_TUNING[circuit.id] || {}),
+  };
+
+  const scaledWaypoints = scaleWaypoints(cloneWaypoints(circuit.waypoints), tuning);
+  const openedWaypoints = relaxTightCorners(scaledWaypoints, tuning);
+  const stretchedWaypoints = stretchLongestStraights(openedWaypoints, tuning);
+
+  return {
+    ...circuit,
+    track_width: Math.round((circuit.track_width || 13) + (tuning.widthBoost || 0)),
+    waypoints: stretchedWaypoints,
+  };
+}
+
+const defaultCircuitBlueprints = [
   {
     id: 'qatar',
     name: 'LUSAIL',
@@ -268,6 +426,8 @@ const defaultCircuits = [
   },
 ];
 
+const defaultCircuits = defaultCircuitBlueprints.map((circuit) => tuneCircuitLayout(circuit));
+
 const defaultBikes = [
   { id: 'ducati', name: 'DUCATI', flag: 'IT', info: 'Potencia bruta - V4', max_speed: 2.65, accel: 0.04, brake: 0.072, turn: 0.038, lean: 0.13, top_gear: 6, color_hex: 'e10000' },
   { id: 'ktm', name: 'KTM', flag: 'AT', info: 'Giros rapidos - V4', max_speed: 2.05, accel: 0.031, brake: 0.066, turn: 0.056, lean: 0.17, top_gear: 6, color_hex: 'ff6600' },
@@ -300,7 +460,15 @@ export const localData = {
     const stored = readStorage(CIRCUITS_KEY, defaultCircuits);
     const merged = stored.map((circuit) => {
       const defaults = defaultsById.get(circuit.id);
-      return defaults ? { ...defaults, ...circuit, image_url: defaults.image_url } : circuit;
+      return defaults ? {
+        ...defaults,
+        ...circuit,
+        image_url: defaults.image_url,
+        image_aspect: defaults.image_aspect,
+        image_scale: defaults.image_scale,
+        track_width: defaults.track_width,
+        waypoints: cloneWaypoints(defaults.waypoints),
+      } : circuit;
     });
     const storedIds = new Set(merged.map((circuit) => circuit.id));
     const missingDefaults = defaultCircuits.filter((circuit) => !storedIds.has(circuit.id));

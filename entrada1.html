@@ -360,6 +360,124 @@
         .marquee { background: var(--red); color: #000; padding: 20px 0; font-family: var(--font-racing); font-size: clamp(40px, 8vw, 100px); font-style: italic; overflow: hidden; white-space: nowrap; }
         .marquee-inner { display: inline-block; animation: scrollMarquee 30s linear infinite; }
         @keyframes scrollMarquee { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+        .crash-zone-shell {
+            padding: 82px clamp(22px, 5vw, 76px) 94px;
+            background:
+                radial-gradient(circle at top left, rgba(225,0,0,0.22), transparent 34%),
+                radial-gradient(circle at top right, rgba(255,255,255,0.05), transparent 28%),
+                linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0));
+        }
+        .crash-zone-head {
+            display: flex;
+            justify-content: space-between;
+            align-items: end;
+            gap: 26px;
+            flex-wrap: wrap;
+            margin-bottom: 34px;
+        }
+        .crash-zone-copy {
+            max-width: 760px;
+        }
+        .crash-zone-copy h3 {
+            margin: 0 0 16px;
+            font-family: var(--font-racing);
+            font-size: clamp(38px, 5vw, 68px);
+            font-style: italic;
+            line-height: 0.94;
+            letter-spacing: 1px;
+        }
+        .crash-zone-copy p {
+            margin: 0;
+            color: #8d8d8d;
+            line-height: 1.8;
+            font-size: 14px;
+            font-family: var(--font-data);
+        }
+        .crash-zone-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            padding: 11px 16px;
+            border: 1px solid rgba(225,0,0,0.35);
+            background: rgba(225,0,0,0.08);
+            color: #fff;
+            font-family: var(--font-data);
+            font-size: 11px;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
+        .crash-video-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 26px;
+        }
+        .crash-video-card {
+            position: relative;
+            overflow: hidden;
+            background: linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01));
+            border: 1px solid rgba(255,255,255,0.08);
+            box-shadow: 0 24px 54px rgba(0,0,0,0.38);
+        }
+        .crash-video-card::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, rgba(225,0,0,0.16), transparent 40%);
+            pointer-events: none;
+        }
+        .crash-video-frame {
+            position: relative;
+            aspect-ratio: 16 / 9;
+            background: #000;
+            border-bottom: 1px solid rgba(255,255,255,0.08);
+        }
+        .crash-video-frame iframe {
+            width: 100%;
+            height: 100%;
+            border: 0;
+            display: block;
+        }
+        .crash-video-meta {
+            position: relative;
+            padding: 18px 20px 22px;
+        }
+        .crash-video-meta small {
+            display: inline-block;
+            margin-bottom: 10px;
+            color: var(--red);
+            font-family: var(--font-data);
+            font-size: 11px;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
+        .crash-video-meta h4 {
+            margin: 0 0 10px;
+            font-family: var(--font-racing);
+            font-size: 28px;
+            font-style: italic;
+        }
+        .crash-video-meta p {
+            margin: 0;
+            color: #8c8c8c;
+            font-size: 14px;
+            line-height: 1.75;
+            font-family: var(--font-data);
+        }
+        .crash-video-source {
+            margin-top: 16px;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            color: #fff;
+            text-decoration: none;
+            font-family: var(--font-data);
+            font-size: 11px;
+            letter-spacing: 1.8px;
+            text-transform: uppercase;
+        }
+        .crash-video-source:hover {
+            color: var(--red);
+        }
 
         #teams, #glossary, #circuit-maps { background: var(--black); position: relative; z-index: 2; }
         .section-head {
@@ -882,6 +1000,9 @@
             .data-grid { grid-template-columns: 1fr; gap: 40px; margin-top: 40px; }
             .data-card { padding-left: 20px; }
             .data-card h3 { font-size: 28px; }
+            .crash-zone-shell { padding: 58px 18px 70px; }
+            .crash-video-grid { grid-template-columns: 1fr; }
+            .crash-video-meta h4 { font-size: 24px; }
             .teams-slider { padding: 40px 0; gap: 20px; }
             .team-card { flex: 0 0 85vw; height: 450px; }
             .team-label { bottom: 30px; left: 30px; font-size: 30px; }
@@ -983,6 +1104,54 @@
         <section class="crash-wall" id="crash">
             <div class="marquee">
                 <div class="marquee-inner">&nbsp;CAIDAS 2026//ZONA PELIGROSA//CAIDAS FUERTES//FALLOS DEL SISTEMA //&nbsp;</div>
+            </div>
+            <div class="crash-zone-shell">
+                <div class="crash-zone-head">
+                    <div class="crash-zone-copy">
+                        <span class="section-kicker reveal">Danger Zone</span>
+                        <h3 class="reveal">CAIDAS<br><span style="color:var(--red);">FUERTES</span></h3>
+                        <p class="reveal">He dejado dos videos oficiales de MotoGP juntos dentro de esta zona para que la seccion tenga mas impacto visual. Uno explica los tipos de caida y el otro recopila highsides espectaculares, asi que la mezcla queda muy bien para este bloque.</p>
+                    </div>
+                    <div class="crash-zone-tag reveal">Official MotoGP video feed</div>
+                </div>
+
+                <div class="crash-video-grid">
+                    <article class="crash-video-card reveal">
+                        <div class="crash-video-frame">
+                            <iframe
+                                src="https://www.youtube.com/embed/ONad3ERJQKE?rel=0&modestbranding=1&playsinline=1"
+                                title="Crashes in MotoGP Explained"
+                                loading="lazy"
+                                referrerpolicy="strict-origin-when-cross-origin"
+                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                                allowfullscreen></iframe>
+                        </div>
+                        <div class="crash-video-meta">
+                            <small>Danger feed 01</small>
+                            <h4>CRASHES IN MOTOGP</h4>
+                            <p>Video oficial del canal de MotoGP que explica por que se producen las caidas mas tipicas: perder el tren delantero, highside y otros fallos al limite.</p>
+                            <a class="crash-video-source" href="https://www.youtube.com/watch?v=ONad3ERJQKE" target="_blank" rel="noopener noreferrer">Ver fuente oficial</a>
+                        </div>
+                    </article>
+
+                    <article class="crash-video-card reveal" style="transition-delay:0.12s;">
+                        <div class="crash-video-frame">
+                            <iframe
+                                src="https://www.youtube.com/embed/N89v6Wj82lQ?rel=0&modestbranding=1&playsinline=1"
+                                title="MotoGP Crash Reel"
+                                loading="lazy"
+                                referrerpolicy="strict-origin-when-cross-origin"
+                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                                allowfullscreen></iframe>
+                        </div>
+                        <div class="crash-video-meta">
+                            <small>Danger feed 02</small>
+                            <h4>MOTOGP CRASH REEL</h4>
+                            <p>He cambiado el segundo bloque por otra recopilacion oficial de caidas de MotoGP, mucho mas directa para esta seccion y sin depender del video anterior que estaba bloqueado.</p>
+                            <a class="crash-video-source" href="https://www.youtube.com/watch?v=N89v6Wj82lQ" target="_blank" rel="noopener noreferrer">Ver fuente oficial</a>
+                        </div>
+                    </article>
+                </div>
             </div>
         </section>
 
@@ -1116,7 +1285,6 @@
 
     <footer>
         <div class="footer-logo">MotoGP Feed</div>
-        <p class="footer-note">Una portada mas solida para explorar la parrilla, la tecnica y el calendario sin perder ritmo visual ni claridad de lectura.</p>
         <div class="social-links">
             <a href="https://www.instagram.com/motogp/" target="_blank" class="social-icon" title="Instagram">
                 <svg viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z"/></svg>
