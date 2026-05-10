@@ -220,6 +220,23 @@
                 grid-template-columns: 1fr;
             }
         }
+
+        @media (prefers-reduced-motion: reduce) {
+            html {
+                scroll-behavior: auto;
+            }
+
+            .scan-line,
+            .clicked-pulse {
+                animation: none !important;
+            }
+
+            .map-display img,
+            .map-card,
+            .btn-back {
+                transition-duration: 0.01ms !important;
+            }
+        }
     </style>
 </head>
 <body>
@@ -273,18 +290,56 @@
 
     <script>
         // 1. Cursor Personalizado
+        const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+        function rafThrottle(callback) {
+            let rafId = 0;
+            let lastArgs = null;
+
+            return (...args) => {
+                lastArgs = args;
+                if (rafId) return;
+
+                rafId = window.requestAnimationFrame(() => {
+                    rafId = 0;
+                    callback(...(lastArgs || []));
+                });
+            };
+        }
+
         const cursor = document.getElementById('pro-cursor');
-        if (window.innerWidth > 850) {
-            document.addEventListener('mousemove', e => {
-                cursor.style.left = e.clientX + 'px';
-                cursor.style.top = e.clientY + 'px';
+        if (window.innerWidth > 850 && !prefersReducedMotion) {
+            const updateCursorPosition = rafThrottle((clientX, clientY) => {
+                cursor.style.left = clientX + 'px';
+                cursor.style.top = clientY + 'px';
             });
+
+            document.addEventListener('pointermove', e => {
+                updateCursorPosition(e.clientX, e.clientY);
+            }, { passive: true });
         }
 
         // 2. Base de datos de circuitos
-        const trackImageFallback = "jerez.png";
-        const availableTrackImages = new Set(["imagenes/assen.png", "imagenes/jerez.png", "imagenes/mugello.png", "imagenes/philipisland.png", "imagenes/sachsenring.png", "imagenes/valencia.png"]);
-        const resolveTrackImage = (imageName) => availableTrackImages.has(imageName) ? imageName : trackImageFallback;
+        const trackImageFallback = 'imagenes/jerez.png';
+        const availableTrackImages = new Set([
+            'aragon.png',
+            'assen.png',
+            'catalunya.png',
+            'cota.png',
+            'jerez.png',
+            'lemans.png',
+            'misano.png',
+            'mugello.png',
+            'philipisland.png',
+            'portimao.png',
+            'qatar.png',
+            'redbullring.png',
+            'sachsenring.png',
+            'sepang.png',
+            'silverstone.png',
+            'valencia.png'
+        ]);
+        const resolveTrackImage = (imageName) => availableTrackImages.has(imageName) ? `imagenes/${imageName}` : trackImageFallback;
 
         const trackData = {
             "qatar": { name: "LUSAIL", length: "5.38 km", curves: "16 (6 Izq, 10 Der)", record: "1'50.789", speed: "350.0 km/h", desc: "Carrera nocturna bajo los focos del desierto. La enorme recta de meta exige pura potencia.", img: resolveTrackImage("qatar.png") },
@@ -322,22 +377,27 @@
         // 4. Efecto Hover 3D
         const container3D = document.getElementById('3d-container');
         const img3D = document.getElementById('map-img');
-        if (window.innerWidth > 850) {
-            container3D.addEventListener('mousemove', (e) => {
+        if (window.innerWidth > 850 && !prefersReducedMotion) {
+            const update3DMap = rafThrottle((clientX, clientY) => {
                 const rect = container3D.getBoundingClientRect();
-                const x = e.clientX - rect.left;
-                const y = e.clientY - rect.top;
+                const x = clientX - rect.left;
+                const y = clientY - rect.top;
                 const rotateX = ((y - (rect.height / 2)) / (rect.height / 2)) * -20; 
                 const rotateY = ((x - (rect.width / 2)) / (rect.width / 2)) * 20;
 
                 img3D.style.transform = `rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale3d(1.05, 1.05, 1.05)`;
                 img3D.style.filter = `drop-shadow(${rotateY * -1}px ${rotateX * 1 + 20}px 30px rgba(225,0,0,0.6)) contrast(150%)`;
             });
-            container3D.addEventListener('mouseleave', () => {
+
+            container3D.addEventListener('pointermove', (e) => {
+                update3DMap(e.clientX, e.clientY);
+            }, { passive: true });
+
+            container3D.addEventListener('pointerleave', () => {
                 img3D.style.transition = 'transform 0.5s ease-out, filter 0.5s ease-out';
-                img3D.style.transform = `rotateX(0deg) rotateY(0deg) scale3d(1, 1, 1)`;
-                img3D.style.filter = `drop-shadow(0 0 20px rgba(225,0,0,0.3)) contrast(150%)`;
-                setTimeout(() => { img3D.style.transition = 'transform 0.1s ease-out, filter 0.3s ease-out'; }, 500);
+                img3D.style.transform = 'rotateX(0deg) rotateY(0deg) scale3d(1, 1, 1)';
+                img3D.style.filter = 'drop-shadow(0 0 20px rgba(225,0,0,0.3)) contrast(150%)';
+                window.setTimeout(() => { img3D.style.transition = 'transform 0.1s ease-out, filter 0.3s ease-out'; }, 500);
             });
         }
 
@@ -360,6 +420,11 @@
 
             // EVENTO PRINCIPAL DE ANIMACIÓN Y TRANSICIÓN
             card.onclick = function(e) {
+                if (prefersReducedMotion) {
+                    window.location.href = `?id=${key}`;
+                    return;
+                }
+
                 // Evitar clics múltiples si ya hay una animación en curso
                 if (document.querySelector('.is-expanding')) return;
                 

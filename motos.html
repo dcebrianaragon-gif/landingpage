@@ -859,6 +859,18 @@
                 height: clamp(240px, 52vw, 320px);
             }
         }
+
+        @media (prefers-reduced-motion: reduce) {
+            html {
+                scroll-behavior: auto;
+            }
+
+            *, *::before, *::after {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
+            }
+        }
     </style>
 </head>
 <body>
@@ -931,7 +943,28 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
     <script>
-        gsap.registerPlugin(ScrollTrigger);
+        const gsapApi = window.gsap;
+        const scrollTriggerApi = window.ScrollTrigger;
+        const hasGsap = Boolean(gsapApi && scrollTriggerApi);
+
+        if (hasGsap) {
+            gsapApi.registerPlugin(scrollTriggerApi);
+        }
+
+        function rafThrottle(callback) {
+            let rafId = 0;
+            let lastArgs = null;
+
+            return (...args) => {
+                lastArgs = args;
+                if (rafId) return;
+
+                rafId = window.requestAnimationFrame(() => {
+                    rafId = 0;
+                    callback(...(lastArgs || []));
+                });
+            };
+        }
 
         const motoCatalog = [
             {
@@ -1058,12 +1091,12 @@
         const motoLaunchOverlay = ensureMotoLaunchOverlay();
 
         function initHeroAnimations() {
-            if (prefersReducedMotion) {
+            if (prefersReducedMotion || !hasGsap) {
                 heroSpeedValue.textContent = '350';
                 return;
             }
 
-            gsap.from('.hero-copy > *', {
+            gsapApi.from('.hero-copy > *', {
                 y: 36,
                 opacity: 0,
                 duration: 0.95,
@@ -1071,7 +1104,7 @@
                 ease: 'power3.out'
             });
 
-            gsap.from('.hero-tag, .hero-speed-arcs', {
+            gsapApi.from('.hero-tag, .hero-speed-arcs', {
                 scale: 0.9,
                 opacity: 0,
                 duration: 1,
@@ -1079,7 +1112,7 @@
                 ease: 'power3.out'
             });
 
-            gsap.from('#hero-rider', {
+            gsapApi.from('#hero-rider', {
                 y: 48,
                 opacity: 0,
                 duration: 1.15,
@@ -1087,7 +1120,7 @@
                 ease: 'power3.out'
             });
 
-            gsap.to({ value: 0 }, {
+            gsapApi.to({ value: 0 }, {
                 value: 350,
                 duration: 2.2,
                 ease: 'power3.out',
@@ -1096,7 +1129,7 @@
                 }
             });
 
-            gsap.to('#hero-rider', {
+            gsapApi.to('#hero-rider', {
                 rotate: 7,
                 yPercent: 5,
                 ease: 'none',
@@ -1108,7 +1141,7 @@
                 }
             });
 
-            gsap.to('.hero-speed-arcs', {
+            gsapApi.to('.hero-speed-arcs', {
                 rotate: 18,
                 ease: 'none',
                 scrollTrigger: {
@@ -1119,7 +1152,7 @@
                 }
             });
 
-            gsap.from('.spec-card', {
+            gsapApi.from('.spec-card', {
                 y: 34,
                 opacity: 0,
                 duration: 0.8,
@@ -1148,10 +1181,7 @@
             const frame = document.querySelector('.hero-visual-frame');
             if (!frame) return;
 
-            frame.addEventListener('pointermove', (event) => {
-                const rect = frame.getBoundingClientRect();
-                const px = (event.clientX - rect.left) / rect.width;
-                const py = (event.clientY - rect.top) / rect.height;
+            const updateHeroPointer = rafThrottle((px, py) => {
                 const tiltY = (px - 0.5) * 12;
                 const tiltX = (0.5 - py) * 12;
                 const shiftX = (px - 0.5) * 18;
@@ -1162,6 +1192,13 @@
                 frame.style.setProperty('--hero-shift-x', `${shiftX.toFixed(2)}px`);
                 frame.style.setProperty('--hero-shift-y', `${shiftY.toFixed(2)}px`);
             });
+
+            frame.addEventListener('pointermove', (event) => {
+                const rect = frame.getBoundingClientRect();
+                const px = (event.clientX - rect.left) / rect.width;
+                const py = (event.clientY - rect.top) / rect.height;
+                updateHeroPointer(px, py);
+            }, { passive: true });
 
             frame.addEventListener('pointerleave', resetHeroPointerMotion);
         }
@@ -1177,12 +1214,7 @@
             if (prefersReducedMotion) return;
 
             cards.forEach((card) => {
-                card.addEventListener('pointermove', (event) => {
-                    if (card.dataset.launching === 'true') return;
-
-                    const rect = card.getBoundingClientRect();
-                    const px = (event.clientX - rect.left) / rect.width;
-                    const py = (event.clientY - rect.top) / rect.height;
+                const updateCardMotion = rafThrottle((px, py) => {
                     const tiltY = (px - 0.5) * 10;
                     const tiltX = (0.5 - py) * 10;
 
@@ -1191,6 +1223,15 @@
                     card.style.setProperty('--glow-x', `${(px * 100).toFixed(2)}%`);
                     card.style.setProperty('--glow-y', `${(py * 100).toFixed(2)}%`);
                 });
+
+                card.addEventListener('pointermove', (event) => {
+                    if (card.dataset.launching === 'true') return;
+
+                    const rect = card.getBoundingClientRect();
+                    const px = (event.clientX - rect.left) / rect.width;
+                    const py = (event.clientY - rect.top) / rect.height;
+                    updateCardMotion(px, py);
+                }, { passive: true });
 
                 card.addEventListener('pointerleave', () => {
                     resetModelCardMotion(card);
@@ -1244,6 +1285,11 @@
             card.addEventListener('click', (event) => {
                 event.preventDefault();
                 if (card.dataset.launching === 'true') return;
+                if (prefersReducedMotion) {
+                    window.location.href = card.href;
+                    return;
+                }
+
                 card.dataset.launching = 'true';
                 card.classList.add('is-animating', 'model-card-launching');
                 motoLaunchOverlay.classList.remove('active');

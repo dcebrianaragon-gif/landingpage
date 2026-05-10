@@ -1109,7 +1109,7 @@
                         <div class="stat-value" id="track-speed">--</div>
                     </div>
                 </div>
-                <p class="track-desc" id="track-desc">Estableciendo conexion con los sensores de pista... Obteniendo telemetria.</p>
+                <p class="track-desc" id="track-desc">Estableciendo conexión con los sensores de pista... Obteniendo telemetría.</p>
             </div>
         </div>
     </div>
@@ -1134,7 +1134,7 @@
                 <svg viewBox="0 0 24 24"><path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64 2.93 2.93 0 0 1 .88.13V9.4a6.84 6.84 0 0 0-1-.05A6.33 6.33 0 0 0 5 20.1a6.34 6.34 0 0 0 10.86-4.43v-7a8.16 8.16 0 0 0 4.77 1.52v-3.4a4.85 4.85 0 0 1-1-.1z"/></svg>
             </a>
         </div>
-        <p style="font-family:var(--font-data);font-size:11px;color:#444;margin-top:50px;letter-spacing:2px;">TERMINAL_OFFLINE // ? 2026 MOTOGP PROTOCOL.</p>
+        <p style="font-family:var(--font-data);font-size:11px;color:#444;margin-top:50px;letter-spacing:2px;">TERMINAL_OFFLINE // © 2026 MOTOGP PROTOCOL.</p>
         <a href="#body-main" class="back-to-top">[ VOLVER AL INICIO ]</a>
     </footer>
 
@@ -1142,23 +1142,49 @@
         
     const cursor = document.getElementById('pro-cursor');
     const interactiveSelector = 'a, button, .map-card, .team-card, .social-icon, .btn-ignite, .slider-btn, #pilot-ai-btn';
+    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    function rafThrottle(callback) {
+        let rafId = 0;
+        let lastArgs = null;
+
+        return (...args) => {
+            lastArgs = args;
+            if (rafId) return;
+
+            rafId = window.requestAnimationFrame(() => {
+                rafId = 0;
+                callback(...(lastArgs || []));
+            });
+        };
+    }
 
     function initCustomCursor() {
-        if (!cursor || window.innerWidth <= 850) return;
+        if (!cursor || window.innerWidth <= 850 || prefersReducedMotion) return;
 
-        document.addEventListener('mousemove', e => {
-            cursor.style.left = e.clientX + 'px';
-            cursor.style.top = e.clientY + 'px';
+        const updateCursorPosition = rafThrottle((clientX, clientY) => {
+            cursor.style.left = clientX + 'px';
+            cursor.style.top = clientY + 'px';
             cursor.style.opacity = '1';
         });
+
+        document.addEventListener('pointermove', (event) => {
+            updateCursorPosition(event.clientX, event.clientY);
+        }, { passive: true });
 
         document.addEventListener('mouseleave', () => {
             cursor.style.opacity = '0';
         });
 
-        document.querySelectorAll(interactiveSelector).forEach(el => {
-            el.addEventListener('mouseenter', () => cursor.classList.add('cursor-hover'));
-            el.addEventListener('mouseleave', () => cursor.classList.remove('cursor-hover'));
+        document.addEventListener('pointerover', (event) => {
+            if (event.target?.closest?.(interactiveSelector)) {
+                cursor.classList.add('cursor-hover');
+            }
+        });
+
+        document.addEventListener('pointerout', (event) => {
+            if (event.relatedTarget?.closest?.(interactiveSelector)) return;
+            cursor.classList.remove('cursor-hover');
         });
     }
 
@@ -1169,16 +1195,26 @@
     const R = 170; 
 
     if(zone && litDiv) {
-        zone.addEventListener('mousemove', e => {
+        if (prefersReducedMotion) {
+            litDiv.style.clipPath = `circle(${R}px at 50% 52%)`;
+        }
+
+        const updateSpotlight = rafThrottle((clientX, clientY) => {
             const rect = zone.getBoundingClientRect();
-            const x = e.clientX - rect.left;
-            const y = e.clientY - rect.top;
+            const x = clientX - rect.left;
+            const y = clientY - rect.top;
             litDiv.style.transition = 'none';
-            litDiv.style.clipPath   = `circle(${R}px at ${x}px ${y}px)`;
+            litDiv.style.clipPath = `circle(${R}px at ${x}px ${y}px)`;
         });
+
+        zone.addEventListener('pointermove', e => {
+            if (prefersReducedMotion) return;
+            updateSpotlight(e.clientX, e.clientY);
+        }, { passive: true });
+
         zone.addEventListener('mouseleave', () => {
             litDiv.style.transition = 'clip-path 0.6s cubic-bezier(0.4, 0, 0.2, 1)';
-            litDiv.style.clipPath   = 'circle(0px at 50% 50%)';
+            litDiv.style.clipPath = prefersReducedMotion ? `circle(${R}px at 50% 52%)` : 'circle(0px at 50% 50%)';
         });
     }
 
@@ -1332,13 +1368,19 @@
 
         if (prevBtn) {
             prevBtn.addEventListener('click', () => {
-                container.scrollBy({ left: -Math.max(container.clientWidth * 0.82, 360), behavior: 'smooth' });
+                container.scrollBy({
+                    left: -Math.max(container.clientWidth * 0.82, 360),
+                    behavior: prefersReducedMotion ? 'auto' : 'smooth'
+                });
             });
         }
 
         if (nextBtn) {
             nextBtn.addEventListener('click', () => {
-                container.scrollBy({ left: Math.max(container.clientWidth * 0.82, 360), behavior: 'smooth' });
+                container.scrollBy({
+                    left: Math.max(container.clientWidth * 0.82, 360),
+                    behavior: prefersReducedMotion ? 'auto' : 'smooth'
+                });
             });
         }
     }
@@ -1363,6 +1405,11 @@
     }
 
     function launchMotoTransition(element, overlay) {
+        if (prefersReducedMotion) {
+            window.location.href = element.href;
+            return;
+        }
+
         const card = element.classList.contains('team-card') ? element : element.querySelector('.team-card');
         const image = element.querySelector('img');
         const preview = overlay.querySelector('.moto-launch-preview');
@@ -1439,16 +1486,12 @@
     }
 
     function initTeamCardMotion(elements) {
-        const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
         if (prefersReducedMotion) return;
 
         elements.forEach((element) => {
-            element.addEventListener('pointermove', (event) => {
+            const updateCardMotion = rafThrottle((px, py) => {
                 if (element.dataset.launching === 'true') return;
 
-                const rect = element.getBoundingClientRect();
-                const px = (event.clientX - rect.left) / rect.width;
-                const py = (event.clientY - rect.top) / rect.height;
                 const tiltY = (px - 0.5) * 10;
                 const tiltX = (0.5 - py) * 10;
 
@@ -1456,6 +1499,13 @@
                 element.style.setProperty('--tilt-y', `${tiltY.toFixed(2)}deg`);
                 element.style.setProperty('--glow-x', `${(px * 100).toFixed(2)}%`);
                 element.style.setProperty('--glow-y', `${(py * 100).toFixed(2)}%`);
+            });
+
+            element.addEventListener('pointermove', (event) => {
+                const rect = element.getBoundingClientRect();
+                const px = (event.clientX - rect.left) / rect.width;
+                const py = (event.clientY - rect.top) / rect.height;
+                updateCardMotion(px, py);
             });
 
             element.addEventListener('pointerleave', () => {
@@ -1942,7 +1992,7 @@ document.addEventListener("DOMContentLoaded", () => {
             aiRadioState.lastTopic = 'adelantamiento';
             return construirRespuesta([
                 `${elegirElemento(aperturas)} Para adelantar sin destruir la vuelta necesitas preparar la maniobra una curva antes.`,
-                'La clave es salir mejor de la curva previa, ense?ar la moto pronto y llegar con la direccion ya bastante controlada. Si fuerzas demasiado la entrada, adelantas una vez y regalas dos curvas despues.'
+                'La clave es salir mejor de la curva previa, enseñar la moto pronto y llegar con la dirección ya bastante controlada. Si fuerzas demasiado la entrada, adelantas una vez y regalas dos curvas después.'
             ]);
         }
 
