@@ -106,6 +106,28 @@
             cursor: wait;
         }
 
+        .secondary-btn {
+            width: 100%;
+            margin-top: 12px;
+            background: transparent;
+            border: 1px solid var(--line);
+            color: #f2f2f2;
+            padding: 12px 14px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            cursor: pointer;
+            transition: border-color 0.2s ease, color 0.2s ease, transform 0.2s ease;
+        }
+
+        .secondary-btn:hover {
+            border-color: rgba(225, 6, 0, 0.45);
+            color: white;
+            transform: translateY(-1px);
+        }
+
         .status {
             margin-top: 18px;
             font-size: 14px;
@@ -212,7 +234,7 @@
 <body>
     <div class="box">
         <h1>MotoGP Registry</h1>
-        <p>Introduce un piloto y se guardara en <code>.vscode/fichajeregistros.json</code> a traves del backend local.</p>
+        <p>Introduce un piloto y se guardara en el backend local si existe. Si no hay servidor, la pagina cambia sola a modo local y guarda los datos en este navegador.</p>
 
         <div class="server-box" id="serverInfo">Comprobando conexion con el servidor local...</div>
 
@@ -227,11 +249,13 @@
 
         <div class="records-container">
             <h2>Privacidad del registro</h2>
-            <div class="privacy-note" id="privacyNote">Los pilotos registrados no se muestran en esta pagina. Solo se conserva el total en el backend local para evitar exponer datos personales.</div>
+            <div class="privacy-note" id="privacyNote">Los pilotos registrados no se muestran en esta pagina. Solo se conserva el total en el backend local o en el almacenamiento local del navegador para evitar exponer datos personales.</div>
+            <button type="button" class="secondary-btn" id="btnExport" hidden>Descargar copia local JSON</button>
         </div>
     </div>
 
     <script>
+        const LOCAL_RECORDS_KEY = 'motogp_registry_records_v1';
         const API_BASE = (() => {
             const { protocol, hostname } = window.location;
 
@@ -242,6 +266,7 @@
             const resolvedHost = hostname || 'localhost';
             return `${protocol}//${resolvedHost}:5501`;
         })();
+        let storageMode = 'backend';
 
         function setStatus(message, type = '') {
             const msg = document.getElementById('msg');
@@ -252,13 +277,69 @@
         function setServerInfo(message, type = '') {
             const info = document.getElementById('serverInfo');
             info.textContent = message;
-            info.style.borderColor = type === 'error' ? '#6a1a1a' : '#2a2a2a';
+            if (type === 'error') {
+                info.style.borderColor = '#6a1a1a';
+                return;
+            }
+
+            if (type === 'warn') {
+                info.style.borderColor = '#6a541a';
+                return;
+            }
+
+            info.style.borderColor = '#2a2a2a';
         }
 
         function clearForm() {
             document.getElementById('name').value = '';
             document.getElementById('team').value = '';
             document.getElementById('email').value = '';
+        }
+
+        function canUseLocalStorage() {
+            try {
+                const probeKey = '__motogp_probe__';
+                window.localStorage.setItem(probeKey, '1');
+                window.localStorage.removeItem(probeKey);
+                return true;
+            } catch (error) {
+                return false;
+            }
+        }
+
+        function normalizeEmail(value) {
+            return String(value || '').trim().toLowerCase();
+        }
+
+        function getTimestampLabel() {
+            return new Date().toLocaleString('es-ES');
+        }
+
+        function readLocalRecords() {
+            if (!canUseLocalStorage()) {
+                return [];
+            }
+
+            try {
+                const raw = window.localStorage.getItem(LOCAL_RECORDS_KEY);
+                if (!raw) {
+                    return [];
+                }
+
+                const parsed = JSON.parse(raw);
+                return Array.isArray(parsed) ? parsed : [];
+            } catch (error) {
+                console.error('No se pudo leer el almacenamiento local:', error);
+                return [];
+            }
+        }
+
+        function writeLocalRecords(records) {
+            if (!canUseLocalStorage()) {
+                throw new Error('Este navegador no permite guardar en modo local.');
+            }
+
+            window.localStorage.setItem(LOCAL_RECORDS_KEY, JSON.stringify(records, null, 2));
         }
 
         function extractTotalRecords(data) {
@@ -271,6 +352,50 @@
             }
 
             return 0;
+        }
+
+        function buildRecordsSummary(records, storageFile = 'fichajeregistros.json', privacyMode = 'summary-only') {
+            const safeRecords = Array.isArray(records) ? records : [];
+            const teamCounts = new Map();
+
+            safeRecords.forEach((record) => {
+                const team = String(record.escuderia || '').trim() || 'Sin escuderia';
+                teamCounts.set(team, (teamCounts.get(team) || 0) + 1);
+            });
+
+            const sortedByNewest = [...safeRecords].sort((a, b) => Number(b.id || 0) - Number(a.id || 0));
+            const topTeams = [...teamCounts.entries()]
+                .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0], 'es'))
+                .slice(0, 5)
+                .map(([name, count]) => ({ name, count }));
+
+            return {
+                total: safeRecords.length,
+                teamsCount: teamCounts.size,
+                lastRegisteredAt: sortedByNewest[0]?.fecha_registro || null,
+                topTeams,
+                privacyMode,
+                storageFile
+            };
+        }
+
+        function buildLocalSummary(records = readLocalRecords()) {
+            return buildRecordsSummary(records, 'navegador-local', 'browser-local');
+        }
+
+        function updatePrivacyNote(message) {
+            document.getElementById('privacyNote').textContent = message;
+        }
+
+        function updateExportButton() {
+            const button = document.getElementById('btnExport');
+            const total = readLocalRecords().length;
+            button.hidden = storageMode !== 'local' || total === 0;
+        }
+
+        function setStorageMode(nextMode) {
+            storageMode = nextMode;
+            updateExportButton();
         }
 
         function buildRecord() {
@@ -294,7 +419,7 @@
             };
         }
 
-        async function fetchRecords() {
+        async function fetchBackendRecords() {
             if (!API_BASE) {
                 throw new Error('Abre esta pagina desde el servidor local para conectar el backend.');
             }
@@ -309,16 +434,87 @@
             return data;
         }
 
+        async function fetchRecords() {
+            if (storageMode === 'local') {
+                return buildLocalSummary();
+            }
+
+            return fetchBackendRecords();
+        }
+
+        function saveRecordLocally(payload) {
+            const records = readLocalRecords();
+            const normalizedEmail = normalizeEmail(payload.email);
+            const duplicate = records.find((record) => normalizeEmail(record.email) === normalizedEmail);
+
+            if (duplicate) {
+                throw new Error('Ese correo ya esta registrado en este navegador.');
+            }
+
+            records.push({
+                id: Date.now(),
+                piloto: payload.piloto,
+                escuderia: payload.escuderia,
+                email: normalizedEmail,
+                fecha_registro: getTimestampLabel()
+            });
+
+            writeLocalRecords(records);
+            return buildLocalSummary(records);
+        }
+
+        function isBackendUnavailable(error) {
+            if (!error) {
+                return false;
+            }
+
+            if (error instanceof TypeError) {
+                return true;
+            }
+
+            return /fetch|network|conexion|connect|servidor|failed/i.test(String(error.message || ''));
+        }
+
+        function downloadLocalBackup() {
+            const records = readLocalRecords();
+            if (records.length === 0) {
+                setStatus('Todavia no hay registros locales para exportar.', 'warn');
+                return;
+            }
+
+            const blob = new Blob([JSON.stringify(records, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = 'motogp-registros-locales.json';
+            link.click();
+            URL.revokeObjectURL(url);
+            setStatus('Copia local descargada correctamente.', 'ok');
+        }
+
         async function checkServer() {
             try {
-                const data = await fetchRecords();
+                const data = await fetchBackendRecords();
                 const totalRecords = extractTotalRecords(data);
+                setStorageMode('backend');
                 setServerInfo(`Servidor conectado en ${API_BASE}. Archivo activo: .vscode/fichajeregistros.json. Registros actuales: ${totalRecords}. Si usas iPhone o tablet, abre esta misma direccion desde ese dispositivo.`);
                 setStatus(`Base de datos conectada. ${totalRecords} pilotos guardados y lista publica desactivada.`, 'ok');
+                updatePrivacyNote('Los pilotos registrados no se muestran en esta pagina. Solo se conserva el total en el backend local para evitar exponer datos personales.');
             } catch (error) {
                 console.error(error);
-                setServerInfo('Servidor local no disponible. Abre iniciar-backend.bat y vuelve a probar. Tambien puedes entrar por http://localhost:5501/registro.html.', 'error');
-                setStatus('No hay conexion con el servidor local, asi que no puedo guardar en el JSON todavia.', 'error');
+                if (!canUseLocalStorage()) {
+                    setStorageMode('backend');
+                    setServerInfo('No hay backend disponible y este navegador tampoco permite guardar en local. Prueba con otro navegador o activa el servidor Node.js.', 'error');
+                    setStatus('Sin servidor y sin almacenamiento local no puedo registrar pilotos en esta copia.', 'error');
+                    updatePrivacyNote('Este navegador ha bloqueado el guardado local. Para esta copia del proyecto necesitas activar el backend con Node.js.');
+                    return;
+                }
+
+                setStorageMode('local');
+                const summary = buildLocalSummary();
+                setServerInfo(`Modo local activo. Este ordenador guardara los registros en el navegador porque no hay backend disponible. Registros locales actuales: ${summary.total}.`, 'warn');
+                setStatus(`No he encontrado servidor, asi que trabajare en modo local. Puedes registrar pilotos igualmente y descargar una copia JSON despues.`, 'warn');
+                updatePrivacyNote('Modo local activo: los registros se guardan en este navegador para que la demo funcione aunque el proyecto se abra desde un ZIP sin Node.js.');
             }
         }
 
@@ -338,24 +534,44 @@
                 const payload = buildRecord();
                 btn.disabled = true;
 
-                const response = await fetch(`${API_BASE}/api/registros`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify(payload)
-                });
+                if (storageMode === 'backend') {
+                    try {
+                        const response = await fetch(`${API_BASE}/api/registros`, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify(payload)
+                        });
 
-                const data = await response.json();
+                        const data = await response.json();
 
-                if (!response.ok) {
-                    throw new Error(data.error || 'No se pudo guardar el registro.');
+                        if (!response.ok) {
+                            throw new Error(data.error || 'No se pudo guardar el registro.');
+                        }
+
+                        clearForm();
+                        setStatus(`Registro guardado correctamente. Total actual: ${data.total}.`, 'ok');
+                        setServerInfo(`Servidor conectado en ${API_BASE}. Registros actuales: ${data.total}. Los registrados no se muestran publicamente.`);
+                        updatePrivacyNote('Los pilotos registrados no se muestran en esta pagina. Solo se conserva el total en el backend local para evitar exponer datos personales.');
+                        await loadRecords();
+                        return;
+                    } catch (error) {
+                        if (!isBackendUnavailable(error)) {
+                            throw error;
+                        }
+
+                        console.warn('Backend no disponible, cambiando a modo local:', error);
+                        setStorageMode('local');
+                    }
                 }
 
+                const localSummary = saveRecordLocally(payload);
                 clearForm();
-                setStatus(`Registro guardado correctamente. Total actual: ${data.total}.`, 'ok');
-                setServerInfo(`Servidor conectado en ${API_BASE}. Registros actuales: ${data.total}. Los registrados no se muestran publicamente.`);
-                await loadRecords();
+                setStatus(`Registro guardado en modo local. Total actual en este navegador: ${localSummary.total}.`, 'ok');
+                setServerInfo(`Modo local activo. No hace falta Node.js para esta copia del proyecto. Registros locales actuales: ${localSummary.total}.`, 'warn');
+                updatePrivacyNote('Modo local activo: los registros se guardan en este navegador y puedes descargar una copia JSON con el boton inferior.');
+                updateExportButton();
             } catch (error) {
                 console.error(error);
                 setStatus(error.message || 'No se pudo guardar el registro.', 'error');
@@ -368,6 +584,7 @@
             event.preventDefault();
             await saveRecord();
         });
+        document.getElementById('btnExport').addEventListener('click', downloadLocalBackup);
 
         checkServer();
     </script>
